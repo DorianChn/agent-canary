@@ -142,6 +142,14 @@ Claude Code / Cursor / 你的 Agent
 
 Node 20+，Windows / macOS / Linux。支持所有 MCP 客户端（Claude Code、Cursor、Cline、Windsurf…）。令牌扫描器和监控器对*任何* Agent 有效，无论是否用 MCP。
 
+## 支持这个项目
+
+agent-canary 免费、本地化、无遥测——但付费推广和服务器都是自掏腰包。如果它帮你抓到过一次注入：
+
+- ⭐ **点个 Star**——对曝光最有帮助的一件事
+- 💳 **GitHub Sponsors**——仓库顶部的 Sponsor 按钮
+- 🧧 **微信支付 / 支付宝**——[`sponsor/`](sponsor/) 内置了自托管赞助收款网关：单文件服务，渲染二维码收款页，端到端校验微信支付（API v3 验签 + AES-GCM 回调解密）和支付宝（RSA2 异步通知）。无需商户资质即可用演示模式跑通全流程，见 [sponsor/README.md](sponsor/README.md)。
+
 ## 参与贡献
 
 欢迎 issue 和 PR——尤其是新诱饵工具的设计和评测套件的注入载荷。请保持诱饵惰性；贡献者必须遵守的保证见 [SECURITY.md](SECURITY.md)。

@@ -1,0 +1,59 @@
+# agent-canary 赞助收款网关
+
+单文件自托管收款服务：**微信支付（Native 扫码，API v3）+ 支付宝（当面付 precreate）**，用于把项目流量转化为资金（赞助 → 付费推广预算 / 服务器费用）。
+
+- 零框架、零遥测，只依赖 `qrcode` 一个包
+- 微信回调：平台证书验签（RSA-SHA256）+ AES-256-GCM 资源解密，验不过直接 401
+- 支付宝异步通知：RSA2 验签，验不过直接 401
+- 金额服务端校验（1–10000 元），前端不决定价格
+- 订单本地持久化在 `orders.json`（记得把它加进备份，不要提交进 git）
+
+## 快速体验（无需任何商户资质）
+
+```bash
+cd sponsor
+npm install
+npm start          # DEMO 模式自动生效
+```
+
+打开 http://localhost:8787 → 选金额 → 生成二维码 → 手机扫码会打开**模拟支付页**（不扣款）→ 点确认 → 赞助页 2 秒内变"支付成功"。整条链路（下单 → 二维码 → 轮询 → 回调 → 订单完成）与真实模式完全同构。
+
+## 配置真实收款
+
+```bash
+cp .env.example .env   # 填入下面的凭据，DEMO=1 删掉
+```
+
+### 微信支付（Native 扫码）
+
+1. 注册商户号：[pay.weixin.qq.com](https://pay.weixin.qq.com)（需营业执照或个体户；小微商户也可）
+2. 商户平台 → 「账户中心 → API 安全」：
+   - 申请 **API 证书**，下载得到 `apiclient_key.pem`（私钥）和证书序列号
+   - 设置 **APIv3 密钥**（32 位字符串，自己设并保存）
+3. 「产品中心」开通 **Native 支付**
+4. 填 `.env`：`WECHAT_MCHID` / `WECHAT_SERIAL` / `WECHAT_APPID`（公众号或开放平台 appid）/ `WECHAT_APIV3_KEY` / `WECHAT_PRIVATE_KEY_PATH=./apiclient_key.pem`
+
+### 支付宝（当面付）
+
+1. [open.alipay.com](https://open.alipay.com) 创建网页/移动应用，获取 `APPID`
+2. 「应用信息 → 接口加签方式」选**公钥模式**：用支付宝密钥生成工具（或 openssl）生成 RSA2 密钥对 → 上传**应用公钥**，平台返回**支付宝公钥**
+3. 签约「**当面付**」产品（需要企业/个体户资质；个人开发者建议先用下面的零代码方案）
+4. 填 `.env`：`ALIPAY_APP_ID` / `ALIPAY_PRIVATE_KEY_PATH`（应用私钥 PEM）/ `ALIPAY_PUBLIC_KEY_PATH`（支付宝公钥，纯 base64 也行）
+
+### 上线要求
+
+- `PUBLIC_BASE_URL` 必须是**公网 HTTPS** 地址（微信/支付宝的异步回调会打到它）
+- 最省事的部署：任意 VPS + Caddy（`pay.你的域名.com { reverse_proxy localhost:8787 }` 两行配置自动签证书）
+- 本地联调可临时用 `cloudflared tunnel --url localhost:8787`
+
+## 零代码替代方案（没有商户资质时的最快路径）
+
+| 方案 | 支持渠道 | 说明 |
+|---|---|---|
+| [爱发电](https://afdian.net) | 微信/支付宝 | 平台化赞助页，个人即可开通，抽成约 8%；建好后填进仓库根目录 `FUNDING.yml` 即可显示 Sponsor 按钮 |
+| GitHub Sponsors | 信用卡 | 需在 GitHub 上单独开通（Stripe 结算），对国内用户收款不如微信/支付宝直接 |
+| 本网关 | 微信/支付宝 | 费率最低（微信/支付宝官方费率 ~0.6%），需要商户资质 + VPS |
+
+## 资金用途透明化建议
+
+在赞助页或 README 写明资金去向（推广 / 服务器 / 开发时间），并在 issues 里定期公示。透明度直接决定开源赞助的转化率和口碑。
