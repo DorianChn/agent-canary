@@ -1,4 +1,5 @@
 .env
 orders.json
 subscribers.json
+qr/
 node_modules/

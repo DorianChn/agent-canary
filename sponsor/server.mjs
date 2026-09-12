@@ -74,7 +74,21 @@ const EPAY = {
 const WECHAT_READY = Boolean(WECHAT.mchid && WECHAT.serial && WECHAT.appid && WECHAT.apiv3Key && WECHAT.keyPath);
 const ALIPAY_READY = Boolean(ALIPAY.appId && ALIPAY.privateKeyPath && ALIPAY.publicKeyPath);
 const EPAY_READY = Boolean(EPAY.url && EPAY.pid && EPAY.key);
-const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && !EPAY_READY && process.env.DEMO !== "0");
+
+// 零成本模式：个人收款码 + 人工确认。把你的个人收款码图片放到 sponsor/qr/ 下即可自动启用：
+//   sponsor/qr/wechat.png (或 .jpg)   sponsor/qr/alipay.png (或 .jpg)
+// 该目录已在 .gitignore 中（收款码是个人信息，不要提交进仓库）。
+const QR_DIR = path.join(__dirname, "qr");
+const qrFiles = {
+  wechat: ["wechat.png", "wechat.jpg", "wechat.jpeg", "wechat.webp"]
+    .map((f) => path.join(QR_DIR, f))
+    .find((f) => fs.existsSync(f)),
+  alipay: ["alipay.png", "alipay.jpg", "alipay.jpeg", "alipay.webp"]
+    .map((f) => path.join(QR_DIR, f))
+    .find((f) => fs.existsSync(f)),
+};
+const MANUAL_READY = Boolean(qrFiles.wechat || qrFiles.alipay);
+const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && !EPAY_READY && !MANUAL_READY && process.env.DEMO !== "0");
 const PRESETS = [5, 10, 25, 50]; // CNY, one-off donations
 
 // Personal Edition plan: $10/month, billed in CNY (rate configurable).
@@ -417,6 +431,35 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
+    // ---- 个人收款码图片（零成本模式） ----
+    if (req.method === "GET" && url.pathname.startsWith("/qr-image/")) {
+      const ch = url.pathname.split("/")[2] === "alipay" ? "alipay" : "wechat";
+      const f = qrFiles[ch];
+      if (!f) return send(res, 404, "no such qr");
+      const type = f.endsWith(".png") ? "image/png" : f.endsWith(".webp") ? "image/webp" : "image/jpeg";
+      return send(res, 200, fs.readFileSync(f), type);
+    }
+
+    // ---- 零成本模式：付款登记（作者用 grant.mjs 人工确认后生效） ----
+    if (req.method === "POST" && url.pathname === "/api/manual-claim") {
+      const input = JSON.parse((await readBody(req)) || "{}");
+      const handle = String(input.handle || "").trim().slice(0, 64);
+      const channel = input.channel === "alipay" ? "alipay" : "wechat";
+      // plan orders are server-priced; donations need an explicit amount
+      const amount = input.plan === "personal" ? PLAN.personal.cny : Number(input.amount);
+      if (!handle || !Number.isFinite(amount) || amount < 1 || amount > 100000) {
+        return send(res, 400, JSON.stringify({ error: "invalid input" }), "application/json");
+      }
+      const plan = input.plan === "personal" ? "personal" : null;
+      const order = plan
+        ? newOrder(channel, PLAN.personal.cny, input.note, "personal", handle)
+        : newOrder(channel, amount, input.note);
+      order.status = "pending_manual";
+      saveOrders();
+      console.log(`[sponsor] manual claim: ${handle} ¥${order.amount} (${channel}${plan ? ", personal" : ""})`);
+      return send(res, 200, JSON.stringify({ ok: true, orderId: order.id }), "application/json");
+    }
+
     // ---- API: order status (page polls this) ----
     if (req.method === "GET" && url.pathname.startsWith("/api/order/")) {
       const o = orders[url.pathname.split("/")[3]];
@@ -562,32 +605,56 @@ ${DEMO ? '<div class="demo">演示模式：扫码后打开的是模拟支付页�
   </ul>
   <input id="handle" placeholder="GitHub 用户名或邮箱（识别你的订阅）" maxlength="64">
   <button id="sub">订阅个人版 · ¥${p.cny}/月</button>
-  <div class="fine">按 30 天为一期，到期后再次支付即自动顺延（可叠加）。微信/支付宝暂不支持自动代扣。绑定标识仅用于权益核对。</div>
+  <div class="fine">按 30 天为一期，到期后再次支付即自动顺延（可叠加）。绑定标识仅用于权益核对。</div>
   <div class="fine" id="subcheck"></div>
 </div>
-
+${MANUAL_READY ? `
+<div class="plan" style="border-color:#30363d">
+  <h2>或扫码个人收款码 <small>零手续费 · 人工确认</small></h2>
+  <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
+    ${qrFiles.wechat ? `<div style="text-align:center"><img src="/qr-image/wechat" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="微信收款码"><div class="fine">微信支付</div></div>` : ""}
+    ${qrFiles.alipay ? `<div style="text-align:center"><img src="/qr-image/alipay" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="支付宝收款码"><div class="fine">支付宝</div></div>` : ""}
+  </div>
+  <div class="fine">转账时备注你的 GitHub 用户名；完成付款后下方登记，作者人工确认后开通（个人版 ¥${p.cny} = 30 天）。</div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <select id="m-channel" style="width:110px;padding:11px;border:1px solid #30363d;border-radius:8px;background:#010409;color:var(--fg);font-size:14px">
+      <option value="wechat">微信</option>
+      <option value="alipay">支付宝</option>
+    </select>
+    <input id="m-amount" type="number" min="1" value="${p.cny}" style="margin:0">
+  </div>
+  <input id="m-note" placeholder="GitHub 用户名或邮箱 + 转账单号后四位" maxlength="120">
+  <button id="m-claim" class="ghost">我已付款，提交登记</button>
+  <div class="fine" id="m-ok"></div>
+</div>
+` : ""}
+${DEMO || EPAY_READY || WECHAT_READY || ALIPAY_READY ? `
 <div class="donate-title">或一次性赞助：</div>
 <div class="tabs"><div class="tab on" id="t-wechat">微信支付</div><div class="tab" id="t-alipay">支付宝</div></div>
 <div class="amts" id="amts"></div>
 <input id="note" placeholder="留言（可选，120 字以内）" maxlength="120">
 <button id="go" class="ghost">生成付款码</button>
 <div class="qrbox" id="qrbox"><img id="qr" alt="付款二维码"><div id="st" class="sub" style="margin-top:10px">等待支付…</div><div class="ok" id="ok">✓ 支付成功，感谢支持！</div></div>
-<p class="note">本页为自托管收款服务：微信/支付宝回调均经过签名验证。<br>项目：github.com/DorianChn/agent-canary</p>
+` : ""}
+<p class="note">本页为自托管收款服务：线上通道回调均经过签名验证。<br>项目：github.com/DorianChn/agent-canary</p>
 </div>
 <script>
-let ch = "wechat";
+const MODE = "${DEMO ? "demo" : !EPAY_READY && !WECHAT_READY && !ALIPAY_READY && MANUAL_READY ? "manual" : "auto"}";
 const PLAN_CNY = ${p.cny};
-const amts = [${PRESETS.join(",")}];
-const amtsEl = document.getElementById("amts");
-amts.forEach(a => {
-  const d = document.createElement("div");
-  d.className = "amt"; d.textContent = "¥" + a;
-  d.onclick = () => { amount = a; [...amtsEl.children].forEach(x => x.classList.remove("on")); d.classList.add("on"); };
-  amtsEl.appendChild(d);
-});
-let amount = null;
-document.getElementById("t-wechat").onclick = () => setTab("wechat");
-document.getElementById("t-alipay").onclick = () => setTab("alipay");
+let ch = "wechat", amount = null;
+
+if (document.getElementById("amts")) {
+  const amts = [${PRESETS.join(",")}];
+  const amtsEl = document.getElementById("amts");
+  amts.forEach(a => {
+    const d = document.createElement("div");
+    d.className = "amt"; d.textContent = "¥" + a;
+    d.onclick = () => { amount = a; [...amtsEl.children].forEach(x => x.classList.remove("on")); d.classList.add("on"); };
+    amtsEl.appendChild(d);
+  });
+  document.getElementById("t-wechat").onclick = () => setTab("wechat");
+  document.getElementById("t-alipay").onclick = () => setTab("alipay");
+}
 function setTab(c) {
   ch = c;
   document.getElementById("t-wechat").classList.toggle("on", c === "wechat");
@@ -617,15 +684,34 @@ async function startOrder(body) {
     }
   }, 2000);
 }
+async function manualClaim(body, okEl) {
+  const r = await fetch("/api/manual-claim", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ channel: document.getElementById("m-channel")?.value || "wechat", ...body })
+  });
+  const j = await r.json();
+  const el = document.getElementById(okEl || "m-ok");
+  el.textContent = j.ok ? "✓ 登记成功，作者确认后开通（通常当天）" : "登记失败: " + (j.error || "?");
+}
 document.getElementById("sub").onclick = () => {
   const handle = document.getElementById("handle").value.trim();
   if (!handle) { alert("先填 GitHub 用户名或邮箱"); return; }
-  startOrder({ plan: "personal", handle, note: document.getElementById("note").value });
+  if (MODE === "manual") return manualClaim({ plan: "personal", handle, amount: PLAN_CNY, note: document.getElementById("m-note")?.value || "" }, "subcheck");
+  startOrder({ plan: "personal", handle, note: document.getElementById("note")?.value || "" });
 };
-document.getElementById("go").onclick = () => {
-  if (!amount) { alert("先选一个金额"); return; }
-  startOrder({ amount, note: document.getElementById("note").value });
-};
+if (document.getElementById("go")) {
+  document.getElementById("go").onclick = () => {
+    if (!amount) { alert("先选一个金额"); return; }
+    startOrder({ amount, note: document.getElementById("note").value });
+  };
+}
+if (document.getElementById("m-claim")) {
+  document.getElementById("m-claim").onclick = () => {
+    const amt = Number(document.getElementById("m-amount").value);
+    if (!Number.isFinite(amt) || amt < 1) { alert("填一个金额"); return; }
+    manualClaim({ amount: amt, note: document.getElementById("m-note").value });
+  };
+}
 // 订阅状态自查
 document.getElementById("handle").addEventListener("change", async () => {
   const h = document.getElementById("handle").value.trim();
