@@ -64,9 +64,17 @@ const ALIPAY = {
   publicKeyPath: process.env.ALIPAY_PUBLIC_KEY_PATH || "",
   gateway: process.env.ALIPAY_GATEWAY || "https://openapi.alipay.com/gateway.do",
 };
+// 易支付(Epay)协议聚合平台：个人免商户的常用通道（ZPAY / 七相PAY / 虎皮椒备用等均兼容此协议）。
+// 填 EPAY_API_URL（如 https://zpayz.cn）、EPAY_PID、EPAY_KEY 三项即可启用。
+const EPAY = {
+  url: (process.env.EPAY_API_URL || "").replace(/\/$/, ""),
+  pid: process.env.EPAY_PID || "",
+  key: process.env.EPAY_KEY || "",
+};
 const WECHAT_READY = Boolean(WECHAT.mchid && WECHAT.serial && WECHAT.appid && WECHAT.apiv3Key && WECHAT.keyPath);
 const ALIPAY_READY = Boolean(ALIPAY.appId && ALIPAY.privateKeyPath && ALIPAY.publicKeyPath);
-const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && process.env.DEMO !== "0");
+const EPAY_READY = Boolean(EPAY.url && EPAY.pid && EPAY.key);
+const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && !EPAY_READY && process.env.DEMO !== "0");
 const PRESETS = [5, 10, 25, 50]; // CNY, one-off donations
 
 // Personal Edition plan: $10/month, billed in CNY (rate configurable).
@@ -302,9 +310,36 @@ function verifyAlipayNotify(form) {
   return crypto.createVerify("RSA-SHA256").update(query).verify(pem, form.sign, "base64");
 }
 
+// ---------- 易支付(Epay)协议 helpers ----------
+function epaySign(params, key) {
+  const s =
+    Object.keys(params)
+      .filter((k) => k !== "sign" && k !== "sign_type" && params[k] !== "" && params[k] != null)
+      .sort()
+      .map((k) => `${k}=${params[k]}`)
+      .join("&") + key;
+  return crypto.createHash("md5").update(s, "utf8").digest("hex");
+}
+function createEpayOrder(order) {
+  const params = {
+    pid: EPAY.pid,
+    type: order.channel === "alipay" ? "alipay" : "wxpay",
+    out_trade_no: order.outTradeNo,
+    notify_url: `${PUBLIC_BASE}/callback/epay`,
+    return_url: `${PUBLIC_BASE}/return`,
+    name: order.plan === "personal" ? "agent-canary Personal Edition" : "agent-canary sponsorship",
+    money: order.amount.toFixed(2),
+    sitename: "agent-canary",
+  };
+  params.sign = epaySign(params, EPAY.key);
+  params.sign_type = "MD5";
+  return `${EPAY.url}/submit.php?${new URLSearchParams(params).toString()}`;
+}
+
 // ---------- payment creation dispatch ----------
 async function createPayment(order) {
   if (DEMO) return `${PUBLIC_BASE}/demo/pay/${order.id}`;
+  if (EPAY_READY) return createEpayOrder(order);
   if (order.channel === "wechat") {
     if (!WECHAT_READY) throw new Error("WeChat Pay credentials not configured (.env)");
     return createWechatOrder(order);
@@ -423,6 +458,28 @@ const server = http.createServer(async (req, res) => {
         markPaid(order.id, form.trade_no);
       }
       return send(res, 200, "success");
+    }
+
+    // ---- 易支付(Epay) async callback (GET with signed params) ----
+    if (req.method === "GET" && url.pathname === "/callback/epay") {
+      const form = Object.fromEntries(url.searchParams);
+      if (!EPAY_READY || form.sign !== epaySign(form, EPAY.key)) return send(res, 401, "fail");
+      const order = Object.values(orders).find((o) => o.outTradeNo === form.out_trade_no);
+      if (order && form.trade_status === "TRADE_SUCCESS") markPaid(order.id, form.trade_no);
+      return send(res, 200, "success");
+    }
+
+    // ---- user-facing return page after payment ----
+    if (req.method === "GET" && url.pathname === "/return") {
+      return send(
+        res,
+        200,
+        `<body style="font-family:sans-serif;background:#0d1117;color:#3fb950;text-align:center;padding-top:70px">
+          <h1>✓ 支付完成</h1>
+          <p style="color:#8b949e">感谢支持 agent-canary · <a href="/" style="color:#ffd338">返回赞助页</a></p>
+        </body>`,
+        "text/html; charset=utf-8"
+      );
     }
 
     // ---- demo-mode simulated gateway ----
