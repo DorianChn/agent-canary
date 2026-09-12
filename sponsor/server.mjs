@@ -5,6 +5,14 @@
  * WeChat Pay (Native scan-to-pay, API v3) and Alipay (当面付 precreate) —
  * used to fund paid promotion and hosting.
  *
+ * Monetization:
+ *  - one-off donations (presets / custom amount)
+ *  - Personal Edition subscription: $10/month (billed in CNY), bound to a
+ *    GitHub handle or email. WeChat/Alipay have no auto-debit for this use
+ *    case, so a subscription = a 30-day entitlement; paying again extends
+ *    from the current expiry (stackable), and GET /api/subscription/:handle
+ *    is the single source of truth for "is this person entitled".
+ *
  * Run `npm i && npm start` inside sponsor/. With DEMO=1 (default until you
  * fill .env) the whole flow works end-to-end with simulated payments, so you
  * can test the page, QR, polling and callbacks locally before touching money.
@@ -59,29 +67,44 @@ const ALIPAY = {
 const WECHAT_READY = Boolean(WECHAT.mchid && WECHAT.serial && WECHAT.appid && WECHAT.apiv3Key && WECHAT.keyPath);
 const ALIPAY_READY = Boolean(ALIPAY.appId && ALIPAY.privateKeyPath && ALIPAY.publicKeyPath);
 const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && process.env.DEMO !== "0");
-const PRESETS = [5, 10, 25, 50]; // CNY
+const PRESETS = [5, 10, 25, 50]; // CNY, one-off donations
+
+// Personal Edition plan: $10/month, billed in CNY (rate configurable).
+const PLAN = {
+  personal: {
+    usd: Number(process.env.PERSONAL_USD || 10),
+    cny: Number(process.env.PERSONAL_CNY || 72),
+    days: 30,
+  },
+};
 
 // ---------- order store ----------
 const ORDERS_FILE = path.join(__dirname, "orders.json");
-function loadOrders() {
+const SUBS_FILE = path.join(__dirname, "subscribers.json");
+function readJson(file, fallback) {
   try {
-    return JSON.parse(fs.readFileSync(ORDERS_FILE, "utf8"));
+    return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch {
-    return {};
+    return fallback;
   }
 }
-function saveOrders() {
-  fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2) + "\n");
+function writeJson(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
 }
-const orders = loadOrders();
+const orders = readJson(ORDERS_FILE, {});
+function saveOrders() {
+  writeJson(ORDERS_FILE, orders);
+}
 
-function newOrder(channel, amountYuan, note) {
+function newOrder(channel, amountYuan, note, plan = null, handle = null) {
   const id = crypto.randomBytes(8).toString("hex");
   const order = {
     id,
     channel,
     amount: Math.round(amountYuan * 100) / 100,
     note: (note || "").slice(0, 120),
+    plan,
+    handle,
     status: "created",
     outTradeNo: `AC${Date.now()}${crypto.randomBytes(3).toString("hex")}`.toUpperCase(),
     createdAt: new Date().toISOString(),
@@ -98,8 +121,26 @@ function markPaid(id, transactionId) {
   o.status = "paid";
   o.paidAt = new Date().toISOString();
   o.transactionId = transactionId ?? o.transactionId ?? null;
+  if (o.plan === "personal" && o.handle) {
+    o.entitlementExpiresAt = extendSubscription(o.handle, o.id);
+  }
   saveOrders();
-  console.log(`[sponsor] order ${id.slice(0, 8)} PAID (${o.channel}, ¥${o.amount})`);
+  console.log(`[sponsor] order ${o.id.slice(0, 8)} PAID (${o.channel}, ¥${o.amount}${o.plan ? `, plan=${o.plan}` : ""})`);
+}
+
+// ---------- subscriptions ----------
+function loadSubs() {
+  return readJson(SUBS_FILE, {});
+}
+function extendSubscription(handle, orderId) {
+  const subs = loadSubs();
+  const now = Date.now();
+  const current = subs[handle]?.expiresAt ? Date.parse(subs[handle].expiresAt) : 0;
+  const expiresAt = new Date(Math.max(now, current) + PLAN.personal.days * 864e5).toISOString();
+  subs[handle] = { handle, expiresAt, lastOrderId: orderId, updatedAt: new Date().toISOString() };
+  writeJson(SUBS_FILE, subs);
+  console.log(`[sponsor] personal edition for "${handle}" active until ${expiresAt}`);
+  return expiresAt;
 }
 
 // ---------- WeChat Pay v3 helpers ----------
@@ -184,7 +225,7 @@ async function createWechatOrder(order) {
   const res = await wechatRequest("POST", "/v3/pay/transactions/native", {
     appid: WECHAT.appid,
     mchid: WECHAT.mchid,
-    description: "agent-canary sponsorship",
+    description: order.plan === "personal" ? "agent-canary Personal Edition" : "agent-canary sponsorship",
     out_trade_no: order.outTradeNo,
     notify_url: `${PUBLIC_BASE}/callback/wechat`,
     amount: { total: Math.round(order.amount * 100), currency: "CNY" },
@@ -233,7 +274,7 @@ async function createAlipayOrder(order) {
     biz_content: JSON.stringify({
       out_trade_no: order.outTradeNo,
       total_amount: order.amount.toFixed(2),
-      subject: "agent-canary sponsorship",
+      subject: order.plan === "personal" ? "agent-canary Personal Edition" : "agent-canary sponsorship",
     }),
   };
   params.sign = alipaySign(params);
@@ -305,15 +346,25 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, png, "image/png");
     }
 
-    // ---- API: create order ----
+    // ---- API: create order (donation or Personal Edition subscription) ----
     if (req.method === "POST" && url.pathname === "/api/order") {
       const input = JSON.parse((await readBody(req)) || "{}");
-      const amount = Number(input.amount);
-      if (!Number.isFinite(amount) || amount < 1 || amount > 10000) {
-        return send(res, 400, JSON.stringify({ error: "invalid amount" }), "application/json");
-      }
       const channel = input.channel === "alipay" ? "alipay" : "wechat";
-      const order = newOrder(channel, amount, input.note);
+      let order;
+      if (input.plan === "personal") {
+        const handle = String(input.handle || "").trim().slice(0, 64);
+        if (!handle) {
+          return send(res, 400, JSON.stringify({ error: "handle required (GitHub 用户名或邮箱)" }), "application/json");
+        }
+        // price is server-authoritative for plan orders
+        order = newOrder(channel, PLAN.personal.cny, input.note, "personal", handle);
+      } else {
+        const amount = Number(input.amount);
+        if (!Number.isFinite(amount) || amount < 1 || amount > 10000) {
+          return send(res, 400, JSON.stringify({ error: "invalid amount" }), "application/json");
+        }
+        order = newOrder(channel, amount, input.note);
+      }
       try {
         order.qr = await createPayment(order);
         saveOrders();
@@ -323,14 +374,32 @@ const server = http.createServer(async (req, res) => {
         saveOrders();
         return send(res, 502, JSON.stringify({ error: order.error }), "application/json");
       }
-      return send(res, 200, JSON.stringify({ orderId: order.id, qr: order.qr, demo: DEMO }), "application/json");
+      return send(
+        res,
+        200,
+        JSON.stringify({ orderId: order.id, qr: order.qr, demo: DEMO, plan: order.plan, handle: order.handle }),
+        "application/json"
+      );
     }
 
     // ---- API: order status (page polls this) ----
     if (req.method === "GET" && url.pathname.startsWith("/api/order/")) {
       const o = orders[url.pathname.split("/")[3]];
       if (!o) return send(res, 404, "no such order");
-      return send(res, 200, JSON.stringify({ status: o.status, amount: o.amount, channel: o.channel }), "application/json");
+      return send(res, 200, JSON.stringify({ status: o.status, amount: o.amount, channel: o.channel, plan: o.plan }), "application/json");
+    }
+
+    // ---- API: subscription status — single source of truth for entitlement ----
+    if (req.method === "GET" && url.pathname.startsWith("/api/subscription/")) {
+      const handle = decodeURIComponent(url.pathname.split("/")[3] || "").trim();
+      const s = loadSubs()[handle];
+      const active = Boolean(s && Date.parse(s.expiresAt) > Date.now());
+      return send(
+        res,
+        200,
+        JSON.stringify({ handle, plan: "personal", active, expiresAt: s?.expiresAt ?? null, price: { usd: PLAN.personal.usd, cny: PLAN.personal.cny } }),
+        "application/json"
+      );
     }
 
     // ---- WeChat async callback ----
@@ -360,12 +429,13 @@ const server = http.createServer(async (req, res) => {
     if (DEMO && req.method === "GET" && url.pathname.startsWith("/demo/pay/")) {
       const o = orders[url.pathname.split("/")[3]];
       if (!o) return send(res, 404, "no such order");
+      const what = o.plan === "personal" ? "个人版订阅" : "赞助";
       return send(
         res,
         200,
         `<body style="font-family:sans-serif;background:#0d1117;color:#c9d1d9;text-align:center;padding-top:60px">
-          <h2>演示模式 — 模拟${o.channel === "wechat" ? "微信支付" : "支付宝"}</h2>
-          <p>订单 ${o.id.slice(0, 8)}… · ¥${o.amount.toFixed(2)}</p>
+          <h2>演示模式 — 模拟${o.channel === "wechat" ? "微信支付" : "支付宝"} · ${what}</h2>
+          <p>订单 ${o.id.slice(0, 8)}… · ¥${o.amount.toFixed(2)}${o.handle ? ` · ${o.handle}` : ""}</p>
           <a href="/demo/confirm/${o.id}" style="display:inline-block;margin-top:20px;padding:12px 28px;background:#3fb950;color:#0d1117;border-radius:8px;text-decoration:none;font-weight:700">确认支付（模拟回调）</a>
         </body>`,
         "text/html; charset=utf-8"
@@ -390,15 +460,23 @@ const server = http.createServer(async (req, res) => {
 
 // ---------- sponsor page ----------
 function sponsorPage() {
+  const p = PLAN.personal;
   return `<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sponsor agent-canary</title><style>
 :root{--bg:#0d1117;--panel:#161b22;--fg:#c9d1d9;--dim:#8b949e;--y:#ffd338;--g:#3fb950}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:'Segoe UI',system-ui,sans-serif;display:flex;justify-content:center;padding:48px 16px}
-.box{width:100%;max-width:420px}
+.box{width:100%;max-width:460px}
 h1{color:#fff;font-size:26px}h1 span{color:var(--y)}
-.sub{color:var(--dim);margin:8px 0 22px;font-size:14px}
+.sub{color:var(--dim);margin:8px 0 20px;font-size:14px}
+.plan{background:var(--panel);border:1px solid var(--y);border-radius:12px;padding:18px;margin-bottom:22px}
+.plan h2{color:#fff;font-size:18px}.plan h2 small{color:var(--y);font-weight:400;font-size:13px}
+.plan ul{list-style:none;margin:10px 0 12px}
+.plan li{font-size:13.5px;color:var(--fg);padding:3px 0}
+.plan li::before{content:"▲ ";color:var(--y);font-size:10px}
+.plan .fine{color:var(--dim);font-size:11.5px;margin-top:8px;line-height:1.5}
+.donate-title{color:var(--dim);font-size:13px;margin-bottom:10px}
 .tabs{display:flex;gap:8px;margin-bottom:14px}
 .tab{flex:1;padding:10px;border:1px solid #30363d;border-radius:8px;text-align:center;cursor:pointer;background:var(--panel)}
 .tab.on{border-color:var(--y);color:var(--y)}
@@ -406,25 +484,42 @@ h1{color:#fff;font-size:26px}h1 span{color:var(--y)}
 .amt{padding:10px 0;border:1px solid #30363d;border-radius:8px;text-align:center;cursor:pointer;background:var(--panel)}
 .amt.on{border-color:var(--y);color:var(--y)}
 input{width:100%;padding:11px;border:1px solid #30363d;border-radius:8px;background:#010409;color:var(--fg);margin-bottom:12px;font-size:15px}
-button{width:100%;padding:13px;border:0;border-radius:8px;background:var(--y);color:#0d1117;font-weight:700;font-size:16px;cursor:pointer}
+button{width:100%;padding:13px;border:0;border-radius:8px;background:var(--y);color:#0d1117;font-weight:700;font-size:16px;cursor:pointer;margin-bottom:10px}
+button.ghost{background:transparent;border:1px solid #30363d;color:var(--fg)}
 .qrbox{margin-top:18px;text-align:center;display:none}
 .qrbox img{background:#fff;padding:10px;border-radius:12px;width:220px;height:220px}
 .ok{color:var(--g);font-size:18px;font-weight:700;margin-top:10px;display:none}
 .note{color:var(--dim);font-size:12px;margin-top:18px;line-height:1.6}
 .demo{background:#2d2a12;color:var(--y);border:1px solid #5a4d12;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:16px}
 </style></head><body><div class="box">
-<h1>赞助 <span>agent-canary</span></h1>
-<p class="sub">资金用于付费推广、服务器与持续开发 · Sponsor funds ads, hosting and development.</p>
+<h1>支持 <span>agent-canary</span></h1>
+<p class="sub">资金用于付费推广、服务器与持续开发 · Funds ads, hosting and development.</p>
 ${DEMO ? '<div class="demo">演示模式：扫码后打开的是模拟支付页，不会产生真实扣款。配置 .env 后自动切换为真实收款。</div>' : ""}
+
+<div class="plan">
+  <h2>个人版 Personal — ¥${p.cny}/月 <small>≈ US$${p.usd}/mo</small></h2>
+  <ul>
+    <li>赞助者名单署名（README + 落地页）</li>
+    <li>Issue 优先响应 + 个人版标签</li>
+    <li>新功能早期访问（评测模式 beta 等）</li>
+  </ul>
+  <input id="handle" placeholder="GitHub 用户名或邮箱（识别你的订阅）" maxlength="64">
+  <button id="sub">订阅个人版 · ¥${p.cny}/月</button>
+  <div class="fine">按 30 天为一期，到期后再次支付即自动顺延（可叠加）。微信/支付宝暂不支持自动代扣。绑定标识仅用于权益核对。</div>
+  <div class="fine" id="subcheck"></div>
+</div>
+
+<div class="donate-title">或一次性赞助：</div>
 <div class="tabs"><div class="tab on" id="t-wechat">微信支付</div><div class="tab" id="t-alipay">支付宝</div></div>
 <div class="amts" id="amts"></div>
 <input id="note" placeholder="留言（可选，120 字以内）" maxlength="120">
-<button id="go">生成付款码</button>
+<button id="go" class="ghost">生成付款码</button>
 <div class="qrbox" id="qrbox"><img id="qr" alt="付款二维码"><div id="st" class="sub" style="margin-top:10px">等待支付…</div><div class="ok" id="ok">✓ 支付成功，感谢支持！</div></div>
 <p class="note">本页为自托管收款服务：微信/支付宝回调均经过签名验证。<br>项目：github.com/DorianChn/agent-canary</p>
 </div>
 <script>
-let ch = "wechat", amount = null;
+let ch = "wechat";
+const PLAN_CNY = ${p.cny};
 const amts = [${PRESETS.join(",")}];
 const amtsEl = document.getElementById("amts");
 amts.forEach(a => {
@@ -433,6 +528,7 @@ amts.forEach(a => {
   d.onclick = () => { amount = a; [...amtsEl.children].forEach(x => x.classList.remove("on")); d.classList.add("on"); };
   amtsEl.appendChild(d);
 });
+let amount = null;
 document.getElementById("t-wechat").onclick = () => setTab("wechat");
 document.getElementById("t-alipay").onclick = () => setTab("alipay");
 function setTab(c) {
@@ -440,30 +536,52 @@ function setTab(c) {
   document.getElementById("t-wechat").classList.toggle("on", c === "wechat");
   document.getElementById("t-alipay").classList.toggle("on", c === "alipay");
 }
-document.getElementById("go").onclick = async () => {
-  if (!amount) { alert("先选一个金额"); return; }
+async function startOrder(body) {
   const r = await fetch("/api/order", {
     method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ channel: ch, amount, note: document.getElementById("note").value })
+    body: JSON.stringify({ channel: ch, ...body })
   });
   const j = await r.json();
   if (j.error) { alert("下单失败: " + j.error); return; }
   document.getElementById("qr").src = "/api/qr?text=" + encodeURIComponent(j.qr);
   document.getElementById("qrbox").style.display = "block";
+  document.getElementById("ok").style.display = "none";
+  document.getElementById("st").style.display = "block";
   const iv = setInterval(async () => {
     const s = await (await fetch("/api/order/" + j.orderId)).json();
     if (s.status === "paid") {
       clearInterval(iv);
-      document.getElementById("ok").style.display = "block";
       document.getElementById("st").style.display = "none";
+      if (j.plan === "personal") {
+        const sub = await (await fetch("/api/subscription/" + encodeURIComponent(j.handle))).json();
+        document.getElementById("ok").textContent = "✓ 个人版已生效，有效期至 " + (sub.expiresAt || "").slice(0, 10);
+      }
+      document.getElementById("ok").style.display = "block";
     }
   }, 2000);
+}
+document.getElementById("sub").onclick = () => {
+  const handle = document.getElementById("handle").value.trim();
+  if (!handle) { alert("先填 GitHub 用户名或邮箱"); return; }
+  startOrder({ plan: "personal", handle, note: document.getElementById("note").value });
 };
+document.getElementById("go").onclick = () => {
+  if (!amount) { alert("先选一个金额"); return; }
+  startOrder({ amount, note: document.getElementById("note").value });
+};
+// 订阅状态自查
+document.getElementById("handle").addEventListener("change", async () => {
+  const h = document.getElementById("handle").value.trim();
+  if (!h) return;
+  const s = await (await fetch("/api/subscription/" + encodeURIComponent(h))).json();
+  document.getElementById("subcheck").textContent = s.active ? "当前状态：已生效，" + s.expiresAt.slice(0, 10) + " 到期" : "当前状态：无生效订阅";
+});
 </script></body></html>`;
 }
 
 server.listen(PORT, () => {
   console.log(`[sponsor] listening on ${PUBLIC_BASE}`);
   console.log(`[sponsor] mode: ${DEMO ? "DEMO (simulated payments)" : "LIVE"}`);
+  console.log(`[sponsor] personal edition: $${PLAN.personal.usd}/mo = ¥${PLAN.personal.cny}/mo`);
   if (!DEMO) console.log(`[sponsor] wechat ready=${WECHAT_READY} alipay ready=${ALIPAY_READY}`);
 });

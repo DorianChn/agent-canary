@@ -149,6 +149,7 @@ agent-canary 免费、本地化、无遥测——但付费推广和服务器都�
 - ⭐ **点个 Star**——对曝光最有帮助的一件事
 - 💳 **GitHub Sponsors**——仓库顶部的 Sponsor 按钮
 - 🧧 **微信支付 / 支付宝**——[`sponsor/`](sponsor/) 内置了自托管赞助收款网关：单文件服务，渲染二维码收款页，端到端校验微信支付（API v3 验签 + AES-GCM 回调解密）和支付宝（RSA2 异步通知）。无需商户资质即可用演示模式跑通全流程，见 [sponsor/README.md](sponsor/README.md)。
+- 💳 **个人版 Personal——$10/月**——同一网关售卖的订阅档：绑定 GitHub 用户名或邮箱，微信/支付宝按 ¥72/月收取（汇率可配），续费自动顺延 30 天可叠加。权益状态唯一入口：`GET /api/subscription/:handle`。
 
 ## 参与贡献
 

@@ -150,6 +150,7 @@ agent-canary is free, local, and telemetry-free — but paid promotion and hosti
 - ⭐ **Star the repo** — genuinely the highest-value thing you can do for discovery
 - 💳 **GitHub Sponsors** — the sponsor button at the top of this repo
 - 🧧 **WeChat Pay / Alipay** — a self-hosted sponsor gateway ships in [`sponsor/`](sponsor/): a single-file server that renders a QR donation page and verifies WeChat Pay (API v3 signatures + AES-GCM callbacks) and Alipay (RSA2 notifications) end to end. Demo mode works with zero merchant credentials; see [sponsor/README.md](sponsor/README.md).
+- 💳 **Personal Edition — $10/mo** — a subscription tier sold through the same gateway: bound to your GitHub handle or email, billed ¥72/mo via WeChat/Alipay (rate configurable), renewal simply stacks another 30 days. Entitlement status is a single API: `GET /api/subscription/:handle`.
 
 ## Contributing
 
