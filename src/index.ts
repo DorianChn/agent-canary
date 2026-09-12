@@ -14,6 +14,7 @@ import { anthropicProvider, openaiCompatibleProvider } from "./eval/providers.js
 import { renderMarkdownReport, runEval } from "./eval/runner.js";
 import { renderDashboard } from "./dashboard.js";
 import { exportCef, exportCsv, exportJson } from "./export.js";
+import { activate, ensureLicensedAsync, licenseServer, UPSELL } from "./license.js";
 
 const program = new Command();
 program
@@ -262,6 +263,10 @@ program
   .option("--max-turns <n>", "Max tool-call turns per payload", (v) => parseInt(v, 10), 3)
   .option("--out <file>", "Write a markdown report to this file")
   .action(async (opts) => {
+    if (!(await ensureLicensedAsync())) {
+      console.error(UPSELL);
+      process.exit(1);
+    }
     let provider;
     if (opts.provider === "openai") {
       const key = opts.key ?? process.env.OPENAI_API_KEY;
@@ -306,7 +311,11 @@ program
   .description("Generate a self-contained HTML attack-chain dashboard from the event log")
   .option("--out <file>", "Output file", "agent-canary-dashboard.html")
   .option("--open", "Open in the default browser after generating")
-  .action((opts) => {
+  .action(async (opts) => {
+    if (!(await ensureLicensedAsync())) {
+      console.error(UPSELL);
+      process.exit(1);
+    }
     const events = readEvents(undefined, 1_000_000);
     const html = renderDashboard(events, { generatedAt: new Date().toISOString(), version: VERSION });
     fs.writeFileSync(opts.out, html);
@@ -327,7 +336,11 @@ program
   .description("Export events for SIEM ingestion (CEF / JSON / CSV)")
   .option("--format <fmt>", "cef | json | csv", "cef")
   .option("--out <file>", "Output file (defaults to stdout)")
-  .action((opts) => {
+  .action(async (opts) => {
+    if (!(await ensureLicensedAsync())) {
+      console.error(UPSELL);
+      process.exit(1);
+    }
     const events = readEvents(undefined, 1_000_000);
     const out =
       opts.format === "json" ? exportJson(events) : opts.format === "csv" ? exportCsv(events) : exportCef(events);
@@ -336,6 +349,24 @@ program
       console.log(`Exported ${events.length} events (${opts.format}) to ${path.resolve(opts.out)}`);
     } else {
       process.stdout.write(out);
+    }
+  });
+
+program
+  .command("activate")
+  .description("Activate Personal Edition with your sponsor handle (GitHub username or email)")
+  .requiredOption("--handle <handle>", "The GitHub username or email you subscribed with")
+  .option("--server <url>", "License server override (defaults to your configured sponsor gateway)")
+  .action(async (opts) => {
+    console.log(`Checking subscription at ${licenseServer(opts.server)} …`);
+    const r = await activate(opts.handle, opts.server);
+    if (r.ok) {
+      console.log(`✓ 个人版已激活，有效期至 ${r.expiresAt}${r.offline ? "（使用本地缓存，离线宽限）" : ""}`);
+      console.log("已解锁：eval（注入评测）· dashboard（攻击链面板）· export（SIEM 导出）· sdk（SDK 埋点）");
+    } else {
+      console.error(`✗ 激活失败：${r.message}`);
+      console.error(UPSELL);
+      process.exit(1);
     }
   });
 

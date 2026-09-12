@@ -172,6 +172,24 @@ guard.inspect(text, "final-answer");                     // any leaked token fir
 
 Node 20+, Windows / macOS / Linux. Works with any MCP-capable client (Claude Code, Cursor, Cline, Windsurf, …). The token scanner and watcher work with *any* agent, MCP or not.
 
+## Free vs Personal
+
+| | Free (forever) | Personal ($10/mo) |
+|---|---|---|
+| Decoy MCP server · canary tokens · watch · alerts · install | ✅ | ✅ |
+| Eval mode — injection resistance scoring (`eval`) | — | ✅ |
+| Attack-chain dashboard (`dashboard`) | — | ✅ |
+| SIEM export — CEF / JSON / CSV (`export`) | — | ✅ |
+| SDK mode — `agent-canary/sdk` for non-MCP agents | — | ✅ |
+
+The core protection stays free forever — that's the deal. Buy a Personal subscription on the sponsor page (WeChat / Alipay), then activate:
+
+```bash
+agent-canary activate --handle <your GitHub username or email>
+```
+
+Activation checks your subscription once and caches it locally with offline grace until expiry.
+
 ## Support this project
 
 agent-canary is free, local, and telemetry-free — but paid promotion and hosting are funded out of pocket. If it ever catches an injection for you:

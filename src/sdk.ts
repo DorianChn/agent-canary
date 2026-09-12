@@ -10,6 +10,7 @@
 import { DECOY_TOOLS, handleDecoyCall } from "./decoys.js";
 import { findTokensInText, plantIntoFile, type CanaryToken } from "./tokens.js";
 import { fireAlerts, logEvent, type CanaryEvent } from "./alerts.js";
+import { ensureLicensed } from "./license.js";
 
 // programmatic honeypot planting is part of the SDK surface
 export { plantIntoFile };
@@ -51,11 +52,13 @@ export function isDecoy(name: string): boolean {
  * audit trail / alerts. Never performs a real action.
  */
 export async function runDecoy(name: string, args: Record<string, unknown> = {}) {
+  ensureLicensed(); // Personal Edition
   return handleDecoyCall(name, args);
 }
 
 /** Scan any text for planted canary tokens. Zero false positives by design. */
 export function scanCanary(text: string): CanaryToken[] {
+  ensureLicensed(); // Personal Edition
   return findTokensInText(text);
 }
 
@@ -69,6 +72,7 @@ export interface TokenGuard {
 }
 
 export function createTokenGuard(opts: { alert?: boolean } = {}): TokenGuard {
+  ensureLicensed(); // Personal Edition
   return {
     inspect(text: string, source?: string): CanaryToken[] {
       const hits = findTokensInText(text);

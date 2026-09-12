@@ -1,10 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 
 process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-sdk-"));
+
+// gated SDK primitives need an active Personal license — mock license server
+const licServer = http.createServer((q, s) =>
+  s.end(JSON.stringify({ active: true, expiresAt: new Date(Date.now() + 864e5).toISOString() }))
+);
+await new Promise<void>((r) => licServer.listen(0, "127.0.0.1", r));
+licServer.unref(); // don't hold the test process open
+const licPort = (licServer.address() as { port: number }).port;
+process.env.AGENT_CANARY_LICENSE_SERVER = `http://127.0.0.1:${licPort}`;
+
+// gated primitives check the cached license synchronously — activate once up front
+const { activate } = await import("../src/license.js");
+assert.equal((await activate("sdk-test-user")).ok, true);
 
 const sdk = await import("../src/sdk.js");
 const { plantIntoFile, scanCanary } = sdk;

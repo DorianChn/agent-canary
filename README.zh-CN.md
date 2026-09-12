@@ -171,6 +171,24 @@ guard.inspect(text, "final-answer");                     // 泄露的令牌触�
 
 Node 20+，Windows / macOS / Linux。支持所有 MCP 客户端（Claude Code、Cursor、Cline、Windsurf…）。令牌扫描器和监控器对*任何* Agent 有效，无论是否用 MCP。
 
+## 免费版 vs 个人版
+
+| | 免费版（永久） | 个人版（$10/月） |
+|---|---|---|
+| 诱饵 MCP 服务器 · 金丝雀令牌 · 监控 · 告警 · 安装 | ✅ | ✅ |
+| 评测模式——注入抗性评分（`eval`） | — | ✅ |
+| 攻击链面板（`dashboard`） | — | ✅ |
+| SIEM 导出——CEF / JSON / CSV（`export`） | — | ✅ |
+| SDK 模式——`agent-canary/sdk` 非 MCP 接入 | — | ✅ |
+
+核心防护永久免费——这是承诺。在赞助页（微信/支付宝）购买个人版后激活：
+
+```bash
+agent-canary activate --handle <你的GitHub用户名或邮箱>
+```
+
+激活只在购买时联网校验一次，本地缓存 + 到期前离线宽限。
+
 ## 支持这个项目
 
 agent-canary 免费、本地化、无遥测——但付费推广和服务器都是自掏腰包。如果它帮你抓到过一次注入：
