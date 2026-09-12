@@ -8,6 +8,8 @@
 
 中文文档：[README.zh-CN.md](README.zh-CN.md)
 
+![agent-canary demo](docs/demo.gif)
+
 ---
 
 ## The idea in 20 seconds

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>agent-canary — Zero-false-positive tripwires for AI agents</title>
+<meta name="description" content="Know instantly when your AI agent has been hijacked by a prompt injection. Inert decoy MCP tools + canary tokens. Zero false positives, by construction.">
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --fg:#c9d1d9; --dim:#8b949e; --yellow:#ffd338; --green:#3fb950; --red:#f85149; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.6; }
+  code, pre { font-family:Consolas,'Cascadia Mono',monospace; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 24px; }
+  header { border-bottom:1px solid #21262d; }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:18px 0; }
+  .logo { font-weight:700; color:#fff; font-size:18px; text-decoration:none; }
+  .logo span { color:var(--yellow); }
+  .btn { background:var(--yellow); color:#0d1117; padding:9px 18px; border-radius:8px; text-decoration:none; font-weight:600; font-size:14px; }
+  .btn.ghost { background:transparent; color:var(--fg); border:1px solid #30363d; margin-right:10px; }
+  .hero { text-align:center; padding:84px 0 64px; }
+  .hero h1 { font-size:52px; color:#fff; letter-spacing:-1px; }
+  .hero h1 em { color:var(--yellow); font-style:normal; }
+  .hero p.sub { font-size:21px; color:var(--dim); max-width:640px; margin:18px auto 0; }
+  .pill { display:inline-block; border:1px solid #30363d; border-radius:999px; padding:4px 14px; font-size:13px; color:var(--yellow); margin-bottom:26px; font-family:Consolas,monospace; }
+  .demo { margin:40px auto 0; max-width:840px; border:1px solid #21262d; border-radius:12px; overflow:hidden; }
+  .demo img { width:100%; display:block; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; padding:56px 0; }
+  .card { background:var(--panel); border:1px solid #21262d; border-radius:12px; padding:24px; }
+  .card h3 { color:#fff; font-size:17px; margin-bottom:10px; }
+  .card h3::before { content:"▲ "; color:var(--yellow); }
+  .card p { color:var(--dim); font-size:14.5px; }
+  pre.term { background:#010409; border:1px solid #21262d; border-radius:12px; padding:22px 26px; font-size:15px; overflow-x:auto; }
+  pre.term .c { color:var(--dim); } pre.term .g { color:var(--green); } pre.term .y { color:var(--yellow); }
+  .howto { padding:24px 0 72px; }
+  .howto h2 { color:#fff; font-size:28px; text-align:center; margin-bottom:8px; }
+  .howto p.center { text-align:center; color:var(--dim); margin-bottom:28px; }
+  footer { border-top:1px solid #21262d; padding:28px 0; color:var(--dim); font-size:14px; display:flex; justify-content:space-between; }
+  footer a { color:var(--fg); }
+  @media (max-width:720px){ .grid{grid-template-columns:1fr;} .hero h1{font-size:36px;} }
+</style>
+</head>
+<body>
+<header><div class="wrap"><nav>
+  <a class="logo" href="#">agent<span>-canary</span></a>
+  <div>
+    <a class="btn ghost" href="https://github.com/DorianChn/agent-canary">GitHub</a>
+    <a class="btn" href="https://github.com/DorianChn/agent-canary#quickstart">Get started</a>
+  </div>
+</nav></div></header>
+
+<section class="hero"><div class="wrap">
+  <div class="pill">MIT · no telemetry · Windows / macOS / Linux</div>
+  <h1>Your agent got hijacked.<br>You'd never <em>know</em>.</h1>
+  <p class="sub">agent-canary plants tripwires nothing legitimate ever touches. When your AI agent hits one — it's compromised. Zero false positives, by construction.</p>
+  <div class="demo"><img src="demo.gif" alt="agent-canary demo"></div>
+</div></section>
+
+<section class="wrap"><div class="grid">
+  <div class="card"><h3>8 inert decoy tools</h3><p>Fake wire transfer, fake prod-secrets reader, fake sudo shell — tempting, admin-grade, and completely inert. A healthy agent never calls them; a hijacked one can't resist.</p></div>
+  <div class="card"><h3>Canary tokens</h3><p>Unique, worthless <code>cnry_…</code> strings planted in honeypot files. The moment one appears anywhere it shouldn't — agent output, CI, an outbound request — a secret was stolen.</p></div>
+  <div class="card"><h3>Traceable leaks</h3><p>Every fake reply embeds a one-time trace token, so exfiltrated "secrets" point back to the exact tool call that leaked them. JSONL audit trail included.</p></div>
+</div></section>
+
+<section class="howto"><div class="wrap">
+  <h2>One command to arm</h2>
+  <p class="center">Works with Claude Code, Cursor, Cline, Windsurf — any MCP client. The token scanner works with any agent.</p>
+<pre class="term"><span class="c">$</span> npm install -g agent-canary
+<span class="c">$</span> agent-canary tokens plant .env.canary --label prod
+<span class="g">[ok]</span> 3 canary tokens planted in .env.canary
+<span class="c">$</span> agent-canary install claude
+<span class="g">[ok]</span> registered in ~/.claude.json <span class="c">(backup created)</span>
+
+<span class="c"># if an agent ever touches a decoy or leaks a token:</span>
+<span class="y">!!! COMPROMISE SIGNAL — decoy tool touched !!!</span>
+<span class="y">tool = canary_read_secrets   args = {"environment":"production"}</span></pre>
+</div></section>
+
+<footer><div class="wrap" style="display:flex;justify-content:space-between;width:100%">
+  <span>agent-canary — the alarm that never cries wolf.</span>
+  <a href="https://github.com/DorianChn/agent-canary">★ Star on GitHub</a>
+</div></footer>
+</body>
+</html>

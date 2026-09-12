@@ -7,6 +7,8 @@
 
 English documentation: [README.md](README.md)
 
+![agent-canary demo](docs/demo.gif)
+
 ---
 
 ## 20 秒讲清楚
