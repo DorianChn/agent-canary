@@ -1,1 +1,50 @@
-ewogICJuYW1lIjogImFnZW50LWNhbmFyeSIsCiAgInZlcnNpb24iOiAiMC4zLjAiLAogICJkZXNjcmlwdGlvbiI6ICJaZXJvLWZhbHNlLXBvc2l0aXZlIHRyaXB3aXJlcyBmb3IgQUkgYWdlbnRzOiBkZWNveSBNQ1AgdG9vbHMgcGx1cyBsZWFrLXRyYWNpbmcgY2FuYXJ5IHRva2Vucy4gS25vdyBpbnN0YW50bHkgd2hlbiB5b3VyIGFnZW50IGlzIGNvbXByb21pc2VkLiIsCiAgImxpY2Vuc2UiOiAiTUlUIiwKICAiYXV0aG9yIjogIkRvcmlhbkNobiIsCiAgInJlcG9zaXRvcnkiOiB7CiAgICAidHlwZSI6ICJnaXQiLAogICAgInVybCI6ICJnaXQraHR0cHM6Ly9naXRodWIuY29tL0RvcmlhbkNobi9hZ2VudC1jYW5hcnkuZ2l0IgogIH0sCiAgImhvbWVwYWdlIjogImh0dHBzOi8vZ2l0aHViLmNvbS9Eb3JpYW5DaG4vYWdlbnQtY2FuYXJ5I3JlYWRtZSIsCiAgImJ1Z3MiOiAiaHR0cHM6Ly9naXRodWIuY29tL0RvcmlhbkNobi9hZ2VudC1jYW5hcnkvaXNzdWVzIiwKICAia2V5d29yZHMiOiBbCiAgICAibWNwIiwKICAgICJzZWN1cml0eSIsCiAgICAicHJvbXB0LWluamVjdGlvbiIsCiAgICAiY2FuYXJ5IiwKICAgICJob25leXBvdCIsCiAgICAiYWktYWdlbnRzIiwKICAgICJsbG0iLAogICAgImFnZW50LXNlY3VyaXR5IiwKICAgICJkZXZ0b29scyIKICBdLAogICJ0eXBlIjogIm1vZHVsZSIsCiAgImVuZ2luZXMiOiB7CiAgICAibm9kZSI6ICI+PTIwIgogIH0sCiAgImJpbiI6IHsKICAgICJhZ2VudC1jYW5hcnkiOiAiZGlzdC9pbmRleC5qcyIKICB9LAogICJmaWxlcyI6IFsKICAgICJkaXN0IiwKICAgICJSRUFETUUubWQiLAogICAgIkxJQ0VOU0UiCiAgXSwKICAic2NyaXB0cyI6IHsKICAgICJidWlsZCI6ICJ0c2MiLAogICAgInRlc3QiOiAibm9kZSAtLWltcG9ydCB0c3ggLS10ZXN0IHRlc3QvdG9rZW5zLnRlc3QudHMgdGVzdC9ldmFsLnRlc3QudHMgdGVzdC9kYXNoYm9hcmQudGVzdC50cyIsCiAgICAicHJlcHVibGlzaE9ubHkiOiAibnBtIHJ1biBidWlsZCIKICB9LAogICJkZXBlbmRlbmNpZXMiOiB7CiAgICAiQG1vZGVsY29udGV4dHByb3RvY29sL3NkayI6ICJeMS4xMi4wIiwKICAgICJjb21tYW5kZXIiOiAiXjEyLjEuMCIKICB9LAogICJkZXZEZXBlbmRlbmNpZXMiOiB7CiAgICAiQHR5cGVzL25vZGUiOiAiXjIyLjAuMCIsCiAgICAidHN4IjogIl40LjE5LjAiLAogICAgInR5cGVzY3JpcHQiOiAiXjUuNS4wIgogIH0KfQo=
+{
+  "name": "agent-canary",
+  "version": "0.3.0",
+  "description": "Zero-false-positive tripwires for AI agents: decoy MCP tools plus leak-tracing canary tokens. Know instantly when your agent is compromised.",
+  "license": "MIT",
+  "author": "DorianChn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DorianChn/agent-canary.git"
+  },
+  "homepage": "https://github.com/DorianChn/agent-canary#readme",
+  "bugs": "https://github.com/DorianChn/agent-canary/issues",
+  "keywords": [
+    "mcp",
+    "security",
+    "prompt-injection",
+    "canary",
+    "honeypot",
+    "ai-agents",
+    "llm",
+    "agent-security",
+    "devtools"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "agent-canary": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --import tsx --test test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,1 +1,72 @@
-LyoqCiAqIFNJRU0gZXhwb3J0IGZvcm1hdHMuIFB1cmUgZnVuY3Rpb25zOiBldmVudHMgaW4sIHRleHQgb3V0LgogKiAgLSBjZWYgIDogQ29tbW9uIEV2ZW50IEZvcm1hdCAoU3BsdW5rIC8gQXJjU2lnaHQgLyBRUmFkYXIgaW5nZXN0KQogKiAgLSBqc29uIDogbmV3bGluZS1kZWxpbWl0ZWQgSlNPTiAoRWxhc3RpYyAvIExva2kgLyBkYXRhIGxha2VzKQogKiAgLSBjc3YgIDogZ2VuZXJpYyBzcHJlYWRzaGVldAogKi8KaW1wb3J0IHR5cGUgeyBDYW5hcnlFdmVudCB9IGZyb20gIi4vYWxlcnRzLmpzIjsKaW1wb3J0IHsgVkVSU0lPTiB9IGZyb20gIi4vY29uZmlnLmpzIjsKCi8qKiBDRUYgZXh0ZW5zaW9uIHZhbHVlcyBlc2NhcGUgYmFja3NsYXNoLCA9IGFuZCBcbiAqLwpmdW5jdGlvbiBjZWZFc2Moczogc3RyaW5nKTogc3RyaW5nIHsKICByZXR1cm4gcy5yZXBsYWNlKC9cXC9nLCAiXFxcXCIpLnJlcGxhY2UoLz0vZywgIlxcPSIpLnJlcGxhY2UoL1xyP1xuL2csICJcXG4iKTsKfQoKY29uc3QgU0VWRVJJVFk6IFJlY29yZDxzdHJpbmcsIHN0cmluZz4gPSB7CiAgZGVjb3lfY2FsbGVkOiAiMTAiLAogIHRva2VuX2ZvdW5kOiAiOSIsCiAgdGVzdDogIjEiLAp9OwoKZXhwb3J0IGZ1bmN0aW9uIGV4cG9ydENlZihldmVudHM6IENhbmFyeUV2ZW50W10pOiBzdHJpbmcgewogIHJldHVybiAoCiAgICBldmVudHMKICAgICAgLm1hcCgoZXYpID0+IHsKICAgICAgICBjb25zdCBuYW1lID0KICAgICAgICAgIGV2LmtpbmQgPT09ICJkZWNveV9jYWxsZWQiCiAgICAgICAgICAgID8gIkRlY295IHRvb2wgaW52b2tlZCIKICAgICAgICAgICAgOiBldi5raW5kID09PSAidG9rZW5fZm91bmQiCiAgICAgICAgICAgICAgPyAiQ2FuYXJ5IHRva2VuIGxlYWsgZGV0ZWN0ZWQiCiAgICAgICAgICAgICAgOiAiVGVzdCBhbGVydCI7CiAgICAgICAgY29uc3QgZXh0ID0gWwogICAgICAgICAgYHJ0PSR7bmV3IERhdGUoZXYudHMpLmdldFRpbWUoKSB8fCAwfWAsCiAgICAgICAgICBldi50b29sID8gYGNzMUxhYmVsPXRvb2wgY3MxPSR7Y2VmRXNjKGV2LnRvb2wpfWAgOiAiIiwKICAgICAgICAgIGV2LmxhYmVsID8gYGNzMkxhYmVsPWxhYmVsIGNzMj0ke2NlZkVzYyhldi5sYWJlbCl9YCA6ICIiLAogICAgICAgICAgZXYucGF0aCA/IGBjczNMYWJlbD1wYXRoIGNzMz0ke2NlZkVzYyhldi5wYXRoKX1gIDogIiIsCiAgICAgICAgICBldi50b2tlbiA/IGBjczRMYWJlbD10b2tlbiBjczQ9JHtjZWZFc2MoZXYudG9rZW4pfWAgOiAiIiwKICAgICAgICAgIGV2Lm5vdGUgPyBgY3M1TGFiZWw9bm90ZSBjczU9JHtjZWZFc2MoZXYubm90ZSl9YCA6ICIiLAogICAgICAgIF0KICAgICAgICAgIC5maWx0ZXIoQm9vbGVhbikKICAgICAgICAgIC5qb2luKCIgIik7CiAgICAgICAgcmV0dXJuIGBDRUY6MHxhZ2VudC1jYW5hcnl8YWdlbnQtY2FuYXJ5fCR7VkVSU0lPTn18JHtldi5raW5kfXwke2NlZkVzYyhuYW1lKX18JHtTRVZFUklUWVtldi5raW5kXSA/PyAiNSJ9fCR7ZXh0fWA7CiAgICAgIH0pCiAgICAgIC5qb2luKCJcbiIpICsgKGV2ZW50cy5sZW5ndGggPyAiXG4iIDogIiIpCiAgKTsKfQoKZXhwb3J0IGZ1bmN0aW9uIGV4cG9ydEpzb24oZXZlbnRzOiBDYW5hcnlFdmVudFtdKTogc3RyaW5nIHsKICByZXR1cm4gZXZlbnRzLm1hcCgoZXYpID0+IEpTT04uc3RyaW5naWZ5KGV2KSkuam9pbigiXG4iKSArIChldmVudHMubGVuZ3RoID8gIlxuIiA6ICIiKTsKfQoKZnVuY3Rpb24gY3N2Q2VsbCh2OiB1bmtub3duKTogc3RyaW5nIHsKICBjb25zdCBzID0gU3RyaW5nKHYgPz8gIiIpOwogIHJldHVybiAvWyIsXG5dLy50ZXN0KHMpID8gYCIke3MucmVwbGFjZSgvIi9nLCAnIiInKX0iYCA6IHM7Cn0KCmV4cG9ydCBmdW5jdGlvbiBleHBvcnRDc3YoZXZlbnRzOiBDYW5hcnlFdmVudFtdKTogc3RyaW5nIHsKICBjb25zdCBoZWFkID0gInRpbWVzdGFtcCxraW5kLHRvb2wsbGFiZWwscGF0aCx0b2tlbl9tYXNrZWQsbm90ZSI7CiAgY29uc3Qgcm93cyA9IGV2ZW50cy5tYXAoKGV2KSA9PgogICAgWwogICAgICBldi50cywKICAgICAgZXYua2luZCwKICAgICAgZXYudG9vbCA/PyAiIiwKICAgICAgZXYubGFiZWwgPz8gIiIsCiAgICAgIGV2LnBhdGggPz8gIiIsCiAgICAgIGV2LnRva2VuID8/ICIiLAogICAgICBldi5ub3RlID8/ICIiLAogICAgXQogICAgICAubWFwKGNzdkNlbGwpCiAgICAgIC5qb2luKCIsIikKICApOwogIHJldHVybiBbaGVhZCwgLi4ucm93c10uam9pbigiXG4iKSArICJcbiI7Cn0K
+/**
+ * SIEM export formats. Pure functions: events in, text out.
+ *  - cef  : Common Event Format (Splunk / ArcSight / QRadar ingest)
+ *  - json : newline-delimited JSON (Elastic / Loki / data lakes)
+ *  - csv  : generic spreadsheet
+ */
+import type { CanaryEvent } from "./alerts.js";
+import { VERSION } from "./config.js";
+
+/** CEF extension values escape backslash, = and \n */
+function cefEsc(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/=/g, "\\=").replace(/\r?\n/g, "\\n");
+}
+
+const SEVERITY: Record<string, string> = {
+  decoy_called: "10",
+  token_found: "9",
+  test: "1",
+};
+
+export function exportCef(events: CanaryEvent[]): string {
+  return (
+    events
+      .map((ev) => {
+        const name =
+          ev.kind === "decoy_called"
+            ? "Decoy tool invoked"
+            : ev.kind === "token_found"
+              ? "Canary token leak detected"
+              : "Test alert";
+        const ext = [
+          `rt=${new Date(ev.ts).getTime() || 0}`,
+          ev.tool ? `cs1Label=tool cs1=${cefEsc(ev.tool)}` : "",
+          ev.label ? `cs2Label=label cs2=${cefEsc(ev.label)}` : "",
+          ev.path ? `cs3Label=path cs3=${cefEsc(ev.path)}` : "",
+          ev.token ? `cs4Label=token cs4=${cefEsc(ev.token)}` : "",
+          ev.note ? `cs5Label=note cs5=${cefEsc(ev.note)}` : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return `CEF:0|agent-canary|agent-canary|${VERSION}|${ev.kind}|${cefEsc(name)}|${SEVERITY[ev.kind] ?? "5"}|${ext}`;
+      })
+      .join("\n") + (events.length ? "\n" : "")
+  );
+}
+
+export function exportJson(events: CanaryEvent[]): string {
+  return events.map((ev) => JSON.stringify(ev)).join("\n") + (events.length ? "\n" : "");
+}
+
+function csvCell(v: unknown): string {
+  const s = String(v ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+export function exportCsv(events: CanaryEvent[]): string {
+  const head = "timestamp,kind,tool,label,path,token_masked,note";
+  const rows = events.map((ev) =>
+    [
+      ev.ts,
+      ev.kind,
+      ev.tool ?? "",
+      ev.label ?? "",
+      ev.path ?? "",
+      ev.token ?? "",
+      ev.note ?? "",
+    ]
+      .map(csvCell)
+      .join(",")
+  );
+  return [head, ...rows].join("\n") + "\n";
+}

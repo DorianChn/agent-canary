@@ -1,1 +1,112 @@
-LyoqCiAqIEF0dGFjay1jaGFpbiBkYXNoYm9hcmQ6IHJlbmRlcnMgdGhlIGV2ZW50IGxvZyBhcyBhIHNlbGYtY29udGFpbmVkIEhUTUwgZmlsZS4KICogRXZlcnl0aGluZyBpcyBzZXJ2ZXItc2lkZSByZW5kZXJlZCAobm8gQ0ROLCBubyBKUyBkZXBlbmRlbmNpZXMpIHNvIHRoZSBmaWxlCiAqIHdvcmtzIG9mZmxpbmUgYW5kIGNhbiBiZSBhdHRhY2hlZCB0byBpbmNpZGVudCByZXBvcnRzLgogKgogKiBTRUNVUklUWTogZXZlbnQgcGF5bG9hZHMgKHRvb2wgYXJncywgcGF0aHMsIG5vdGVzKSBhcmUgYXR0YWNrZXItY29udHJvbGxlZC4KICogRXZlcnkgaW50ZXJwb2xhdGVkIHZhbHVlIGdvZXMgdGhyb3VnaCBlc2MoKSDigJQgdGhlIGRhc2hib2FyZCBtdXN0IG5ldmVyCiAqIGJlY29tZSB0aGUgaW5qZWN0aW9uIHZlY3RvciBpdCBleGlzdHMgdG8gZGV0ZWN0LgogKi8KaW1wb3J0IHR5cGUgeyBDYW5hcnlFdmVudCB9IGZyb20gIi4vYWxlcnRzLmpzIjsKCmZ1bmN0aW9uIGVzYyhzOiB1bmtub3duKTogc3RyaW5nIHsKICByZXR1cm4gU3RyaW5nKHMgPz8gIiIpCiAgICAucmVwbGFjZSgvJi9nLCAiJmFtcDsiKQogICAgLnJlcGxhY2UoLzwvZywgIiZsdDsiKQogICAgLnJlcGxhY2UoLz4vZywgIiZndDsiKQogICAgLnJlcGxhY2UoLyIvZywgIiZxdW90OyIpCiAgICAucmVwbGFjZSgvJy9nLCAiJiMzOTsiKTsKfQoKY29uc3QgS0lORF9NRVRBOiBSZWNvcmQ8c3RyaW5nLCB7IGxhYmVsOiBzdHJpbmc7IGNvbG9yOiBzdHJpbmcgfT4gPSB7CiAgZGVjb3lfY2FsbGVkOiB7IGxhYmVsOiAi6K+x6aW16Kem5Y+RIERFQ09ZIiwgY29sb3I6ICIjZjg1MTQ5IiB9LAogIHRva2VuX2ZvdW5kOiB7IGxhYmVsOiAi5Luk54mM5rOE6ZyyIFRPS0VOIExFQUsiLCBjb2xvcjogIiNmZmQzMzgiIH0sCiAgdGVzdDogeyBsYWJlbDogIua1i+ivlSBURVNUIiwgY29sb3I6ICIjOGI5NDllIiB9LAp9OwoKZnVuY3Rpb24ga2luZE1ldGEoa2luZDogc3RyaW5nKSB7CiAgcmV0dXJuIEtJTkRfTUVUQVtraW5kXSA/PyB7IGxhYmVsOiBraW5kLCBjb2xvcjogIiM4Yjk0OWUiIH07Cn0KCmZ1bmN0aW9uIGV2ZW50RGV0YWlsKGV2OiBDYW5hcnlFdmVudCk6IHN0cmluZyB7CiAgaWYgKGV2LmtpbmQgPT09ICJkZWNveV9jYWxsZWQiKSB7CiAgICByZXR1cm4gYOivsemlteW3peWFtyA8Y29kZT4ke2VzYyhldi50b29sKX08L2NvZGU+IOiiq+iwg+eUqCDCtyDov73ouKrku6TniYwgPGNvZGU+JHtlc2MoU3RyaW5nKGV2LnRva2VuID8/ICIiKS5zbGljZSgwLCAxOCkpfeKApjwvY29kZT5gOwogIH0KICBpZiAoZXYua2luZCA9PT0gInRva2VuX2ZvdW5kIikgewogICAgcmV0dXJuIGDph5HkuJ3pm4Dku6TniYwgPGNvZGU+JHtlc2MoZXYubGFiZWwpfTwvY29kZT4g5Ye6546w5ZyoIDxjb2RlPiR7ZXNjKGV2LnBhdGgpfTwvY29kZT5gOwogIH0KICByZXR1cm4gZXNjKGV2Lm5vdGUgPz8gInRlc3QiKTsKfQoKZXhwb3J0IGZ1bmN0aW9uIHJlbmRlckRhc2hib2FyZChldmVudHM6IENhbmFyeUV2ZW50W10sIG1ldGE6IHsgZ2VuZXJhdGVkQXQ6IHN0cmluZzsgdmVyc2lvbjogc3RyaW5nIH0pOiBzdHJpbmcgewogIGNvbnN0IHNvcnRlZCA9IFsuLi5ldmVudHNdLnNvcnQoKGEsIGIpID0+IChhLnRzIDwgYi50cyA/IDEgOiAtMSkpOyAvLyBuZXdlc3QgZmlyc3QKICBjb25zdCBkZWNveXMgPSBldmVudHMuZmlsdGVyKChlKSA9PiBlLmtpbmQgPT09ICJkZWNveV9jYWxsZWQiKS5sZW5ndGg7CiAgY29uc3QgbGVha3MgPSBldmVudHMuZmlsdGVyKChlKSA9PiBlLmtpbmQgPT09ICJ0b2tlbl9mb3VuZCIpLmxlbmd0aDsKICBjb25zdCBsYXN0ID0gZXZlbnRzLmxlbmd0aCA/IGV2ZW50c1tldmVudHMubGVuZ3RoIC0gMV0udHMgOiAi4oCUIjsKCiAgY29uc3QgY2FyZHMgPSBgCiAgPGRpdiBjbGFzcz0iY2FyZHMiPgogICAgPGRpdiBjbGFzcz0iY2FyZCI+PGRpdiBjbGFzcz0ibnVtIj4ke2V2ZW50cy5sZW5ndGh9PC9kaXY+PGRpdiBjbGFzcz0ibGJsIj7kuovku7bmgLvmlbA8L2Rpdj48L2Rpdj4KICAgIDxkaXYgY2xhc3M9ImNhcmQgJHtkZWNveXMgPyAiaG90IiA6ICIifSI+PGRpdiBjbGFzcz0ibnVtIj4ke2RlY295c308L2Rpdj48ZGl2IGNsYXNzPSJsYmwiPuivsemlteinpuWPkTwvZGl2PjwvZGl2PgogICAgPGRpdiBjbGFzcz0iY2FyZCAke2xlYWtzID8gImhvdCIgOiAiIn0iPjxkaXYgY2xhc3M9Im51bSI+JHtsZWFrc308L2Rpdj48ZGl2IGNsYXNzPSJsYmwiPuS7pOeJjOazhOmcsjwvZGl2PjwvZGl2PgogICAgPGRpdiBjbGFzcz0iY2FyZCI+PGRpdiBjbGFzcz0ibnVtIiBzdHlsZT0iZm9udC1zaXplOjIwcHg7cGFkZGluZy10b3A6MTRweCI+JHtlc2MobGFzdCl9PC9kaXY+PGRpdiBjbGFzcz0ibGJsIj7mnIDlkI7mtLvliqg8L2Rpdj48L2Rpdj4KICA8L2Rpdj5gOwoKICBjb25zdCB0aW1lbGluZSA9IHNvcnRlZAogICAgLm1hcCgoZXYpID0+IHsKICAgICAgY29uc3Qga20gPSBraW5kTWV0YShldi5raW5kKTsKICAgICAgY29uc3QgYXJncyA9IGV2LmFyZ3MgPyBgPGRldGFpbHM+PHN1bW1hcnk+6LCD55So5Y+C5pWwPC9zdW1tYXJ5PjxwcmU+JHtlc2MoSlNPTi5zdHJpbmdpZnkoZXYuYXJncywgbnVsbCwgMikpfTwvcHJlPjwvZGV0YWlscz5gIDogIiI7CiAgICAgIHJldHVybiBgCiAgICA8ZGl2IGNsYXNzPSJldiI+CiAgICAgIDxkaXYgY2xhc3M9ImRvdCIgc3R5bGU9ImJhY2tncm91bmQ6JHtrbS5jb2xvcn0iPjwvZGl2PgogICAgICA8ZGl2IGNsYXNzPSJib2R5Ij4KICAgICAgICA8ZGl2IGNsYXNzPSJoZWFkIj48c3BhbiBjbGFzcz0iYmFkZ2UiIHN0eWxlPSJib3JkZXItY29sb3I6JHtrbS5jb2xvcn07Y29sb3I6JHtrbS5jb2xvcn0iPiR7a20ubGFiZWx9PC9zcGFuPgogICAgICAgIDxzcGFuIGNsYXNzPSJ0cyI+JHtlc2MoZXYudHMpfTwvc3Bhbj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJkZXRhaWwiPiR7ZXZlbnREZXRhaWwoZXYpfTwvZGl2PgogICAgICAgICR7YXJnc30KICAgICAgPC9kaXY+CiAgICA8L2Rpdj5gOwogICAgfSkKICAgIC5qb2luKCJcbiIpOwoKICBjb25zdCBlbXB0eSA9IGA8ZGl2IGNsYXNzPSJlbXB0eSI+5pqC5peg5LqL5Lu2IOKAlOKAlCDov5nmmK/lpb3mtojmga/jgILop6blj5Hor7HppbXmiJbku6TniYzlpJbms4Tml7bkvJrlh7rnjrDlnKjov5nph4zjgII8L2Rpdj5gOwoKICByZXR1cm4gYDwhRE9DVFlQRSBodG1sPjxodG1sIGxhbmc9InpoIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYtOCI+CjxtZXRhIG5hbWU9InZpZXdwb3J0IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsaW5pdGlhbC1zY2FsZT0xIj4KPHRpdGxlPmFnZW50LWNhbmFyeSDmlLvlh7vpk77pnaLmnb88L3RpdGxlPjxzdHlsZT4KOnJvb3R7LS1iZzojMGQxMTE3Oy0tcGFuZWw6IzE2MWIyMjstLWZnOiNjOWQxZDk7LS1kaW06IzhiOTQ5ZTstLXk6I2ZmZDMzODstLWxpbmU6IzIxMjYyZH0KKnttYXJnaW46MDtwYWRkaW5nOjA7Ym94LXNpemluZzpib3JkZXItYm94fQpib2R5e2JhY2tncm91bmQ6dmFyKC0tYmcpO2NvbG9yOnZhcigtLWZnKTtmb250LWZhbWlseTonU2Vnb2UgVUknLHN5c3RlbS11aSxzYW5zLXNlcmlmO3BhZGRpbmc6NDBweCAyMHB4fQoud3JhcHttYXgtd2lkdGg6ODYwcHg7bWFyZ2luOjAgYXV0b30KaDF7Y29sb3I6I2ZmZjtmb250LXNpemU6MjZweH1oMSBzcGFue2NvbG9yOnZhcigtLXkpfQoubWV0YXtjb2xvcjp2YXIoLS1kaW0pO2ZvbnQtc2l6ZToxM3B4O21hcmdpbjo2cHggMCAyNHB4fQouY2FyZHN7ZGlzcGxheTpncmlkO2dyaWQtdGVtcGxhdGUtY29sdW1uczpyZXBlYXQoNCwxZnIpO2dhcDoxMnB4O21hcmdpbi1ib3R0b206MzBweH0KLmNhcmR7YmFja2dyb3VuZDp2YXIoLS1wYW5lbCk7Ym9yZGVyOjFweCBzb2xpZCB2YXIoLS1saW5lKTtib3JkZXItcmFkaXVzOjEwcHg7cGFkZGluZzoxNnB4O3RleHQtYWxpZ246Y2VudGVyfQouY2FyZC5ob3R7Ym9yZGVyLWNvbG9yOnZhcigtLXkpfQouY2FyZCAubnVte2ZvbnQtc2l6ZTozMnB4O2ZvbnQtd2VpZ2h0OjcwMDtjb2xvcjojZmZmfQouY2FyZC5ob3QgLm51bXtjb2xvcjp2YXIoLS15KX0KLmNhcmQgLmxibHtjb2xvcjp2YXIoLS1kaW0pO2ZvbnQtc2l6ZToxMnB4O21hcmdpbi10b3A6NHB4fQoudGx7cG9zaXRpb246cmVsYXRpdmU7cGFkZGluZy1sZWZ0OjIycHh9Ci50bDo6YmVmb3Jle2NvbnRlbnQ6IiI7cG9zaXRpb246YWJzb2x1dGU7bGVmdDo1cHg7dG9wOjZweDtib3R0b206NnB4O3dpZHRoOjJweDtiYWNrZ3JvdW5kOnZhcigtLWxpbmUpfQouZXZ7cG9zaXRpb246cmVsYXRpdmU7bWFyZ2luLWJvdHRvbToxNHB4fQouZG90e3Bvc2l0aW9uOmFic29sdXRlO2xlZnQ6LTIycHg7dG9wOjE2cHg7d2lkdGg6MTJweDtoZWlnaHQ6MTJweDtib3JkZXItcmFkaXVzOjUwJTtib3JkZXI6MnB4IHNvbGlkIHZhcigtLWJnKX0KLmJvZHl7YmFja2dyb3VuZDp2YXIoLS1wYW5lbCk7Ym9yZGVyOjFweCBzb2xpZCB2YXIoLS1saW5lKTtib3JkZXItcmFkaXVzOjEwcHg7cGFkZGluZzoxNHB4IDE2cHh9Ci5oZWFke2Rpc3BsYXk6ZmxleDtqdXN0aWZ5LWNvbnRlbnQ6c3BhY2UtYmV0d2VlbjthbGlnbi1pdGVtczpjZW50ZXI7ZmxleC13cmFwOndyYXA7Z2FwOjhweH0KLmJhZGdle2ZvbnQtc2l6ZToxMXB4O2JvcmRlcjoxcHggc29saWQ7Ym9yZGVyLXJhZGl1czo5OTlweDtwYWRkaW5nOjJweCAxMHB4O2ZvbnQtd2VpZ2h0OjYwMH0KLnRze2NvbG9yOnZhcigtLWRpbSk7Zm9udC1zaXplOjEycHh9Ci5kZXRhaWx7bWFyZ2luLXRvcDo4cHg7Zm9udC1zaXplOjE0cHh9CmNvZGV7YmFja2dyb3VuZDojMDEwNDA5O3BhZGRpbmc6MnB4IDZweDtib3JkZXItcmFkaXVzOjZweDtmb250LXNpemU6MTIuNXB4fQpkZXRhaWxze21hcmdpbi10b3A6OHB4fQpzdW1tYXJ5e2N1cnNvcjpwb2ludGVyO2NvbG9yOnZhcigtLWRpbSk7Zm9udC1zaXplOjEycHh9CnByZXtiYWNrZ3JvdW5kOiMwMTA0MDk7Ym9yZGVyOjFweCBzb2xpZCB2YXIoLS1saW5lKTtib3JkZXItcmFkaXVzOjhweDtwYWRkaW5nOjEwcHg7Zm9udC1zaXplOjEycHg7b3ZlcmZsb3cteDphdXRvO21hcmdpbi10b3A6NnB4fQouZW1wdHl7Y29sb3I6dmFyKC0tZGltKTt0ZXh0LWFsaWduOmNlbnRlcjtwYWRkaW5nOjYwcHggMDtiYWNrZ3JvdW5kOnZhcigtLXBhbmVsKTtib3JkZXI6MXB4IGRhc2hlZCB2YXIoLS1saW5lKTtib3JkZXItcmFkaXVzOjEwcHh9Ci5mb290e2NvbG9yOnZhcigtLWRpbSk7Zm9udC1zaXplOjEycHg7bWFyZ2luLXRvcDozMHB4O3RleHQtYWxpZ246Y2VudGVyfQpAbWVkaWEobWF4LXdpZHRoOjY0MHB4KXsuY2FyZHN7Z3JpZC10ZW1wbGF0ZS1jb2x1bW5zOnJlcGVhdCgyLDFmcil9fQo8L3N0eWxlPjwvaGVhZD48Ym9keT48ZGl2IGNsYXNzPSJ3cmFwIj4KPGgxPmFnZW50LWNhbmFyeSA8c3Bhbj7mlLvlh7vpk77pnaLmnb88L3NwYW4+PC9oMT4KPGRpdiBjbGFzcz0ibWV0YSI+55Sf5oiQ5pe26Ze0ICR7ZXNjKG1ldGEuZ2VuZXJhdGVkQXQpfSDCtyBhZ2VudC1jYW5hcnkgdiR7ZXNjKG1ldGEudmVyc2lvbil9IMK3IOaVsOaNrua6kCB+Ly5hZ2VudC1jYW5hcnkvZXZlbnRzLmpzb25sPC9kaXY+CiR7Y2FyZHN9CjxkaXYgY2xhc3M9InRsIj4ke3RpbWVsaW5lIHx8IGVtcHR5fTwvZGl2Pgo8ZGl2IGNsYXNzPSJmb290Ij7pm7bor6/miqXvvJrkuovku7blj6rlnKjor7HppbXooqvop6bnorDmiJbph5HkuJ3pm4Dku6TniYzlpJbms4Tml7bkuqfnlJ8gwrcgZ2l0aHViLmNvbS9Eb3JpYW5DaG4vYWdlbnQtY2FuYXJ5PC9kaXY+CjwvZGl2PjwvYm9keT48L2h0bWw+YDsKfQo=
+/**
+ * Attack-chain dashboard: renders the event log as a self-contained HTML file.
+ * Everything is server-side rendered (no CDN, no JS dependencies) so the file
+ * works offline and can be attached to incident reports.
+ *
+ * SECURITY: event payloads (tool args, paths, notes) are attacker-controlled.
+ * Every interpolated value goes through esc() — the dashboard must never
+ * become the injection vector it exists to detect.
+ */
+import type { CanaryEvent } from "./alerts.js";
+
+function esc(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+const KIND_META: Record<string, { label: string; color: string }> = {
+  decoy_called: { label: "诱饵触发 DECOY", color: "#f85149" },
+  token_found: { label: "令牌泄露 TOKEN LEAK", color: "#ffd338" },
+  test: { label: "测试 TEST", color: "#8b949e" },
+};
+
+function kindMeta(kind: string) {
+  return KIND_META[kind] ?? { label: kind, color: "#8b949e" };
+}
+
+function eventDetail(ev: CanaryEvent): string {
+  if (ev.kind === "decoy_called") {
+    return `诱饵工具 <code>${esc(ev.tool)}</code> 被调用 · 追踪令牌 <code>${esc(String(ev.token ?? "").slice(0, 18))}…</code>`;
+  }
+  if (ev.kind === "token_found") {
+    return `金丝雀令牌 <code>${esc(ev.label)}</code> 出现在 <code>${esc(ev.path)}</code>`;
+  }
+  return esc(ev.note ?? "test");
+}
+
+export function renderDashboard(events: CanaryEvent[], meta: { generatedAt: string; version: string }): string {
+  const sorted = [...events].sort((a, b) => (a.ts < b.ts ? 1 : -1)); // newest first
+  const decoys = events.filter((e) => e.kind === "decoy_called").length;
+  const leaks = events.filter((e) => e.kind === "token_found").length;
+  const last = events.length ? events[events.length - 1].ts : "—";
+
+  const cards = `
+  <div class="cards">
+    <div class="card"><div class="num">${events.length}</div><div class="lbl">事件总数</div></div>
+    <div class="card ${decoys ? "hot" : ""}"><div class="num">${decoys}</div><div class="lbl">诱饵触发</div></div>
+    <div class="card ${leaks ? "hot" : ""}"><div class="num">${leaks}</div><div class="lbl">令牌泄露</div></div>
+    <div class="card"><div class="num" style="font-size:20px;padding-top:14px">${esc(last)}</div><div class="lbl">最后活动</div></div>
+  </div>`;
+
+  const timeline = sorted
+    .map((ev) => {
+      const km = kindMeta(ev.kind);
+      const args = ev.args ? `<details><summary>调用参数</summary><pre>${esc(JSON.stringify(ev.args, null, 2))}</pre></details>` : "";
+      return `
+    <div class="ev">
+      <div class="dot" style="background:${km.color}"></div>
+      <div class="body">
+        <div class="head"><span class="badge" style="border-color:${km.color};color:${km.color}">${km.label}</span>
+        <span class="ts">${esc(ev.ts)}</span></div>
+        <div class="detail">${eventDetail(ev)}</div>
+        ${args}
+      </div>
+    </div>`;
+    })
+    .join("\n");
+
+  const empty = `<div class="empty">暂无事件 —— 这是好消息。触发诱饵或令牌外泄时会出现在这里。</div>`;
+
+  return `<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>agent-canary 攻击链面板</title><style>
+:root{--bg:#0d1117;--panel:#161b22;--fg:#c9d1d9;--dim:#8b949e;--y:#ffd338;--line:#21262d}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:'Segoe UI',system-ui,sans-serif;padding:40px 20px}
+.wrap{max-width:860px;margin:0 auto}
+h1{color:#fff;font-size:26px}h1 span{color:var(--y)}
+.meta{color:var(--dim);font-size:13px;margin:6px 0 24px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:30px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center}
+.card.hot{border-color:var(--y)}
+.card .num{font-size:32px;font-weight:700;color:#fff}
+.card.hot .num{color:var(--y)}
+.card .lbl{color:var(--dim);font-size:12px;margin-top:4px}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.ev{position:relative;margin-bottom:14px}
+.dot{position:absolute;left:-22px;top:16px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg)}
+.body{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.badge{font-size:11px;border:1px solid;border-radius:999px;padding:2px 10px;font-weight:600}
+.ts{color:var(--dim);font-size:12px}
+.detail{margin-top:8px;font-size:14px}
+code{background:#010409;padding:2px 6px;border-radius:6px;font-size:12.5px}
+details{margin-top:8px}
+summary{cursor:pointer;color:var(--dim);font-size:12px}
+pre{background:#010409;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;overflow-x:auto;margin-top:6px}
+.empty{color:var(--dim);text-align:center;padding:60px 0;background:var(--panel);border:1px dashed var(--line);border-radius:10px}
+.foot{color:var(--dim);font-size:12px;margin-top:30px;text-align:center}
+@media(max-width:640px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><div class="wrap">
+<h1>agent-canary <span>攻击链面板</span></h1>
+<div class="meta">生成时间 ${esc(meta.generatedAt)} · agent-canary v${esc(meta.version)} · 数据源 ~/.agent-canary/events.jsonl</div>
+${cards}
+<div class="tl">${timeline || empty}</div>
+<div class="foot">零误报：事件只在诱饵被触碰或金丝雀令牌外泄时产生 · github.com/DorianChn/agent-canary</div>
+</div></body></html>`;
+}

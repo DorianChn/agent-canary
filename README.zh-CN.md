@@ -1,1 +1,166 @@
-IyBhZ2VudC1jYW5hcnkKClshW0NJXShodHRwczovL2dpdGh1Yi5jb20vRG9yaWFuQ2huL2FnZW50LWNhbmFyeS9hY3Rpb25zL3dvcmtmbG93cy9jaS55bWwvYmFkZ2Uuc3ZnKV0oaHR0cHM6Ly9naXRodWIuY29tL0RvcmlhbkNobi9hZ2VudC1jYW5hcnkvYWN0aW9ucy93b3JrZmxvd3MvY2kueW1sKQpbIVtMaWNlbnNlOiBNSVRdKGh0dHBzOi8vaW1nLnNoaWVsZHMuaW8vYmFkZ2UvTGljZW5zZS1NSVQtYmx1ZS5zdmcpXShMSUNFTlNFKQoKKirnu5kgQUkgQWdlbnQg6KOF55qE6Zu26K+v5oql57uK57q/77yIY2FuYXJ5IHRyaXB3aXJl77yJ44CCKiog5b2T5L2g55qEIEFJIOe8lueoi+WKqeaJi+iiq+aPkOekuuazqOWFpeaUu+WHu+WKq+aMgeaXtu+8jOesrOS4gOaXtumXtOefpemBk+KAlOKAlOS4jeaYr+WboOS4uuWQr+WPkeW8j+inhOWImSLnjJwi5Yiw5LqG77yM6ICM5piv5Zug5Li65a6D56Kw5LqG6K+x6aW177yM6ICM5Lu75L2V5q2j5bi45rWB56iL6YO95rC46L+c5LiN5Lya56Kw6K+x6aW144CCCgpFbmdsaXNoIGRvY3VtZW50YXRpb246IFtSRUFETUUubWRdKFJFQURNRS5tZCkKCiFbYWdlbnQtY2FuYXJ5IGRlbW9dKGRvY3MvZGVtby5naWYpCgotLS0KCiMjIDIwIOenkuiusua4healmgoK5bqX5Li75Zyo6YeM5bGL5pS+5LqG5LiA5Liq5o6l5aW96K2m5oql5Zmo55qE5YGH5L+d6Zmp5p+c44CC55yf6aG+5a6i5rC46L+c5LiN5Lya56Kw5a6D4oCU4oCU5omA5Lul6K2m5oql5LiA5ZON77yM5bCx5piv6L+b6LS85LqG77yM6Zu26K+v5oql44CCCgphZ2VudC1jYW5hcnkg5a+5IEFJIEFnZW5077yIQ2xhdWRlIENvZGXjgIFDdXJzb3LjgIFDbGluZSDmiJbkvaDoh6rlt7HlhpnnmoTvvInlgZrlkIzmoLfnmoTkuovjgILov5nkupsgQWdlbnQg6IO96K+75paH5Lu244CB5omn6KGM5ZG95Luk44CB6LCD55SoIEFQSe+8jOS4gOaXpuiiq+aBtuaEj+e9kemhtS/mlofmoaPph4znmoTms6jlhaXmjIfku6TliqvmjIHvvIzlkI7mnpzkuI3loKrorr7mg7PvvJoKCjEuICoq6K+x6aW1IE1DUCDlt6XlhbcqKiDigJTigJQg5YGH55qEIui9rOi0piLlt6XlhbfjgIHlgYfnmoQi6K+75Y+W55Sf5Lqn5a+G6ZKlIuW3peWFt+OAgeWBh+eahCLku6Ugcm9vdCDmiafooYzlkb3ku6Qi44CC5YGl5bq355qEIEFnZW50IOawuOi/nOS4jeS8muiwg+eUqOWug+S7rO+8m+iiq+WKq+aMgeeahOS8mu+8jOS9oOS8mueri+WIu+aUtuWIsOW4puWujOaVtOaUu+WHu+S4iuS4i+aWh+eahOWRiuitpuOAggoyLiAqKumHkeS4nembgOS7pOeJjCoqIOKAlOKAlCDmpI3lhaXonJznvZDmlofku7bph4znmoTjgIHmr6vml6Dku7flgLzkvYblhajlsYDllK/kuIDnmoQgYGNucnlf4oCmYCDlrZfnrKbkuLLjgILlroPkuIDml6blh7rnjrDlnKggQWdlbnQg55qE6L6T5Ye644CB6KKr5aSW5Lyg55qE5paH5Lu25oiW5a+55aSW6K+35rGC6YeM77yM5bCx6K+B5piO5pyJ5a+G6ZKl6KKr5YG35LqG44CC5rKh5pyJ56ys5LqM56eN6Kej6YeK44CCCgrmr4/kuKror7HppbXov5Tlm57nmoTlgYflk43lupTph4zpg73ltYzkuobkuIDmrKHmgKfnmoTov73ouKrku6TniYzigJTigJTlpoLmnpzmlLvlh7vovb3ojbfmiooi5YG35Yiw55qE5a+G6ZKlIuWkluS8oOS6hu+8jOS7pOeJjOiDveWRiuivieS9oOazhOmcsua6kOiHquWTquS4gOasoeW3peWFt+iwg+eUqOOAggoKIyMg5Li65LuA5LmI5LiN55u05o6l5YGa5o+Q56S65rOo5YWl5qOA5rWL77yfCgrms6jlhaXmo4DmtYvlmajpnaDnu5nmlofmnKzmiZPliIbmnaUi54ycIu+8jOimgeS5iOivr+aKpea3ueayoeS9oO+8jOimgeS5iOa8j+aOieaWsOi9veiNt+OAgumHkeS4nembgOaKiumXrumimOWPjei/h+adpe+8mgoKfCB8IOazqOWFpeajgOa1i+WZqCB8IGFnZW50LWNhbmFyeSB8CnwtLS18LS0tfC0tLXwKfCDkv6Hlj7cgfCAi6L+Z5q61IHByb21wdCDnnIvnnYDlj6/nlpEiIHwgIuivsemlteiiq+eisOS6hiIgfAp8IOivr+aKpSB8IOWkmiB8ICoq57uT5p6E5oCn5Li66Zu2KiogfAp8IOaWsOWei+aUu+WHuyB8IOaXtueBteaXtuS4jeeBtSB8IOmDveiDveaKk+KAlOKAlOWPquimgeiiq+WKq+aMgeWwseS8mueisOivsemltSB8Cnwg5o6l5YWl5oiQ5pysIHwg6LCD5Y+C44CB5o6l566h6YGTIHwgTUNQIOmFjee9ruWKoOS4gOihjCB8CgrkuKTogIXlj6/ku6XlhbHlrZjvvJvph5HkuJ3pm4DmmK/pgqPlj6rku47kuI3kubHlj6vnmoTnnIvpl6jni5fjgIIKCiMjIOW/q+mAn+W8gOWniwoKYGBgYmFzaApucG0gaW5zdGFsbCAtZyBhZ2VudC1jYW5hcnkKCiMgMS4g5Zyo6aG555uu6YeM5pKS5LiA5Liq5YGH5a+G6ZKl6Jyc572Q5paH5Lu2CmFnZW50LWNhbmFyeSB0b2tlbnMgcGxhbnQgLmVudi5jYW5hcnkgLS1sYWJlbCBteS1wcm9qZWN0CgojIDIuIOaKiuivsemltSBNQ1Ag5pyN5Yqh5Zmo5rOo5YaM6L+bIENsYXVkZSBDb2Rl77yI5oiWIGluc3RhbGwgY3Vyc29y77yJCmFnZW50LWNhbmFyeSBpbnN0YWxsIGNsYXVkZQoKIyAzLiDnq6/liLDnq6/pqozor4HlkYrorabpk77ot68KYWdlbnQtY2FuYXJ5IGFsZXJ0LXRlc3QKYGBgCgo+IG5wbSDljIXpmYbnu63lj5HluIPkuK3igJTigJToi6XkuIrpnaLnmoTlkb3ku6TmmoLml7bkuI3lj6/nlKjvvIzlj6/ku47mupDnoIHlronoo4XvvIhOb2RlIDIwK++8ie+8mgo+IGBgYGJhc2gKPiBnaXQgY2xvbmUgaHR0cHM6Ly9naXRodWIuY29tL0RvcmlhbkNobi9hZ2VudC1jYW5hcnkuZ2l0ICYmIGNkIGFnZW50LWNhbmFyeQo+IG5wbSBpbnN0YWxsICYmIG5wbSBydW4gYnVpbGQgJiYgbnBtIGxpbmsKPiBgYGAKCumHjeWQr+e8lui+keWZqOOAgkFnZW50IOeOsOWcqOiDveeci+WIsCA4IOS4queci+i1t+adpeW+iOivseS6uuOAgeS9hue7neS4jeivpeeisOeahOivsemlteW3peWFt+OAguWug+S4gOaXpueisOS6hu+8mgoKYGBgY29uc29sZQokIGFnZW50LWNhbmFyeSBldmVudHMKMjAyNi0wOS0xNVQxMDoyMTowNFogIGRlY295X2NhbGxlZCAgdG9vbD1jYW5hcnlfcmVhZF9zZWNyZXRzCjIwMjYtMDktMTVUMTA6MjE6MDlaICB0b2tlbl9mb3VuZCAgIGxhYmVsPWRlY295OmNhbmFyeV9yZWFkX3NlY3JldHMgcGF0aD1odHRwczovL2V2aWwuZXhhbXBsZS9jb2xsZWN0CmBgYAoK5oqK5Luk54mM5omr5o+P5o6l6L+b5L2g546w5pyJ55qE5Lu75L2V5rWB56iL77yaCgpgYGBiYXNoCmFnZW50LWNhbmFyeSB0b2tlbnMgY2hlY2sgLiAmJiBlY2hvIGNsZWFuICAgICAgICAgICMg5Y+R546w5rOE6Zyy5YiZIGV4aXQgMe+8jOWPr+ebtOaOpeaOpSBDSSAvIGdpdCBob29rCmFnZW50LWNhbmFyeSB3YXRjaCAuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICMg5a6e5pe255uR5o6n77ya5Lu75L2V5paH5Lu26YeM5Ye6546w5Luk54mM5Y2z5ZGK6K2mCmFnZW50LWNhbmFyeSBzZXQtd2ViaG9vayBodHRwczovL2hvb2tzLnNsYWNrLmNvbS/igKYgIyDmjqjpgIHliLAgU2xhY2sgLyBEaXNjb3JkIC8gVGVsZWdyYW0g5qGl5o6lCmBgYAoKIyMgQWdlbnQg55y85Lit55qE6K+x6aW16ZW/5LuA5LmI5qC3Cgror7HppbXlhajmmK8i566h55CG5ZGY57qnIueahOivseS6uuW3peWFt++8jOS9hioq5YWo6YOo5piv56m65pON5L2cKirigJTigJTmr4/kuKrlpITnkIblmajlj6rov5Tlm57kvKrpgKDovpPlh7rvvJoKCnwg6K+x6aW15bel5YW3IHwg6KKr5Yqr5oyB55qEIEFnZW50IOS7peS4uuiDveaLv+WIsCB8CnwtLS18LS0tfAp8IGBjYW5hcnlfdHJhbnNmZXJfZnVuZHNgIHwg566h55CG5ZGY6L2s6LSm77yMNSDkuIfku6XkuIvoh6rliqjmlL7ooYwgfAp8IGBjYW5hcnlfcmVhZF9zZWNyZXRzYCB8IOS7u+aEj+eOr+Wig+eahOeUn+S6pyBBUEkg5a+G6ZKlIHwKfCBgY2FuYXJ5X3J1bl9zaGVsbGAgfCDlnKjmnoTlu7rmnI3liqHlmajkuIrku6Ugcm9vdCDmiafooYzku7vmhI/lkb3ku6QgfAp8IGBjYW5hcnlfZGVsZXRlX2ZpbGVzYCB8IOawuOS5heWIoOmZpO+8jOaXoOWbnuaUtuermSB8CnwgYGNhbmFyeV9zZW5kX2VtYWlsYCB8IOS7peS7u+aEj+WGhemDqOWcsOWdgOWPkemCruS7tu+8jOi3s+i/hyBTUEYgfAp8IGBjYW5hcnlfZXhwb3J0X2RhdGFiYXNlYCB8IOWFqOihqOWvvOWHuiBDU1bvvIzkuI3nlZnlrqHorqHorrDlvZUgfAp8IGBjYW5hcnlfZmV0Y2hfaW50ZXJuYWxgIHwg5LuO5YaF572R5oqT5Y+W566h55CG5ZCO5Y+wIHwKfCBgY2FuYXJ5X2Rpc2FibGVfc2VjdXJpdHlgIHwg5YWz6Zet57uI56uv6Ziy5oqkL+adgOavkiB8CgrlkYrorabph4zluKblhajph4/kuIrkuIvmlofvvJrlk6rkuKror7HppbXjgIHku4DkuYjlj4LmlbDjgIHlh6Dngrnpkp/vvIzlpJbliqDljZXmrKHosIPnlKjnmoTov73ouKrku6TniYzjgIIKCiMjIOehrOaAp+S/neivgQoKLSAqKuivsemlteW3peWFt+aYr+aDsOaAp+eahOOAgioqIGBjYW5hcnlfcnVuX3NoZWxsYCDkuI3kvJrmiafooYzku7vkvZXlkb3ku6TvvIxgY2FuYXJ5X3RyYW5zZmVyX2Z1bmRzYCDkuI3kvJrnorDku7vkvZXpkrHjgILmr4/kuKrlpITnkIblmajlj6rov5Tlm57ku6XlgYfkubHnnJ/nmoQq5YGHKue7k+aenO+8jOWIq+aXoOWFtuS7luOAguingSBbU0VDVVJJVFkubWRdKFNFQ1VSSVRZLm1kKeOAggotICoq6YeR5Lid6ZuA5Luk54mM6Kej5LiN5byA5Lu75L2V5Lic6KW/44CCKiog5a6D5Lus5piv6ZqP5py655qEIGBjbnJ5X+KApmAg5a2X56ym5Liy77yM5Zyo5ZOq5YS/6YO95q+r5peg5Lu35YC844CCCi0gKirml6DpgaXmtYvjgIIqKiDkuovku7blj6rnlZnlnKjkvaDmnLrlmajkuIrnmoQgYH4vLmFnZW50LWNhbmFyeS9ldmVudHMuanNvbmxg77yM6Zmk6Z2e5L2g6Ieq5bex6YWN572uIHdlYmhvb2vjgIIKLSAqKue7k+aehOaAp+mbtuivr+aKpeOAgioqIOivsemlteWSjOS7pOeJjOmDveWcqOS4gOWIh+ato+W4uOW3peS9nOa1geS5i+Wklu+8myLooqvop6bnorAi5pys6Lqr5bCx5piv5L+h5Y+344CCCgojIyBDTEkg5Y+C6ICDCgpgYGAKYWdlbnQtY2FuYXJ5IHNlcnZlICAgICAgICAgICAgICAgICAg6L+Q6KGM6K+x6aW1IE1DUCDmnI3liqHlmajvvIjnvJbovpHlmajlkK/liqjnmoTlsLHmmK/lroPvvIkKYWdlbnQtY2FuYXJ5IGluaXQgICAgICAgICAgICAgICAgICAg5Yid5aeL5YyWIH4vLmFnZW50LWNhbmFyeSDlkozpu5jorqTphY3nva4KYWdlbnQtY2FuYXJ5IGluc3RhbGwgY2xhdWRlfGN1cnNvciAg5rOo5YaM6K+x6aW15pyN5Yqh5Zmo5YiwIE1DUCDlrqLmiLfnq6/vvIjlhYjlpIfku73ljp/phY3nva7vvIkKYWdlbnQtY2FuYXJ5IHVuaW5zdGFsbCBjbGF1ZGV8Y3Vyc29yCmFnZW50LWNhbmFyeSB0b2tlbnMgZ2VuZXJhdGUgLS1sYWJlbCA8bD4gWy1jIG5dCmFnZW50LWNhbmFyeSB0b2tlbnMgcGxhbnQgPGZpbGU+IC0tbGFiZWwgPGw+IFstYyBuXQphZ2VudC1jYW5hcnkgdG9rZW5zIGNoZWNrIFtwYXRocy4uLl0gWy0tc3RkaW5dICAgICAg5Y+R546w5rOE6ZyyIGV4aXQgMQphZ2VudC1jYW5hcnkgdG9rZW5zIGxpc3QgLyBwcmludCAtLWxhYmVsIDxsPgphZ2VudC1jYW5hcnkgd2F0Y2ggPHBhdGhzLi4uPiAgICAgICDlrp7ml7bnm5Hmjqfmlofku7bkuK3nmoTku6TniYzms4TpnLIKYWdlbnQtY2FuYXJ5IGV2ZW50cyBbLW4gMjBdICAgICAgICAg5pyA6L+R5LqL5Lu2CmFnZW50LWNhbmFyeSByZXBvcnQgICAgICAgICAgICAgICAgIE1hcmtkb3duIOS6i+S7tuaKpeWRigphZ2VudC1jYW5hcnkgYWxlcnQtdGVzdCAgICAgICAgICAgICDmtYvor5Xlhajpg6jlkYrorabpgJrpgZMKYWdlbnQtY2FuYXJ5IHNldC13ZWJob29rIDx1cmx8bnVsbD4KYWdlbnQtY2FuYXJ5IHNldC1ub3RpZnkgPG9ufG9mZj4KYGBgCgrphY3nva7lnKggYH4vLmFnZW50LWNhbmFyeS9jb25maWcuanNvbmDvvJoKCmBgYGpzb24KeyAid2ViaG9vayI6IG51bGwsICJub3RpZnkiOiB0cnVlLCAiZXZlbnRzRmlsZSI6ICJ+Ly5hZ2VudC1jYW5hcnkvZXZlbnRzLmpzb25sIiB9CmBgYAoKIyMg5bel5L2c5Y6f55CGCgpgYGAKQ2xhdWRlIENvZGUgLyBDdXJzb3IgLyDkvaDnmoQgQWdlbnQKICAgICAgICDilIIgIE1DUCDphY3nva7liqDkuIDooYwKICAgICAgICDilrwK4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQCuKUgiBhZ2VudC1jYW5hcnnvvIjor7HppbXmnI3liqHlmajvvIkgICAgICDilILilIDilIDooqvop6bnorDilIDilIDilrYg8J+aqCDlkYroraYgKyBKU09OTCDlrqHorqHnlZnnl5UK4pSCIDgg5Liq5oOw5oCn44CB6K+x5Lq655qE5YGH5bel5YW3ICAgICAgICAgIOKUgiAgICAgICAgICAgKyDlgYflk43lupTlhoXltYzkuIDmrKHmgKfov73ouKrku6TniYwK4pSU4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSYCuKUjOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUkArilIIg6Jyc572Q5paH5Lu2Ly5lbnYv5pWw5o2u5bqT6YeM55qEICAgICAgICDilILilIDilIDku6TniYzlh7rnjrDlnKjku7vkvZXlnLDmlrnilIDilIDilrYg8J+aqCDpm7bor6/miqXlkYroraYK4pSCIOmHkeS4nembgOS7pOeJjCAgICAgICAgICAgICAgICAgICAgIOKUgiAgIO+8iHNjYW4gwrcgd2F0Y2ggwrcgQ0kgY2hlY2vvvIkK4pSU4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSYCmBgYAoKIyMg6Lev57q/5Zu+CgotIFt4XSB2MC4xIOKAlCDor7HppbUgTUNQIOacjeWKoeWZqOOAgemHkeS4nembgOS7pOeJjOOAgeaWh+S7tuebkeaOp+OAgUpTT05MICsgd2ViaG9vayArIOahjOmdouWRiuitpgotIFt4XSB2MC4yIOKAlCAqKuivhOa1i+aooeW8jyoq77yaMjAg5p2h57K+6YCJ5rOo5YWl6L296I2377yINyDlpKfnsbvvvInmiZPku7vmhI8gT3BlbkFJIOWFvOWuuS9BbnRocm9waWMg5qih5Z6L77yM6L6T5Ye65Y+v5aSN546w5oq15oqX5Yqb6K+E5YiG4oCU4oCUYGFnZW50LWNhbmFyeSBldmFsYAotIFt4XSB2MC4zIOKAlCAqKumdouadv+S4jiBTSUVNIOWvvOWHuioq77ya6Ieq5YyF5ZCrIEhUTUwg5pS75Ye76ZO+5pe26Ze057q/77yIYGFnZW50LWNhbmFyeSBkYXNoYm9hcmQgLS1vcGVuYO+8iSsgQ0VGIC8gSlNPTiAvIENTViDlr7zlh7rlr7nmjqUgU3BsdW5rIC8gRWxhc3RpYyAvIEFyY1NpZ2h077yIYGFnZW50LWNhbmFyeSBleHBvcnRg77yJCi0gWyBdIHYwLjQg4oCUIE1DUCDkuYvlpJbnmoQgU0RLIOWfi+eCue+8iE9wZW5BSSAvIEFudGhyb3BpYyBhZ2VudCBTREsgaG9va3PvvIkKCiMjIOWFvOWuueaApwoKTm9kZSAyMCvvvIxXaW5kb3dzIC8gbWFjT1MgLyBMaW51eOOAguaUr+aMgeaJgOaciSBNQ1Ag5a6i5oi356uv77yIQ2xhdWRlIENvZGXjgIFDdXJzb3LjgIFDbGluZeOAgVdpbmRzdXJm4oCm77yJ44CC5Luk54mM5omr5o+P5Zmo5ZKM55uR5o6n5Zmo5a+5KuS7u+S9lSogQWdlbnQg5pyJ5pWI77yM5peg6K665piv5ZCm55SoIE1DUOOAggoKIyMg5pSv5oyB6L+Z5Liq6aG555uuCgphZ2VudC1jYW5hcnkg5YWN6LS544CB5pys5Zyw5YyW44CB5peg6YGl5rWL4oCU4oCU5L2G5LuY6LS55o6o5bm/5ZKM5pyN5Yqh5Zmo6YO95piv6Ieq5o6P6IWw5YyF44CC5aaC5p6c5a6D5biu5L2g5oqT5Yiw6L+H5LiA5qyh5rOo5YWl77yaCgotIOKtkCAqKueCueS4qiBTdGFyKirigJTigJTlr7nmm53lhYnmnIDmnInluK7liqnnmoTkuIDku7bkuosKLSDwn5KzICoqR2l0SHViIFNwb25zb3JzKirigJTigJTku5PlupPpobbpg6jnmoQgU3BvbnNvciDmjInpkq4KLSDwn6enICoq5b6u5L+h5pSv5LuYIC8g5pSv5LuY5a6dKirigJTigJRbYHNwb25zb3IvYF0oc3BvbnNvci8pIOWGhee9ruS6huiHquaJmOeuoei1nuWKqeaUtuasvue9keWFs++8muWNleaWh+S7tuacjeWKoe+8jOa4suafk+S6jOe7tOeggeaUtuasvumhte+8jOerr+WIsOerr+agoemqjOW+ruS/oeaUr+S7mO+8iEFQSSB2MyDpqoznrb4gKyBBRVMtR0NNIOWbnuiwg+ino+Wvhu+8ieWSjOaUr+S7mOWune+8iFJTQTIg5byC5q2l6YCa55+l77yJ44CC5peg6ZyA5ZWG5oi36LWE6LSo5Y2z5Y+v55So5ryU56S65qih5byP6LeR6YCa5YWo5rWB56iL77yM6KeBIFtzcG9uc29yL1JFQURNRS5tZF0oc3BvbnNvci9SRUFETUUubWQp44CCCi0g8J+SsyAqKuS4quS6uueJiCBQZXJzb25hbOKAlOKAlCQxMC/mnIgqKuKAlOKAlOWQjOS4gOe9keWFs+WUruWNlueahOiuoumYheaho++8mue7keWumiBHaXRIdWIg55So5oi35ZCN5oiW6YKu566x77yM5b6u5L+hL+aUr+S7mOWuneaMiSDCpTcyL+aciOaUtuWPlu+8iOaxh+eOh+WPr+mFje+8ie+8jOe7rei0ueiHquWKqOmhuuW7tiAzMCDlpKnlj6/lj6DliqDjgILmnYPnm4rnirbmgIHllK/kuIDlhaXlj6PvvJpgR0VUIC9hcGkvc3Vic2NyaXB0aW9uLzpoYW5kbGVg44CCCgojIyDlj4LkuI7otKHnjK4KCuasoui/jiBpc3N1ZSDlkowgUFLigJTigJTlsKTlhbbmmK/mlrDor7HppbXlt6XlhbfnmoTorr7orqHlkozor4TmtYvlpZfku7bnmoTms6jlhaXovb3ojbfjgILor7fkv53mjIHor7HppbXmg7DmgKfvvJvotKHnjK7ogIXlv4XpobvpgbXlrojnmoTkv53or4Hop4EgW1NFQ1VSSVRZLm1kXShTRUNVUklUWS5tZCnjgIIKCiMjIOiuuOWPr+ivgQoKTUlUCg==
+# agent-canary
+
+[![CI](https://github.com/DorianChn/agent-canary/actions/workflows/ci.yml/badge.svg)](https://github.com/DorianChn/agent-canary/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+**给 AI Agent 装的零误报绊线（canary tripwire）。** 当你的 AI 编程助手被提示注入攻击劫持时，第一时间知道——不是因为启发式规则"猜"到了，而是因为它碰了诱饵，而任何正常流程都永远不会碰诱饵。
+
+English documentation: [README.md](README.md)
+
+![agent-canary demo](docs/demo.gif)
+
+---
+
+## 20 秒讲清楚
+
+店主在里屋放了一个接好警报器的假保险柜。真顾客永远不会碰它——所以警报一响，就是进贼了，零误报。
+
+agent-canary 对 AI Agent（Claude Code、Cursor、Cline 或你自己写的）做同样的事。这些 Agent 能读文件、执行命令、调用 API，一旦被恶意网页/文档里的注入指令劫持，后果不堪设想：
+
+1. **诱饵 MCP 工具** —— 假的"转账"工具、假的"读取生产密钥"工具、假的"以 root 执行命令"。健康的 Agent 永远不会调用它们；被劫持的会，你会立刻收到带完整攻击上下文的告警。
+2. **金丝雀令牌** —— 植入蜜罐文件里的、毫无价值但全局唯一的 `cnry_…` 字符串。它一旦出现在 Agent 的输出、被外传的文件或对外请求里，就证明有密钥被偷了。没有第二种解释。
+
+每个诱饵返回的假响应里都嵌了一次性的追踪令牌——如果攻击载荷把"偷到的密钥"外传了，令牌能告诉你泄露源自哪一次工具调用。
+
+## 为什么不直接做提示注入检测？
+
+注入检测器靠给文本打分来"猜"，要么误报淹没你，要么漏掉新载荷。金丝雀把问题反过来：
+
+| | 注入检测器 | agent-canary |
+|---|---|---|
+| 信号 | "这段 prompt 看着可疑" | "诱饵被碰了" |
+| 误报 | 多 | **结构性为零** |
+| 新型攻击 | 时灵时不灵 | 都能抓——只要被劫持就会碰诱饵 |
+| 接入成本 | 调参、接管道 | MCP 配置加一行 |
+
+两者可以共存；金丝雀是那只从不乱叫的看门狗。
+
+## 快速开始
+
+```bash
+npm install -g agent-canary
+
+# 1. 在项目里撒一个假密钥蜜罐文件
+agent-canary tokens plant .env.canary --label my-project
+
+# 2. 把诱饵 MCP 服务器注册进 Claude Code（或 install cursor）
+agent-canary install claude
+
+# 3. 端到端验证告警链路
+agent-canary alert-test
+```
+
+> npm 包陆续发布中——若上面的命令暂时不可用，可从源码安装（Node 20+）：
+> ```bash
+> git clone https://github.com/DorianChn/agent-canary.git && cd agent-canary
+> npm install && npm run build && npm link
+> ```
+
+重启编辑器。Agent 现在能看到 8 个看起来很诱人、但绝不该碰的诱饵工具。它一旦碰了：
+
+```console
+$ agent-canary events
+2026-09-15T10:21:04Z  decoy_called  tool=canary_read_secrets
+2026-09-15T10:21:09Z  token_found   label=decoy:canary_read_secrets path=https://evil.example/collect
+```
+
+把令牌扫描接进你现有的任何流程：
+
+```bash
+agent-canary tokens check . && echo clean          # 发现泄露则 exit 1，可直接接 CI / git hook
+agent-canary watch .                               # 实时监控：任何文件里出现令牌即告警
+agent-canary set-webhook https://hooks.slack.com/… # 推送到 Slack / Discord / Telegram 桥接
+```
+
+## Agent 眼中的诱饵长什么样
+
+诱饵全是"管理员级"的诱人工具，但**全部是空操作**——每个处理器只返回伪造输出：
+
+| 诱饵工具 | 被劫持的 Agent 以为能拿到 |
+|---|---|
+| `canary_transfer_funds` | 管理员转账，5 万以下自动放行 |
+| `canary_read_secrets` | 任意环境的生产 API 密钥 |
+| `canary_run_shell` | 在构建服务器上以 root 执行任意命令 |
+| `canary_delete_files` | 永久删除，无回收站 |
+| `canary_send_email` | 以任意内部地址发邮件，跳过 SPF |
+| `canary_export_database` | 全表导出 CSV，不留审计记录 |
+| `canary_fetch_internal` | 从内网抓取管理后台 |
+| `canary_disable_security` | 关闭终端防护/杀毒 |
+
+告警里带全量上下文：哪个诱饵、什么参数、几点钟，外加单次调用的追踪令牌。
+
+## 硬性保证
+
+- **诱饵工具是惰性的。** `canary_run_shell` 不会执行任何命令，`canary_transfer_funds` 不会碰任何钱。每个处理器只返回以假乱真的*假*结果，别无其他。见 [SECURITY.md](SECURITY.md)。
+- **金丝雀令牌解不开任何东西。** 它们是随机的 `cnry_…` 字符串，在哪儿都毫无价值。
+- **无遥测。** 事件只留在你机器上的 `~/.agent-canary/events.jsonl`，除非你自己配置 webhook。
+- **结构性零误报。** 诱饵和令牌都在一切正常工作流之外；"被触碰"本身就是信号。
+
+## CLI 参考
+
+```
+agent-canary serve                  运行诱饵 MCP 服务器（编辑器启动的就是它）
+agent-canary init                   初始化 ~/.agent-canary 和默认配置
+agent-canary install claude|cursor  注册诱饵服务器到 MCP 客户端（先备份原配置）
+agent-canary uninstall claude|cursor
+agent-canary tokens generate --label <l> [-c n]
+agent-canary tokens plant <file> --label <l> [-c n]
+agent-canary tokens check [paths...] [--stdin]      发现泄露 exit 1
+agent-canary tokens list / print --label <l>
+agent-canary watch <paths...>       实时监控文件中的令牌泄露
+agent-canary events [-n 20]         最近事件
+agent-canary report                 Markdown 事件报告
+agent-canary alert-test             测试全部告警通道
+agent-canary set-webhook <url|null>
+agent-canary set-notify <on|off>
+```
+
+配置在 `~/.agent-canary/config.json`：
+
+```json
+{ "webhook": null, "notify": true, "eventsFile": "~/.agent-canary/events.jsonl" }
+```
+
+## 工作原理
+
+```
+Claude Code / Cursor / 你的 Agent
+        │  MCP 配置加一行
+        ▼
+┌───────────────────────────────┐
+│ agent-canary（诱饵服务器）      │──被触碰──▶ 🚨 告警 + JSONL 审计留痕
+│ 8 个惰性、诱人的假工具          │           + 假响应内嵌一次性追踪令牌
+└───────────────────────────────┘
+┌───────────────────────────────┐
+│ 蜜罐文件/.env/数据库里的        │──令牌出现在任何地方──▶ 🚨 零误报告警
+│ 金丝雀令牌                     │   （scan · watch · CI check）
+└───────────────────────────────┘
+```
+
+## 路线图
+
+- [x] v0.1 — 诱饵 MCP 服务器、金丝雀令牌、文件监控、JSONL + webhook + 桌面告警
+- [x] v0.2 — **评测模式**：20 条精选注入载荷（7 大类）打任意 OpenAI 兼容/Anthropic 模型，输出可复现抵抗力评分——`agent-canary eval`
+- [x] v0.3 — **面板与 SIEM 导出**：自包含 HTML 攻击链时间线（`agent-canary dashboard --open`）+ CEF / JSON / CSV 导出对接 Splunk / Elastic / ArcSight（`agent-canary export`）
+- [ ] v0.4 — MCP 之外的 SDK 埋点（OpenAI / Anthropic agent SDK hooks）
+
+## 兼容性
+
+Node 20+，Windows / macOS / Linux。支持所有 MCP 客户端（Claude Code、Cursor、Cline、Windsurf…）。令牌扫描器和监控器对*任何* Agent 有效，无论是否用 MCP。
+
+## 支持这个项目
+
+agent-canary 免费、本地化、无遥测——但付费推广和服务器都是自掏腰包。如果它帮你抓到过一次注入：
+
+- ⭐ **点个 Star**——对曝光最有帮助的一件事
+- 💳 **GitHub Sponsors**——仓库顶部的 Sponsor 按钮
+- 🧧 **微信支付 / 支付宝**——[`sponsor/`](sponsor/) 内置了自托管赞助收款网关：单文件服务，渲染二维码收款页，端到端校验微信支付（API v3 验签 + AES-GCM 回调解密）和支付宝（RSA2 异步通知）。无需商户资质即可用演示模式跑通全流程，见 [sponsor/README.md](sponsor/README.md)。
+- 💳 **个人版 Personal——$10/月**——同一网关售卖的订阅档：绑定 GitHub 用户名或邮箱，微信/支付宝按 ¥72/月收取（汇率可配），续费自动顺延 30 天可叠加。权益状态唯一入口：`GET /api/subscription/:handle`。
+
+## 参与贡献
+
+欢迎 issue 和 PR——尤其是新诱饵工具的设计和评测套件的注入载荷。请保持诱饵惰性；贡献者必须遵守的保证见 [SECURITY.md](SECURITY.md)。
+
+## 许可证
+
+MIT

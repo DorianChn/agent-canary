@@ -1,1 +1,71 @@
-aW1wb3J0IHsgdGVzdCB9IGZyb20gIm5vZGU6dGVzdCI7CmltcG9ydCBhc3NlcnQgZnJvbSAibm9kZTphc3NlcnQvc3RyaWN0IjsKaW1wb3J0IGZzIGZyb20gIm5vZGU6ZnMiOwppbXBvcnQgb3MgZnJvbSAibm9kZTpvcyI7CmltcG9ydCBwYXRoIGZyb20gIm5vZGU6cGF0aCI7Cgpwcm9jZXNzLmVudi5BR0VOVF9DQU5BUllfSE9NRSA9IGZzLm1rZHRlbXBTeW5jKHBhdGguam9pbihvcy50bXBkaXIoKSwgImFnZW50LWNhbmFyeS1kYXNoLSIpKTsKCmNvbnN0IHsgcmVuZGVyRGFzaGJvYXJkIH0gPSBhd2FpdCBpbXBvcnQoIi4uL3NyYy9kYXNoYm9hcmQuanMiKTsKY29uc3QgeyBleHBvcnRDZWYsIGV4cG9ydENzdiwgZXhwb3J0SnNvbiB9ID0gYXdhaXQgaW1wb3J0KCIuLi9zcmMvZXhwb3J0LmpzIik7CmltcG9ydCB0eXBlIHsgQ2FuYXJ5RXZlbnQgfSBmcm9tICIuLi9zcmMvYWxlcnRzLmpzIjsKCmNvbnN0IEVWRU5UUzogQ2FuYXJ5RXZlbnRbXSA9IFsKICB7CiAgICB0czogIjIwMjYtMDktMTNUMTA6MDA6MDBaIiwKICAgIGtpbmQ6ICJkZWNveV9jYWxsZWQiLAogICAgdG9vbDogImNhbmFyeV9yZWFkX3NlY3JldHMiLAogICAgbGFiZWw6ICJkZWNveTpjYW5hcnlfcmVhZF9zZWNyZXRzIiwKICAgIHRva2VuOiAiY25yeV9hYmMxMjMiLAogICAgYXJnczogeyBlbnZpcm9ubWVudDogJ3Byb2R1Y3Rpb24iPjxzY3JpcHQ+YWxlcnQoMSk8L3NjcmlwdD4nIH0sCiAgfSwKICB7IHRzOiAiMjAyNi0wOS0xM1QxMDowMTowMFoiLCBraW5kOiAidG9rZW5fZm91bmQiLCBsYWJlbDogInByb2QiLCBwYXRoOiAib3V0Ym91bmQvZXZpbCIsIHRva2VuOiAiY25yeV9kZWY0NTYiIH0sCiAgeyB0czogIjIwMjYtMDktMTNUMTA6MDI6MDBaIiwga2luZDogInRlc3QiLCBub3RlOiAibWFudWFsIHRlc3QiIH0sCl07Cgp0ZXN0KCJkYXNoYm9hcmQgcmVuZGVycyBzdW1tYXJ5IGNhcmRzIGFuZCB0aW1lbGluZSIsICgpID0+IHsKICBjb25zdCBodG1sID0gcmVuZGVyRGFzaGJvYXJkKEVWRU5UUywgeyBnZW5lcmF0ZWRBdDogIjIwMjYtMDktMTNUMTE6MDA6MDBaIiwgdmVyc2lvbjogIjAuMy4wIiB9KTsKICBhc3NlcnQubWF0Y2goaHRtbCwgL+aUu+WHu+mTvumdouadvy8pOwogIGFzc2VydC5tYXRjaChodG1sLCAv6K+x6aW16Kem5Y+RLyk7CiAgYXNzZXJ0Lm1hdGNoKGh0bWwsIC/ku6TniYzms4TpnLIvKTsKICBhc3NlcnQubWF0Y2goaHRtbCwgL2NhbmFyeV9yZWFkX3NlY3JldHMvKTsKICBhc3NlcnQubWF0Y2goaHRtbCwgLzIwMjYtMDktMTNUMTA6MDA6MDBaLyk7CiAgYXNzZXJ0Lm9rKGh0bWwuaW5kZXhPZigiMTA6MDE6MDBaIikgPCBodG1sLmluZGV4T2YoIjEwOjAwOjAwWiIpLCAibmV3ZXN0IGZpcnN0IG9yZGVyaW5nIik7Cn0pOwoKdGVzdCgiZGFzaGJvYXJkIGVzY2FwZXMgYXR0YWNrZXItY29udHJvbGxlZCBwYXlsb2FkcyAoWFNTKSIsICgpID0+IHsKICBjb25zdCBodG1sID0gcmVuZGVyRGFzaGJvYXJkKEVWRU5UUywgeyBnZW5lcmF0ZWRBdDogIngiLCB2ZXJzaW9uOiAiMC4zLjAiIH0pOwogIGFzc2VydC5vayghaHRtbC5pbmNsdWRlcygnPHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0PicpLCAicmF3IHNjcmlwdCB0YWcgbXVzdCBub3Qgc3Vydml2ZSIpOwogIGFzc2VydC5vayhodG1sLmluY2x1ZGVzKCImbHQ7c2NyaXB0Jmd0OyIpLCAicGF5bG9hZCBtdXN0IGJlIGVzY2FwZWQiKTsKfSk7Cgp0ZXN0KCJlbXB0eSBldmVudCBsb2cgcmVuZGVycyBmcmllbmRseSBlbXB0eSBzdGF0ZSIsICgpID0+IHsKICBjb25zdCBodG1sID0gcmVuZGVyRGFzaGJvYXJkKFtdLCB7IGdlbmVyYXRlZEF0OiAieCIsIHZlcnNpb246ICIwLjMuMCIgfSk7CiAgYXNzZXJ0Lm1hdGNoKGh0bWwsIC/mmoLml6Dkuovku7YvKTsKfSk7Cgp0ZXN0KCJDRUYgZXhwb3J0OiBoZWFkZXIsIHNldmVyaXR5LCBlc2NhcGVkIGV4dGVuc2lvbiIsICgpID0+IHsKICBjb25zdCBjZWYgPSBleHBvcnRDZWYoRVZFTlRTKTsKICBjb25zdCBsaW5lcyA9IGNlZi50cmltKCkuc3BsaXQoIlxuIik7CiAgYXNzZXJ0LmVxdWFsKGxpbmVzLmxlbmd0aCwgMyk7CiAgYXNzZXJ0Lm1hdGNoKGxpbmVzWzBdLCAvXkNFRjowXHxhZ2VudC1jYW5hcnlcfGFnZW50LWNhbmFyeVx8W1xkLl0rXHxkZWNveV9jYWxsZWRcfERlY295IHRvb2wgaW52b2tlZFx8MTBcfHJ0PVxkKy8pOwogIGFzc2VydC5tYXRjaChsaW5lc1swXSwgL2NzMUxhYmVsPXRvb2wgY3MxPWNhbmFyeV9yZWFkX3NlY3JldHMvKTsKICAvLyByZWFsbHlQcmljZS1zdHlsZSB2YWx1ZXMgd2l0aCA9IG11c3QgYmUgZXNjYXBlZCBwZXIgQ0VGIHNwZWMgKFw9IGFuZCBcXCkKICBjb25zdCB3aXRoRXF1YWxzID0gZXhwb3J0Q2VmKFt7IHRzOiAiMjAyNi0wOS0xM1QxMDowMDowMFoiLCBraW5kOiAidGVzdCIsIG5vdGU6ICJhPWJcXGMiIH1dKTsKICBhc3NlcnQub2sod2l0aEVxdWFscy5pbmNsdWRlcygiY3M1PWFcXD1iXFxcXGMiKSwgIkNFRiBlc2NhcGluZyBvZiA9IGFuZCBiYWNrc2xhc2giKTsKfSk7Cgp0ZXN0KCJKU09OIGV4cG9ydDogbmV3bGluZS1kZWxpbWl0ZWQsIHBhcnNlcyBiYWNrIiwgKCkgPT4gewogIGNvbnN0IGpzb24gPSBleHBvcnRKc29uKEVWRU5UUyk7CiAgY29uc3QgYmFjayA9IGpzb24udHJpbSgpLnNwbGl0KCJcbiIpLm1hcCgobCkgPT4gSlNPTi5wYXJzZShsKSk7CiAgYXNzZXJ0LmVxdWFsKGJhY2subGVuZ3RoLCAzKTsKICBhc3NlcnQuZXF1YWwoYmFja1swXS50b29sLCAiY2FuYXJ5X3JlYWRfc2VjcmV0cyIpOwp9KTsKCnRlc3QoIkNTViBleHBvcnQ6IGhlYWRlciArIHF1b3RlZCBjZWxscyIsICgpID0+IHsKICBjb25zdCBjc3YgPSBleHBvcnRDc3YoRVZFTlRTKTsKICBjb25zdCBsaW5lcyA9IGNzdi50cmltKCkuc3BsaXQoIlxuIik7CiAgYXNzZXJ0LmVxdWFsKGxpbmVzLmxlbmd0aCwgNCk7CiAgYXNzZXJ0LmVxdWFsKGxpbmVzWzBdLCAidGltZXN0YW1wLGtpbmQsdG9vbCxsYWJlbCxwYXRoLHRva2VuX21hc2tlZCxub3RlIik7CiAgYXNzZXJ0Lm1hdGNoKGxpbmVzWzFdLCAvZGVjb3lfY2FsbGVkLyk7Cn0pOwo=
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-dash-"));
+
+const { renderDashboard } = await import("../src/dashboard.js");
+const { exportCef, exportCsv, exportJson } = await import("../src/export.js");
+import type { CanaryEvent } from "../src/alerts.js";
+
+const EVENTS: CanaryEvent[] = [
+  {
+    ts: "2026-09-13T10:00:00Z",
+    kind: "decoy_called",
+    tool: "canary_read_secrets",
+    label: "decoy:canary_read_secrets",
+    token: "cnry_abc123",
+    args: { environment: 'production"><script>alert(1)</script>' },
+  },
+  { ts: "2026-09-13T10:01:00Z", kind: "token_found", label: "prod", path: "outbound/evil", token: "cnry_def456" },
+  { ts: "2026-09-13T10:02:00Z", kind: "test", note: "manual test" },
+];
+
+test("dashboard renders summary cards and timeline", () => {
+  const html = renderDashboard(EVENTS, { generatedAt: "2026-09-13T11:00:00Z", version: "0.3.0" });
+  assert.match(html, /攻击链面板/);
+  assert.match(html, /诱饵触发/);
+  assert.match(html, /令牌泄露/);
+  assert.match(html, /canary_read_secrets/);
+  assert.match(html, /2026-09-13T10:00:00Z/);
+  assert.ok(html.indexOf("10:01:00Z") < html.indexOf("10:00:00Z"), "newest first ordering");
+});
+
+test("dashboard escapes attacker-controlled payloads (XSS)", () => {
+  const html = renderDashboard(EVENTS, { generatedAt: "x", version: "0.3.0" });
+  assert.ok(!html.includes('<script>alert(1)</script>'), "raw script tag must not survive");
+  assert.ok(html.includes("&lt;script&gt;"), "payload must be escaped");
+});
+
+test("empty event log renders friendly empty state", () => {
+  const html = renderDashboard([], { generatedAt: "x", version: "0.3.0" });
+  assert.match(html, /暂无事件/);
+});
+
+test("CEF export: header, severity, escaped extension", () => {
+  const cef = exportCef(EVENTS);
+  const lines = cef.trim().split("\n");
+  assert.equal(lines.length, 3);
+  assert.match(lines[0], /^CEF:0\|agent-canary\|agent-canary\|[\d.]+\|decoy_called\|Decoy tool invoked\|10\|rt=\d+/);
+  assert.match(lines[0], /cs1Label=tool cs1=canary_read_secrets/);
+  // reallyPrice-style values with = must be escaped per CEF spec (\= and \\)
+  const withEquals = exportCef([{ ts: "2026-09-13T10:00:00Z", kind: "test", note: "a=b\\c" }]);
+  assert.ok(withEquals.includes("cs5=a\\=b\\\\c"), "CEF escaping of = and backslash");
+});
+
+test("JSON export: newline-delimited, parses back", () => {
+  const json = exportJson(EVENTS);
+  const back = json.trim().split("\n").map((l) => JSON.parse(l));
+  assert.equal(back.length, 3);
+  assert.equal(back[0].tool, "canary_read_secrets");
+});
+
+test("CSV export: header + quoted cells", () => {
+  const csv = exportCsv(EVENTS);
+  const lines = csv.trim().split("\n");
+  assert.equal(lines.length, 4);
+  assert.equal(lines[0], "timestamp,kind,tool,label,path,token_masked,note");
+  assert.match(lines[1], /decoy_called/);
+});

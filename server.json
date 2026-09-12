@@ -1,1 +1,6 @@
-ewogICIkc2NoZW1hIjogImh0dHBzOi8vc3RhdGljLm1vZGVsY29udGV4dHByb3RvY29sLmlvL3NjaGVtYXMvMjAyNS0wOS0yOS9zZXJ2ZXIuc2NoZW1hLmpzb24iLAogICJuYW1lIjogImlvLmdpdGh1Yi5Eb3JpYW5DaG4vYWdlbnQtY2FuYXJ5IiwKICAiZGVzY3JpcHRpb24iOiAiWmVyby1mYWxzZS1wb3NpdGl2ZSB0cmlwd2lyZXMgZm9yIEFJIGFnZW50cyDigJQgZGVjb3kgdG9vbHMgKyBjYW5hcnkgdG9rZW5zIGNhdGNoIHByb21wdCBpbmplY3Rpb24uIiwKICAidmVyc2lvbiI6ICIwLjMuMCIKfQo=
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.DorianChn/agent-canary",
+  "description": "Zero-false-positive tripwires for AI agents — decoy tools + canary tokens catch prompt injection.",
+  "version": "0.3.0"
+}
