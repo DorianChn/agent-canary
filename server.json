@@ -1,0 +1,14 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.DorianChn/agent-canary",
+  "description": "Zero-false-positive tripwires for AI agents: 8 inert decoy MCP tools (fake wire transfer, prod-secrets reader, sudo shell...) plus leak-tracing canary tokens planted in honeypot files. Any touch is a compromise signal with full attack context; alerts via JSONL, desktop and webhook. Works with any MCP client (Claude Code, Cursor, Cline, Windsurf). MIT, no telemetry.",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "agent-canary",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" }
+    }
+  ]
+}
