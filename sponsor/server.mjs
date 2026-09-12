@@ -74,6 +74,12 @@ const EPAY = {
 const WECHAT_READY = Boolean(WECHAT.mchid && WECHAT.serial && WECHAT.appid && WECHAT.apiv3Key && WECHAT.keyPath);
 const ALIPAY_READY = Boolean(ALIPAY.appId && ALIPAY.privateKeyPath && ALIPAY.publicKeyPath);
 const EPAY_READY = Boolean(EPAY.url && EPAY.pid && EPAY.key);
+// V免签（szvone/vmqphp 自托管 + 安卓监控端）：零成本全自动确认。
+const VMQ = {
+  url: (process.env.VMQ_URL || "").replace(/\/$/, ""),
+  key: process.env.VMQ_KEY || "",
+};
+const VMQ_READY = Boolean(VMQ.url && VMQ.key);
 
 // 零成本模式：个人收款码 + 人工确认。把你的个人收款码图片放到 sponsor/qr/ 下即可自动启用：
 //   sponsor/qr/wechat.png (或 .jpg)   sponsor/qr/alipay.png (或 .jpg)
@@ -88,7 +94,7 @@ const qrFiles = {
     .find((f) => fs.existsSync(f)),
 };
 const MANUAL_READY = Boolean(qrFiles.wechat || qrFiles.alipay);
-const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && !EPAY_READY && !MANUAL_READY && process.env.DEMO !== "0");
+const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && !EPAY_READY && !VMQ_READY && !MANUAL_READY && process.env.DEMO !== "0");
 const PRESETS = [5, 10, 25, 50]; // CNY, one-off donations
 
 // Personal Edition plan: $10/month, billed in CNY (rate configurable).
@@ -350,10 +356,39 @@ function createEpayOrder(order) {
   return `${EPAY.url}/submit.php?${new URLSearchParams(params).toString()}`;
 }
 
+// ---------- V免签 helpers（协议来源：szvone/vmqphp public/api.html 与 Index.php） ----------
+function vmqMd5(s) {
+  return crypto.createHash("md5").update(s, "utf8").digest("hex");
+}
+async function createVmqOrder(order) {
+  const param = order.id; // 原样随异步通知返回，便于对账
+  const price = order.amount.toFixed(2);
+  const type = order.channel === "alipay" ? "2" : "1";
+  const sign = vmqMd5(`${order.outTradeNo}${param}${type}${price}${VMQ.key}`);
+  const q = new URLSearchParams({
+    payId: order.outTradeNo,
+    type,
+    price,
+    param,
+    isHtml: "0",
+    notifyUrl: `${PUBLIC_BASE}/callback/vmq`,
+    returnUrl: `${PUBLIC_BASE}/return`,
+    sign,
+  });
+  const res = await fetch(`${VMQ.url}/createOrder?${q.toString()}`);
+  const j = await res.json();
+  if (j.code !== 1 || !j.data?.orderId) {
+    throw new Error(`Vmq API: ${JSON.stringify(j).slice(0, 200)}`);
+  }
+  // pay.html 会展示匹配好金额尾数的个人收款码，是给付款人的正确落地页
+  return `${VMQ.url}/payPage/pay.html?orderId=${j.data.orderId}`;
+}
+
 // ---------- payment creation dispatch ----------
 async function createPayment(order) {
   if (DEMO) return `${PUBLIC_BASE}/demo/pay/${order.id}`;
   if (EPAY_READY) return createEpayOrder(order);
+  if (VMQ_READY) return createVmqOrder(order);
   if (order.channel === "wechat") {
     if (!WECHAT_READY) throw new Error("WeChat Pay credentials not configured (.env)");
     return createWechatOrder(order);
@@ -509,6 +544,19 @@ const server = http.createServer(async (req, res) => {
       if (!EPAY_READY || form.sign !== epaySign(form, EPAY.key)) return send(res, 401, "fail");
       const order = Object.values(orders).find((o) => o.outTradeNo === form.out_trade_no);
       if (order && form.trade_status === "TRADE_SUCCESS") markPaid(order.id, form.trade_no);
+      return send(res, 200, "success");
+    }
+
+    // ---- V免签 async callback: sign = md5(payId+param+type+price+reallyPrice+key) ----
+    if (req.method === "GET" && url.pathname === "/callback/vmq") {
+      const form = Object.fromEntries(url.searchParams);
+      const expect = vmqMd5(
+        `${form.payId ?? ""}${form.param ?? ""}${form.type ?? ""}${form.price ?? ""}${form.reallyPrice ?? ""}${VMQ.key}`
+      );
+      if (!VMQ_READY || form.sign !== expect) return send(res, 401, "error_sign");
+      const order = Object.values(orders).find((o) => o.outTradeNo === form.payId);
+      // reallyPrice 含金额尾数浮动（防撞单），验签通过即可信任
+      if (order) markPaid(order.id, `vmq:${form.param ?? ""}`);
       return send(res, 200, "success");
     }
 
