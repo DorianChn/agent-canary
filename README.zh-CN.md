@@ -142,7 +142,30 @@ Claude Code / Cursor / 你的 Agent
 - [x] v0.1 — 诱饵 MCP 服务器、金丝雀令牌、文件监控、JSONL + webhook + 桌面告警
 - [x] v0.2 — **评测模式**：20 条精选注入载荷（7 大类）打任意 OpenAI 兼容/Anthropic 模型，输出可复现抵抗力评分——`agent-canary eval`
 - [x] v0.3 — **面板与 SIEM 导出**：自包含 HTML 攻击链时间线（`agent-canary dashboard --open`）+ CEF / JSON / CSV 导出对接 Splunk / Elastic / ArcSight（`agent-canary export`）
-- [ ] v0.4 — MCP 之外的 SDK 埋点（OpenAI / Anthropic agent SDK hooks）
+- [x] v0.4 — **MCP 之外的 SDK 埋点**：`import { decoyToolDefs, runDecoy, createTokenGuard } from "agent-canary/sdk"`——LangChain.js / Vercel AI SDK / 裸写循环三行接入同一套诱饵、追踪令牌和零误报泄露扫描
+
+路线图四项全部交付。下一步方向由用户驱动——欢迎开 issue 描述你的部署场景。
+
+## 非 MCP Agent 接入（SDK 模式）
+
+自研 agent 代码（LangChain.js、Vercel AI SDK、裸写循环）不需要 MCP 也能装同一套绊线：
+
+```js
+import { generateText } from "ai";                       // 任何框架，套路相同
+import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";
+
+const guard = createTokenGuard();                        // 零误报泄露扫描
+const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
+
+const { text, toolCalls } = await myAgentLoop(toolDefs); // 你现有的循环
+
+for (const call of toolCalls) {
+  if (isDecoy(call.name)) await runDecoy(call.name, call.args); // 惰性 + 留痕 🚨
+}
+guard.inspect(text, "final-answer");                     // 泄露的令牌触发告警
+```
+
+`decoyToolDefs("anthropic")` 输出 Anthropic 原生工具格式。诱饵调用绝不执行任何真实操作——见 [SECURITY.md](SECURITY.md)。
 
 ## 兼容性
 

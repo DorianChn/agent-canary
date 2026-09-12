@@ -143,7 +143,30 @@ Claude Code / Cursor / your agent
 - [x] v0.1 — decoy MCP server, canary tokens, file watch, JSONL + webhook + desktop alerts
 - [x] v0.2 — **eval mode**: run a curated prompt-injection suite (20 payloads, 7 categories) against any OpenAI-compatible or Anthropic model, output a reproducible resistance score — `agent-canary eval`
 - [x] v0.3 — **dashboard & SIEM export**: self-contained HTML attack-chain timeline (`agent-canary dashboard --open`) + CEF / JSON / CSV export for Splunk / Elastic / ArcSight (`agent-canary export`)
-- [ ] v0.4 — SDK instrumentation beyond MCP (OpenAI / Anthropic agent SDK hooks)
+- [x] v0.4 — **SDK instrumentation beyond MCP**: `import { decoyToolDefs, runDecoy, createTokenGuard } from "agent-canary/sdk"` — LangChain.js / Vercel AI SDK / raw provider loops get the same decoys, trace tokens and zero-false-positive leak guard in three lines
+
+The roadmap is now fully shipped. What's next is driven by users — open an issue with your deployment scenario.
+
+## Using with non-MCP agents (SDK mode)
+
+Custom agent code (LangChain.js, Vercel AI SDK, raw provider loops) gets the same tripwires without MCP:
+
+```js
+import { generateText } from "ai";                       // any framework, same pattern
+import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";
+
+const guard = createTokenGuard();                        // zero-false-positive leak scanner
+const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
+
+const { text, toolCalls } = await myAgentLoop(toolDefs); // your existing loop
+
+for (const call of toolCalls) {
+  if (isDecoy(call.name)) await runDecoy(call.name, call.args); // inert + audited 🚨
+}
+guard.inspect(text, "final-answer");                     // any leaked token fires an alert
+```
+
+`decoyToolDefs("anthropic")` emits native Anthropic tool schemas. Decoy calls never execute anything real — see [SECURITY.md](SECURITY.md).
 
 ## Compatibility
 
