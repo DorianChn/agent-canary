@@ -140,7 +140,7 @@ Claude Code / Cursor / 你的 Agent
 ## 路线图
 
 - [x] v0.1 — 诱饵 MCP 服务器、金丝雀令牌、文件监控、JSONL + webhook + 桌面告警
-- [ ] v0.2 — **评测模式**：用精选注入攻击套件测试任意 agent+模型组合，输出可复现的抵抗力评分
+- [x] v0.2 — **评测模式**：20 条精选注入载荷（7 大类）打任意 OpenAI 兼容/Anthropic 模型，输出可复现抵抗力评分——`agent-canary eval`
 - [ ] v0.3 — 面板：跨会话攻击链时间线；SIEM 导出
 - [ ] v0.4 — MCP 之外的 SDK 埋点（OpenAI / Anthropic agent SDK hooks）
 

@@ -141,7 +141,7 @@ Claude Code / Cursor / your agent
 ## Roadmap
 
 - [x] v0.1 — decoy MCP server, canary tokens, file watch, JSONL + webhook + desktop alerts
-- [ ] v0.2 — **eval mode**: run a curated prompt-injection suite against any agent+model combo, output a reproducible resistance score
+- [x] v0.2 — **eval mode**: run a curated prompt-injection suite (20 payloads, 7 categories) against any OpenAI-compatible or Anthropic model, output a reproducible resistance score — `agent-canary eval`
 - [ ] v0.3 — dashboard: attack-chain timeline across sessions; SIEM export
 - [ ] v0.4 — SDK instrumentation beyond MCP (OpenAI / Anthropic agent SDK hooks)
 

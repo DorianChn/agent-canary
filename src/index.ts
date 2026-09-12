@@ -8,6 +8,9 @@ import { generateTokens, loadTokens, plantIntoFile, findTokensInText, scanFile }
 import { logEvent, readEvents, fireAlerts, type CanaryEvent } from "./alerts.js";
 import { installServer, uninstallServer, configPathFor, type InstallTarget } from "./install.js";
 import { watch } from "./watch.js";
+import { EVAL_PAYLOADS, EVAL_SUITE_VERSION } from "./eval/payloads.js";
+import { anthropicProvider, openaiCompatibleProvider } from "./eval/providers.js";
+import { renderMarkdownReport, runEval } from "./eval/runner.js";
 
 const program = new Command();
 program
@@ -244,6 +247,55 @@ program
     cfg.notify = v !== "off";
     saveConfig(cfg);
     console.log(`Desktop notifications ${cfg.notify ? "enabled" : "disabled"}.`);
+  });
+
+program
+  .command("eval")
+  .description("Run the prompt-injection resistance suite against a model (v0.2 eval mode)")
+  .requiredOption("--provider <name>", "openai | anthropic (openai covers all OpenAI-compatible endpoints)")
+  .requiredOption("--model <model>", "e.g. gpt-4o, deepseek-chat, claude-sonnet-4-5")
+  .option("--base-url <url>", "OpenAI-compatible base URL (e.g. https://api.deepseek.com/v1)")
+  .option("--key <key>", "API key (defaults to OPENAI_API_KEY / ANTHROPIC_API_KEY env)")
+  .option("--max-turns <n>", "Max tool-call turns per payload", (v) => parseInt(v, 10), 3)
+  .option("--out <file>", "Write a markdown report to this file")
+  .action(async (opts) => {
+    let provider;
+    if (opts.provider === "openai") {
+      const key = opts.key ?? process.env.OPENAI_API_KEY;
+      if (!key) {
+        console.error("Missing API key: pass --key or set OPENAI_API_KEY");
+        process.exit(1);
+      }
+      provider = openaiCompatibleProvider(opts.baseUrl ?? "https://api.openai.com/v1", key);
+    } else if (opts.provider === "anthropic") {
+      const key = opts.key ?? process.env.ANTHROPIC_API_KEY;
+      if (!key) {
+        console.error("Missing API key: pass --key or set ANTHROPIC_API_KEY");
+        process.exit(1);
+      }
+      provider = anthropicProvider(key);
+    } else {
+      console.error("provider must be: openai | anthropic");
+      process.exit(1);
+    }
+
+    console.log(
+      `agent-canary eval · suite ${EVAL_SUITE_VERSION} · ${EVAL_PAYLOADS.length} payloads · model ${opts.model}`
+    );
+    const report = await runEval(provider, opts.model, {
+      maxTurns: opts.maxTurns,
+      onProgress: (line) => console.log("  " + line),
+    });
+
+    if (opts.out) {
+      fs.writeFileSync(opts.out, renderMarkdownReport(report));
+      console.log(`\nMarkdown report written to ${opts.out}`);
+    }
+    for (const [cat, v] of Object.entries(report.byCategory)) {
+      console.log(`  ${cat.padEnd(20)} ${v.passed}/${v.total} resisted`);
+    }
+    console.log(`\nSCORE: ${report.score}/100 (${report.passed}/${report.total} payloads resisted)`);
+    process.exit(report.score === 100 ? 0 : 2);
   });
 
 program.parseAsync(process.argv).catch((err: unknown) => {
