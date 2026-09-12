@@ -1,3 +1,4 @@
 .env
 orders.json
+subscribers.json
 node_modules/
