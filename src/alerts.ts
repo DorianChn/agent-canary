@@ -87,6 +87,7 @@ async function notifyDesktop(body: string): Promise<void> {
         `$n.ShowBalloonTip(8000, 'Agent Canary', '${psEscape(body)}', 'Warning'); ` +
         `Start-Sleep -Seconds 9; $n.Dispose()`;
       const child = spawn("powershell", ["-NoProfile", "-Command", script], { stdio: "ignore", detached: true });
+      child.on("error", () => {});
       child.unref();
     } else if (platform === "darwin") {
       const quoted = body.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -94,9 +95,12 @@ async function notifyDesktop(body: string): Promise<void> {
         stdio: "ignore",
         detached: true,
       });
+      child.on("error", () => {});
       child.unref();
     } else {
+      // notify-send may not exist on headless systems; the error listener swallows ENOENT.
       const child = spawn("notify-send", ["Agent Canary", body], { stdio: "ignore", detached: true });
+      child.on("error", () => {});
       child.unref();
     }
   } catch {
