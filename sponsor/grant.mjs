@@ -59,7 +59,20 @@ function main() {
     const expiresAt = new Date(Math.max(now, current) + months * 30 * 864e5).toISOString();
     subs[handle] = { handle, expiresAt, lastOrderId: "manual-grant", updatedAt: new Date().toISOString() };
     write(SUBS_FILE, subs);
-    console.log(`✓ ${handle} 个人版已开通，有效期至 ${expiresAt}`);
+
+    // 把该用户的待确认登记一并标记为已确认
+    const orders = read(ORDERS_FILE, {});
+    let confirmed = 0;
+    for (const o of Object.values(orders)) {
+      if (o.status === "pending_manual" && (o.handle === handle || (o.note && o.note.includes(handle)))) {
+        o.status = "confirmed_manual";
+        o.confirmedAt = new Date().toISOString();
+        confirmed++;
+      }
+    }
+    if (confirmed) write(ORDERS_FILE, orders);
+
+    console.log(`✓ ${handle} 个人版已开通，有效期至 ${expiresAt}` + (confirmed ? `（已确认 ${confirmed} 条待审登记）` : ""));
     return;
   }
 

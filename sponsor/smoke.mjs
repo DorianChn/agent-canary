@@ -1,0 +1,92 @@
+/**
+ * 赞助网关冒烟测试（CI 用，demo 模式零依赖外部服务）。
+ * 启动 server.m于随机端口，验证：页面渲染 / 下单 / QR 接口 / 订单轮询 / 手动登记 / 订阅状态。
+ * 运行：node smoke.mjs（在 sponsor/ 目录）
+ */
+import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+process.env.AGENT_CANARY_HOME_DUMMY = "1"; // no-op, keeps intent obvious
+
+const PORT = 8189;
+const BASE = `http://127.0.0.1:${PORT}`;
+
+// 隔离数据文件，避免污染真实 orders/subscribers
+for (const f of ["orders.json", "subscribers.json"]) {
+  try { fs.rmSync(path.join(__dirname, f)); } catch {}
+}
+
+const server = spawn(process.execPath, ["server.mjs"], {
+  cwd: __dirname,
+  env: { ...process.env, PORT: String(PORT), DEMO: "1", PUBLIC_BASE_URL: BASE },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+server.stderr.on("data", (d) => process.stderr.write(`[sponsor] ${d}`));
+
+async function waitFor(fn, ms = 15000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    try { if (await fn()) return true; } catch {}
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
+
+let failures = 0;
+function check(name, ok) {
+  console.log(`${ok ? "ok" : "FAIL"} - ${name}`);
+  if (!ok) failures++;
+}
+
+try {
+  const up = await waitFor(async () => (await fetch(BASE + "/")).status === 200);
+  check("server boots in demo mode", up);
+
+  const page = await (await fetch(BASE + "/")).text();
+  check("page renders personal plan card", page.includes("个人版 Personal"));
+  check("page renders donation section (demo)", page.includes("一次性赞助"));
+
+  const qrRes = await fetch(BASE + "/api/qr?text=hello");
+  check("qr endpoint serves png", qrRes.status === 200 && qrRes.headers.get("content-type") === "image/png");
+
+  const order = await (await fetch(BASE + "/api/order", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ channel: "wechat", plan: "personal", handle: "smoke-test" }),
+  })).json();
+  check("personal order created", order.ok === undefined && !!order.orderId && order.qr.includes("/demo/pay/"));
+
+  const payPage = await fetch(BASE + `/demo/pay/${order.orderId}`);
+  check("demo pay page renders", payPage.status === 200);
+  await fetch(BASE + `/demo/confirm/${order.orderId}`);
+
+  const status = await (await fetch(BASE + "/api/order/" + order.orderId)).json();
+  check("order auto-confirms in demo", status.status === "paid");
+
+  const sub = await (await fetch(BASE + "/api/subscription/smoke-test")).json();
+  check("subscription activated (+30d)", sub.active === true && !!sub.expiresAt);
+
+  const bad = await fetch(BASE + "/api/order", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ channel: "wechat", plan: "personal" }),
+  });
+  check("personal order without handle rejected", bad.status === 400);
+
+  const claim = await (await fetch(BASE + "/api/manual-claim", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ channel: "alipay", plan: "personal", handle: "manual-test" }),
+  })).json();
+  check("manual claim accepted", claim.ok === true);
+} catch (err) {
+  failures++;
+  console.log("FAIL - unexpected error:", err.message);
+} finally {
+  server.kill();
+}
+
+process.exit(failures ? 1 : 0);

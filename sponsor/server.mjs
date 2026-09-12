@@ -466,13 +466,15 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
-    // ---- 个人收款码图片（零成本模式） ----
+    // ---- 个人收款码图片（零成本模式；无本地文件时回退到仓库 CDN 版） ----
     if (req.method === "GET" && url.pathname.startsWith("/qr-image/")) {
       const ch = url.pathname.split("/")[2] === "alipay" ? "alipay" : "wechat";
-      const f = qrFiles[ch];
-      if (!f) return send(res, 404, "no such qr");
-      const type = f.endsWith(".png") ? "image/png" : f.endsWith(".webp") ? "image/webp" : "image/jpeg";
-      return send(res, 200, fs.readFileSync(f), type);
+      if (qrFiles[ch]) {
+        const type = qrFiles[ch].endsWith(".png") ? "image/png" : qrFiles[ch].endsWith(".webp") ? "image/webp" : "image/jpeg";
+        return send(res, 200, fs.readFileSync(qrFiles[ch]), type);
+      }
+      res.writeHead(302, { Location: `https://cdn.jsdelivr.net/gh/DorianChn/agent-canary@main/docs/pay/${ch}.jpg` });
+      return res.end();
     }
 
     // ---- 零成本模式：付款登记（作者用 grant.mjs 人工确认后生效） ----
@@ -676,7 +678,7 @@ ${MANUAL_READY ? `
   <div class="fine" id="m-ok"></div>
 </div>
 ` : ""}
-${DEMO || EPAY_READY || WECHAT_READY || ALIPAY_READY ? `
+${DEMO || EPAY_READY || WECHAT_READY || ALIPAY_READY || VMQ_READY ? `
 <div class="donate-title">或一次性赞助：</div>
 <div class="tabs"><div class="tab on" id="t-wechat">微信支付</div><div class="tab" id="t-alipay">支付宝</div></div>
 <div class="amts" id="amts"></div>
@@ -709,13 +711,15 @@ function setTab(c) {
   document.getElementById("t-alipay").classList.toggle("on", c === "alipay");
 }
 async function startOrder(body) {
+  const qrEl = document.getElementById("qr");
+  if (!qrEl) { alert("当前模式不支持在线支付，请使用下方扫码登记"); return; }
   const r = await fetch("/api/order", {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({ channel: ch, ...body })
   });
   const j = await r.json();
   if (j.error) { alert("下单失败: " + j.error); return; }
-  document.getElementById("qr").src = "/api/qr?text=" + encodeURIComponent(j.qr);
+  qrEl.src = "/api/qr?text=" + encodeURIComponent(j.qr);
   document.getElementById("qrbox").style.display = "block";
   document.getElementById("ok").style.display = "none";
   document.getElementById("st").style.display = "block";

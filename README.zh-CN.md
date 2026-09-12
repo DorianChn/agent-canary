@@ -50,6 +50,12 @@ agent-canary install claude
 agent-canary alert-test
 ```
 
+> npm 包陆续发布中——若上面的命令暂时不可用，可从源码安装（Node 20+）：
+> ```bash
+> git clone https://github.com/DorianChn/agent-canary.git && cd agent-canary
+> npm install && npm run build && npm link
+> ```
+
 重启编辑器。Agent 现在能看到 8 个看起来很诱人、但绝不该碰的诱饵工具。它一旦碰了：
 
 ```console

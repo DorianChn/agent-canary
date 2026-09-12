@@ -51,6 +51,12 @@ agent-canary install claude
 agent-canary alert-test
 ```
 
+> npm package rolling out — if `npm install -g agent-canary` isn't available yet, install from source (Node 20+):
+> ```bash
+> git clone https://github.com/DorianChn/agent-canary.git && cd agent-canary
+> npm install && npm run build && npm link
+> ```
+
 Restart your editor. The agent now sees 8 juicy-looking decoy tools it should never touch. If it does:
 
 ```console
