@@ -108,10 +108,13 @@ test("handle without subscription is refused", async () => {
 test("tampered cache file is rejected on load", async () => {
   signWith = "test";
   assert.equal((await activate("paid-user")).ok, true);
-  // tamper: swap the signature
+  // tamper: flip the first signature character (fully significant base64 bits —
+  // flipping the LAST char would only touch padding bits and decode identically)
   const licFile = path.join(process.env.AGENT_CANARY_HOME!, "license.json");
   const doc = JSON.parse(fs.readFileSync(licFile, "utf8"));
-  doc.license = doc.license.replace(/.$/, doc.license.endsWith("A") ? "B" : "A");
+  const dot = doc.license.indexOf(".");
+  doc.license =
+    doc.license.slice(0, dot + 1) + (doc.license[dot + 1] === "A" ? "B" : "A") + doc.license.slice(dot + 2);
   fs.writeFileSync(licFile, JSON.stringify(doc));
   assert.equal(cachedLicense(), null);
   await assert.rejects(() => Promise.resolve(sdk.runDecoy("canary_transfer_funds", {})), LicenseError);
