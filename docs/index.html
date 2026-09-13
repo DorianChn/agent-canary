@@ -44,7 +44,7 @@
   <a class="logo" href="#">agent<span>-canary</span></a>
   <div>
     <a class="btn ghost" href="https://github.com/DorianChn/agent-canary">GitHub</a>
-    <a class="btn ghost" href="https://github.com/DorianChn/agent-canary#support-this-project">♥ Sponsor</a>
+    <a class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ Sponsor</a>
     <a class="btn" href="https://github.com/DorianChn/agent-canary#quickstart">Get started</a>
   </div>
 </nav></div></header>
@@ -78,7 +78,27 @@
 
 <footer><div class="wrap" style="display:flex;justify-content:space-between;width:100%">
   <span>agent-canary — the alarm that never cries wolf.</span>
-  <a href="https://github.com/DorianChn/agent-canary">★ Star on GitHub</a>
+  <span><a data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ 赞助支持</a> · <a href="https://github.com/DorianChn/agent-canary">GitHub</a></span>
 </div></footer>
+<script>
+// 赞助链接动态解析：读取仓库里的当前公网地址（隧道域名变化时由 public-link.mjs 自动更新）
+(function () {
+  const sources = [
+    "https://cdn.jsdelivr.net/gh/DorianChn/agent-canary@main/docs/pay/url.txt",
+    "https://raw.githubusercontent.com/DorianChn/agent-canary/main/docs/pay/url.txt"
+  ];
+  (function next(i) {
+    if (i >= sources.length) return;
+    fetch(sources[i] + "?t=" + Date.now(), { cache: "no-store" })
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
+      .then((t) => {
+        const u = t.trim();
+        if (!/^https:\/\/[a-z0-9.-]+/.test(u)) throw new Error("bad url");
+        document.querySelectorAll("[data-sponsor-url]").forEach((a) => (a.href = u + "/"));
+      })
+      .catch(() => next(i + 1));
+  })(0);
+})();
+</script>
 </body>
 </html>
