@@ -29,7 +29,7 @@ const CLOCK_FILE = path.join(ROOT, "clock.json");
 
 /** Ed25519 public key matching the sponsor gateway's signing key. */
 let TRUSTED_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEADSb2vO6iv1hSVDaUGvENJGEdh1GcwfKBUpRO4qz5+hQ=
+MCowBQYDK2VwAyEA/EuB78D0nLimALPsllVTuvFZtCaOU8CDs2kd03SpdV0=
 -----END PUBLIC KEY-----
 `;
 

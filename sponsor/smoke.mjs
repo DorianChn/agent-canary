@@ -105,8 +105,17 @@ try {
   failures++;
   console.log("FAIL - unexpected error:", err.message);
 } finally {
-  if (SUBS_BACKUP !== null) fs.writeFileSync(path.join(__dirname,"subscribers.json"), SUBS_BACKUP);
-  else { try { fs.rmSync(path.join(__dirname,"subscribers.json")); } catch {} }
+  // 恢复原始订阅文件，但保留运行期间真实授予的订阅（去掉测试句柄）
+  const SUBS_PATH = path.join(__dirname, "subscribers.json");
+  let finalSubs = SUBS_BACKUP !== null ? JSON.parse(SUBS_BACKUP) : {};
+  try {
+    const during = JSON.parse(fs.readFileSync(SUBS_PATH, "utf8"));
+    for (const [k, v] of Object.entries(during)) {
+      if (!["smoke-test", "manual-test", "limit-test", "LH"].includes(k)) finalSubs[k] = v;
+    }
+  } catch {}
+  fs.writeFileSync(SUBS_PATH, JSON.stringify(finalSubs, null, 2) + "
+");
   server.kill();
 }
 

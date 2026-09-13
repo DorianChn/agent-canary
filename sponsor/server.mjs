@@ -125,6 +125,14 @@ function saveOrders() {
 }
 
 function newOrder(channel, amountYuan, note, plan = null, handle = null) {
+  // disk-fill guard: keep the newest 1500 orders, pruning settled ones first
+  const ids = Object.keys(orders);
+  if (ids.length > 2000) {
+    for (const id of ids.slice(0, ids.length - 1500)) {
+      if (orders[id].status === "paid" || orders[id].status === "failed") delete orders[id];
+    }
+    saveOrders();
+  }
   const id = crypto.randomBytes(8).toString("hex");
   const order = {
     id,
@@ -205,7 +213,12 @@ function rateLimited(ip) {
   const arr = (rateMap.get(ip) ?? []).filter((t) => now - t < 600_000);
   arr.push(now);
   rateMap.set(ip, arr);
+  if (rateMap.size > 5000) for (const [k, v] of rateMap) if (v.every((t) => now - t >= 600_000)) rateMap.delete(k);
   return arr.length > 10;
+}
+
+function isLoopback(ip) {
+  return ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1";
 }
 
 function extendSubscription(handle, orderId) {
@@ -554,6 +567,9 @@ const server = http.createServer(async (req, res) => {
 
     // ---- API: subscription status — single source of truth for entitlement ----
     if (req.method === "GET" && url.pathname.startsWith("/api/subscription/")) {
+      if (rateLimited("sub:" + (req.socket.remoteAddress ?? "?"))) {
+        return send(res, 429, JSON.stringify({ ok: false, error: "too many requests" }), "application/json");
+      }
       const handle = decodeURIComponent(url.pathname.split("/")[3] || "").trim();
       const s = loadSubs()[handle];
       const active = Boolean(s && Date.parse(s.expiresAt) > Date.now());
@@ -626,6 +642,10 @@ const server = http.createServer(async (req, res) => {
     // ---- Personal Edition activation (signed license + machine binding) ----
     if (req.method === "POST" && url.pathname === "/api/activate") {
       const ip = req.socket.remoteAddress ?? "?";
+      if (DEMO && !isLoopback(ip)) {
+        // 演示模式的"支付"是模拟的——绝不能让远程机器据此拿到许可
+        return send(res, 403, JSON.stringify({ ok: false, error: "demo mode: activation only from localhost" }), "application/json");
+      }
       if (rateLimited(ip)) return send(res, 429, JSON.stringify({ ok: false, error: "too many attempts" }), "application/json");
       const body = JSON.parse((await readBody(req)) || "{}");
       const handle = String(body.handle || "").trim().slice(0, 64);
@@ -857,9 +877,21 @@ server.listen(PORT, () => {
   console.log(`[sponsor] listening on ${PUBLIC_BASE}`);
   console.log(`[sponsor] mode: ${DEMO ? "DEMO (simulated payments)" : "LIVE"}`);
   console.log(`[sponsor] personal edition: $${PLAN.personal.usd}/mo = ¥${PLAN.personal.cny}/mo · license TTL ${LICENSE_TTL_DAYS}d · max ${MAX_MACHINES} machines`);
+  if (!/^https:\/\/|^http:\/\/(localhost|127\.0\.0\.1)/.test(PUBLIC_BASE)) {
+    console.warn("[sponsor] ⚠ PUBLIC_BASE_URL 是明文 HTTP —— 付款二维码可能被中间人替换，生产环境请使用 HTTPS");
+  }
   if (VMQ_READY && (VMQ.key === "admin" || VMQ.key.length < 16)) {
     console.warn("[sponsor] ⚠ VMQ 通讯密钥过弱（默认值或短于 16 位）——伪造回调可以绕过付费校验！");
     console.warn("[sponsor] ⚠ 请在 vmq 后台更换强密钥，并同步更新 sponsor/.env 的 VMQ_KEY");
+  }
+  if (VMQ_READY) {
+    // 探测 V免签后台是否仍是默认账号密码（admin/admin）——是的话任何人可登录改收款码
+    fetch(`${VMQ.url}/login?user=admin&pass=admin`, { signal: AbortSignal.timeout(4000) })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.code === 1) console.warn("[sponsor] ⚠⚠ V免签后台仍为默认密码 admin/admin —— 请立即修改，否则付款码可被攻击者重定向！");
+      })
+      .catch(() => {});
   }
   if (!DEMO) console.log(`[sponsor] wechat ready=${WECHAT_READY} alipay ready=${ALIPAY_READY}`);
 });
