@@ -210,13 +210,13 @@ function signLicensePayload(payloadObj) {
 
 // activation registry: handle → { machines: { machineHash: lastSeenMs } }
 const rateMap = new Map();
-function rateLimited(ip) {
+function rateLimited(key, max = 10, windowMs = 600_000) {
   const now = Date.now();
-  const arr = (rateMap.get(ip) ?? []).filter((t) => now - t < 600_000);
+  const arr = (rateMap.get(key) ?? []).filter((t) => now - t < windowMs);
   arr.push(now);
-  rateMap.set(ip, arr);
-  if (rateMap.size > 5000) for (const [k, v] of rateMap) if (v.every((t) => now - t >= 600_000)) rateMap.delete(k);
-  return arr.length > 10;
+  rateMap.set(key, arr);
+  if (rateMap.size > 5000) for (const [k, v] of rateMap) if (v.every((t) => now - t >= windowMs)) rateMap.delete(k);
+  return arr.length > max;
 }
 
 function isLoopback(ip) {
@@ -478,7 +478,12 @@ async function createPayment(order) {
 
 // ---------- tiny HTTP framework ----------
 function send(res, status, body, type = "text/plain; charset=utf-8") {
-  res.writeHead(status, { "Content-Type": type });
+  res.writeHead(status, {
+    "Content-Type": type,
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "referrer-policy": "no-referrer",
+  });
   res.end(body);
 }
 function readBody(req) {
@@ -503,6 +508,8 @@ const server = http.createServer(async (req, res) => {
 
     // ---- QR raster endpoint (page uses this for both real and demo QR) ----
     if (req.method === "GET" && url.pathname === "/api/qr") {
+      const ip = req.socket.remoteAddress ?? "?";
+      if (rateLimited("qr:" + ip, 120)) return send(res, 429, "too many");
       const text = url.searchParams.get("text") || "";
       if (!text || text.length > 800) return send(res, 400, "bad text");
       const png = await QRCode.toBuffer(text, { width: 512, margin: 1 });
@@ -511,6 +518,10 @@ const server = http.createServer(async (req, res) => {
 
     // ---- API: create order (donation or Personal Edition subscription) ----
     if (req.method === "POST" && url.pathname === "/api/order") {
+      const ip = req.socket.remoteAddress ?? "?";
+      if (rateLimited("order:" + ip, 10)) {
+        return send(res, 429, JSON.stringify({ ok: false, error: "too many orders, slow down" }), "application/json");
+      }
       const input = JSON.parse((await readBody(req)) || "{}");
       const channel = input.channel === "alipay" ? "alipay" : "wechat";
       let order;
@@ -558,6 +569,10 @@ const server = http.createServer(async (req, res) => {
 
     // ---- 零成本模式：付款登记（作者用 grant.mjs 人工确认后生效） ----
     if (req.method === "POST" && url.pathname === "/api/manual-claim") {
+      const ip = req.socket.remoteAddress ?? "?";
+      if (rateLimited("claim:" + ip, 10)) {
+        return send(res, 429, JSON.stringify({ ok: false, error: "too many claims" }), "application/json");
+      }
       const input = JSON.parse((await readBody(req)) || "{}");
       const handle = String(input.handle || "").trim().slice(0, 64);
       const channel = input.channel === "alipay" ? "alipay" : "wechat";
@@ -664,7 +679,7 @@ const server = http.createServer(async (req, res) => {
         // 演示模式的"支付"是模拟的——绝不能让远程机器据此拿到许可
         return send(res, 403, JSON.stringify({ ok: false, error: "demo mode: activation only from localhost" }), "application/json");
       }
-      if (rateLimited(ip)) return send(res, 429, JSON.stringify({ ok: false, error: "too many attempts" }), "application/json");
+      if (rateLimited("act:" + ip)) return send(res, 429, JSON.stringify({ ok: false, error: "too many attempts" }), "application/json");
       const body = JSON.parse((await readBody(req)) || "{}");
       const handle = String(body.handle || "").trim().slice(0, 64);
       const machineHash = String(body.machineHash || "").trim();
