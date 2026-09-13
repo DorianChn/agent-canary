@@ -140,6 +140,15 @@ casual copying; it is not DRM.
 
 Run `agent-canary --help` for details.
 
+---
+
+## More in this suite
+
+AI agent security toolkit by DorianChn:
+
+- [traceplay](https://github.com/DorianChn/traceplay) — record & replay agent trajectories in CI — zero tokens
+- [agent-gate](https://github.com/DorianChn/agent-gate) — tool-call policy gateway: least privilege, short-lived credentials, audit
+- [reposieve](https://github.com/DorianChn/reposieve) — privacy-first repository context packs for coding agents
 ## License
 
 MIT
