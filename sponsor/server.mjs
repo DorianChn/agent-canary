@@ -49,6 +49,8 @@ function loadDotEnv() {
 loadDotEnv();
 
 const PORT = Number(process.env.PORT || 8787);
+// 收款系统只服务本机回环：公网流量经隧道/路由器进来，局域网设备无需也不应直接访问
+const HOST = process.env.HOST || "127.0.0.1";
 const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
 const WECHAT = {
   mchid: process.env.WECHAT_MCHID || "",
@@ -875,7 +877,7 @@ document.getElementById("handle").addEventListener("change", async () => {
 </script></body></html>`;
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`[sponsor] listening on ${PUBLIC_BASE}`);
   console.log(`[sponsor] mode: ${DEMO ? "DEMO (simulated payments)" : "LIVE"}`);
   console.log(`[sponsor] personal edition: $${PLAN.personal.usd}/mo = ¥${PLAN.personal.cny}/mo · license TTL ${LICENSE_TTL_DAYS}d · max ${MAX_MACHINES} machines`);
