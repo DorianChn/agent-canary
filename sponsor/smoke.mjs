@@ -5,6 +5,7 @@
  */
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,16 +14,18 @@ process.env.AGENT_CANARY_HOME_DUMMY = "1"; // no-op, keeps intent obvious
 
 const PORT = 8189;
 const BASE = `http://127.0.0.1:${PORT}`;
-
-// 隔离数据文件，避免污染真实 orders/subscribers
-for (const f of ["orders.json", "subscribers.json", "activations.json"]) {
-  try { fs.rmSync(path.join(__dirname, f)); } catch {}
-}
-
-const SUBS_BACKUP = fs.existsSync(path.join(__dirname,"subscribers.json")) ? fs.readFileSync(path.join(__dirname,"subscribers.json"),"utf8") : null;
+// Never share persistence with the live gateway. The smoke server creates all
+// order/subscription/license state below this disposable directory.
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-sponsor-"));
 const server = spawn(process.execPath, ["server.mjs"], {
   cwd: __dirname,
-  env: { ...process.env, PORT: String(PORT), DEMO: "1", PUBLIC_BASE_URL: BASE },
+  env: {
+    ...process.env,
+    PORT: String(PORT),
+    DEMO: "1",
+    PUBLIC_BASE_URL: BASE,
+    DATA_DIR: TEST_DATA_DIR,
+  },
   stdio: ["ignore", "pipe", "pipe"],
 });
 server.stderr.on("data", (d) => process.stderr.write(`[sponsor] ${d}`));
@@ -86,7 +89,7 @@ try {
 
   // license activation: machine binding + limit (LICENSE_MAX_MACHINES default 3)
   const crypto = await import("node:crypto");
-  fs.writeFileSync(path.join(__dirname, "subscribers.json"),
+  fs.writeFileSync(path.join(TEST_DATA_DIR, "subscribers.json"),
     JSON.stringify({ "LH": { handle: "LH", expiresAt: new Date(Date.now() + 864e5).toISOString() } }));
   const act = (h) => fetch(BASE + "/api/activate", {
     method: "POST", headers: { "content-type": "application/json" },
@@ -100,22 +103,13 @@ try {
   check("activation 1-3 accepted", r1.ok && r2.ok && r3.ok);
   const r4body = await r4.json();
   check("4th machine rejected (machine_limit)", r4.status === 403 && r4body.code === "machine_limit");
-  fs.rmSync(path.join(__dirname, "subscribers.json"), { force: true });
+  fs.rmSync(path.join(TEST_DATA_DIR, "subscribers.json"), { force: true });
 } catch (err) {
   failures++;
   console.log("FAIL - unexpected error:", err.message);
 } finally {
-  // 恢复原始订阅文件，但保留运行期间真实授予的订阅（去掉测试句柄）
-  const SUBS_PATH = path.join(__dirname, "subscribers.json");
-  let finalSubs = SUBS_BACKUP !== null ? JSON.parse(SUBS_BACKUP) : {};
-  try {
-    const during = JSON.parse(fs.readFileSync(SUBS_PATH, "utf8"));
-    for (const [k, v] of Object.entries(during)) {
-      if (!["smoke-test", "manual-test", "limit-test", "LH"].includes(k)) finalSubs[k] = v;
-    }
-  } catch {}
-  fs.writeFileSync(SUBS_PATH, JSON.stringify(finalSubs, null, 2) + "\n");
   server.kill();
+  fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true });
 }
 
 process.exit(failures ? 1 : 0);

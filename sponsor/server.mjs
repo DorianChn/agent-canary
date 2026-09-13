@@ -109,8 +109,12 @@ const PLAN = {
 };
 
 // ---------- order store ----------
-const ORDERS_FILE = path.join(__dirname, "orders.json");
-const SUBS_FILE = path.join(__dirname, "subscribers.json");
+// Tests can point persistence at an isolated temporary directory. Production
+// keeps the historical sponsor/ location when DATA_DIR is not set.
+const DATA_DIR = path.resolve(process.env.DATA_DIR || __dirname);
+fs.mkdirSync(DATA_DIR, { recursive: true });
+const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
+const SUBS_FILE = path.join(DATA_DIR, "subscribers.json");
 function readJson(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -174,8 +178,8 @@ function loadSubs() {
 // ---------- Personal Edition license signing (Ed25519) ----------
 // license-keys.json holds the PRIVATE signing key — generated on first run,
 // never committed. The matching public key is baked into the agent-canary CLI.
-const KEYS_FILE = path.join(__dirname, "license-keys.json");
-const ACTIVATIONS_FILE = path.join(__dirname, "activations.json");
+const KEYS_FILE = path.join(DATA_DIR, "license-keys.json");
+const ACTIVATIONS_FILE = path.join(DATA_DIR, "activations.json");
 const MAX_MACHINES = Number(process.env.LICENSE_MAX_MACHINES || 3);
 const LICENSE_TTL_DAYS = Number(process.env.LICENSE_TTL_DAYS || 30);
 
