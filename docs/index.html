@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>agent-canary — Zero-false-positive tripwires for AI agents</title>
 <meta name="description" content="Know instantly when your AI agent has been hijacked by a prompt injection. Inert decoy MCP tools + canary tokens. Zero false positives, by construction.">
+<link rel="canonical" href="https://dorianchn.github.io/agent-canary/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="agent-canary — Tripwires for AI agents">
+<meta property="og:description" content="Detect prompt-injected AI agents with inert decoy MCP tools and traceable canary tokens.">
+<meta property="og:url" content="https://dorianchn.github.io/agent-canary/">
+<meta property="og:image" content="https://dorianchn.github.io/agent-canary/demo.gif">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="agent-canary — Tripwires for AI agents">
+<meta name="twitter:description" content="Detect prompt-injected AI agents with inert decoy MCP tools and traceable canary tokens.">
 <style>
   :root { --bg:#0d1117; --panel:#161b22; --fg:#c9d1d9; --dim:#8b949e; --yellow:#ffd338; --green:#3fb950; --red:#f85149; }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -80,9 +89,10 @@
 </section>
 
 <section class="howto"><div class="wrap">
-  <h2>One command to arm</h2>
+  <h2>Arm from source today</h2>
   <p class="center">Works with Claude Code, Cursor, Cline, Windsurf — any MCP client. The token scanner works with any agent.</p>
-<pre class="term"><span class="c">$</span> npm install -g agent-canary
+<pre class="term"><span class="c">$</span> git clone https://github.com/DorianChn/agent-canary
+<span class="c">$</span> cd agent-canary &amp;&amp; npm install &amp;&amp; npm run build &amp;&amp; npm link
 <span class="c">$</span> agent-canary tokens plant .env.canary --label prod
 <span class="g">[ok]</span> 3 canary tokens planted in .env.canary
 <span class="c">$</span> agent-canary install claude
