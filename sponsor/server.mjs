@@ -442,7 +442,9 @@ async function createVmqOrder(order) {
     throw new Error(`Vmq API: ${JSON.stringify(j).slice(0, 200)}`);
   }
   // pay.html 会展示匹配好金额尾数的个人收款码，是给付款人的正确落地页
-  return `${VMQ.url}/payPage/pay.html?orderId=${j.data.orderId}`;
+  // 付款人通常在公网——支付页走公网地址（VMQ_PUBLIC_URL），本机回调仍走内网
+  const payBase = (process.env.VMQ_PUBLIC_URL || VMQ.url).replace(/\/$/, "");
+  return `${payBase}/payPage/pay.html?orderId=${j.data.orderId}`;
 }
 
 // ---------- payment creation dispatch ----------
