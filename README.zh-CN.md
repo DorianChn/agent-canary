@@ -117,13 +117,6 @@ agent 眼里这些都是管理员级工具，但它们什么都不做。
 
 `agent-canary --help` 看详情。
 
----
-
-## 🔗 同系列项目
-
-- [traceplay](https://github.com/DorianChn/traceplay) — Agent 轨迹录制回放，离线零 token 测试
-- [agent-gate](https://github.com/DorianChn/agent-gate) — 工具调用策略网关：最小权限 + 审计
-- [reposieve](https://github.com/DorianChn/reposieve) — 隐私优先的仓库上下文打包
 ## 许可证
 
 MIT

@@ -423,6 +423,19 @@ function createEpayOrder(order) {
 function vmqMd5(s) {
   return crypto.createHash("md5").update(s, "utf8").digest("hex");
 }
+// 每次下单实时读取 .env 中的 VMQ_PUBLIC_URL（隧道域名轮换后由守护进程更新此文件）
+function currentVmqPublicUrl() {
+  try {
+    const env = fs.readFileSync(path.join(__dirname, ".env"), "utf8");
+    const m = env.match(/^VMQ_PUBLIC_URL=(.+)$/m);
+    if (m) {
+      const v = m[1].trim().replace(/^["']|["']$/g, "");
+      if (v && v !== "null") return v.replace(/\/$/, "");
+    }
+  } catch {}
+  return null;
+}
+
 async function createVmqOrder(order) {
   const param = order.id; // 原样随异步通知返回，便于对账
   const price = order.amount.toFixed(2);
@@ -444,8 +457,9 @@ async function createVmqOrder(order) {
     throw new Error(`Vmq API: ${JSON.stringify(j).slice(0, 200)}`);
   }
   // pay.html 会展示匹配好金额尾数的个人收款码，是给付款人的正确落地页
-  // 付款人通常在公网——支付页走公网地址（VMQ_PUBLIC_URL），本机回调仍走内网
-  const payBase = (process.env.VMQ_PUBLIC_URL || VMQ.url).replace(/\/$/, "");
+  // 付款人通常在公网——支付页走公网地址。隧道域名会轮换，所以每次下单都
+  // 实时读 .env 里的最新值（守护进程更新文件即可生效，无需重启网关）
+  const payBase = (currentVmqPublicUrl() ?? process.env.VMQ_PUBLIC_URL ?? VMQ.url).replace(/\/$/, "");
   return `${payBase}/payPage/pay.html?orderId=${j.data.orderId}`;
 }
 

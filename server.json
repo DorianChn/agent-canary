@@ -2,5 +2,5 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "io.github.DorianChn/agent-canary",
   "description": "Zero-false-positive tripwires for AI agents — decoy tools + canary tokens catch prompt injection.",
-  "version": "0.7.1"
+  "version": "0.8.0"
 }

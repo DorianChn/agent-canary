@@ -1,5 +1,4 @@
 # agent-canary
-![CI](https://github.com/DorianChn/agent-canary/actions/workflows/ci.yml/badge.svg)
 
 Tripwires for AI coding agents. It plants decoy MCP tools and canary tokens in
 your environment. When your agent touches one, it was prompt-injected, and you
@@ -140,15 +139,6 @@ casual copying; it is not DRM.
 
 Run `agent-canary --help` for details.
 
----
-
-## More in this suite
-
-AI agent security toolkit by DorianChn:
-
-- [traceplay](https://github.com/DorianChn/traceplay) — record & replay agent trajectories in CI — zero tokens
-- [agent-gate](https://github.com/DorianChn/agent-gate) — tool-call policy gateway: least privilege, short-lived credentials, audit
-- [reposieve](https://github.com/DorianChn/reposieve) — privacy-first repository context packs for coding agents
 ## License
 
 MIT

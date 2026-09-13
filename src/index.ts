@@ -16,6 +16,7 @@ import { renderDashboard } from "./dashboard.js";
 import { exportCef, exportCsv, exportJson } from "./export.js";
 import { activate, ensureLicensedAsync, licenseServer, UPSELL, cachedLicense } from "./license.js";
 import { DECOY_TOOLS } from "./decoys.js";
+import http from "node:http";
 
 const program = new Command();
 program
@@ -387,6 +388,59 @@ program
     console.log(`  事件        ${events.length} 条（${real} 条真实告警）`);
     console.log(`  许可服务器  ${licenseServer()}`);
     console.log(`  事件日志    ${cfg.eventsFile}`);
+  });
+
+program
+  .command("doctor")
+  .description("Diagnose installation, license and payment-stack health")
+  .action(async () => {
+    const cfg = loadConfig();
+    const lic = cachedLicense();
+    const tokens = loadTokens();
+    const events = readEvents(undefined, 1_000_000);
+    const ok = (s: string) => console.log("  ✓ " + s);
+    const bad = (s: string) => console.log("  ✗ " + s);
+    const info = (s: string) => console.log("  · " + s);
+
+    console.log(`agent-canary doctor (v${VERSION})`);
+    console.log("  环境");
+    if (lic) ok(`授权：个人版 Personal，有效期至 ${lic.expiresAt.slice(0, 10)}`);
+    else info("授权：免费版 Free（eval/dashboard/export/sdk 需个人版）");
+    info(`配置文件：${fs.existsSync(CONFIG_PATH) ? CONFIG_PATH : "未创建（agent-canary init）"}`);
+    info(`诱饵工具：${DECOY_TOOLS.length} 个 · 令牌：${tokens.length} 个（${tokens.filter((t) => t.planted.length).length} 已埋放）`);
+    info(`事件：${events.length} 条 · 日志 ${cfg.eventsFile}`);
+
+    console.log("  许可服务器");
+    const ls = licenseServer();
+    try {
+      const r = await fetch(`${ls}/api/subscription/__probe`, { signal: AbortSignal.timeout(3000) });
+      if (r.status < 500) ok(`${ls} 可达 (HTTP ${r.status})`);
+      else bad(`${ls} 异常 (HTTP ${r.status})`);
+    } catch {
+      bad(`${ls} 不可达（本地收款场景可忽略）`);
+    }
+
+    console.log("  收款服务栈（本机）");
+    const probes: Array<[number, string]> = [
+      [8890, "V免签"],
+      [8790, "赞助网关"],
+      [8793, "路由器"],
+    ];
+    for (const [port, name] of probes) {
+      const res = await new Promise<string>((resolve) => {
+        const rq = http.get({ host: "127.0.0.1", port, path: "/", timeout: 2500 }, (r) => {
+          r.resume();
+          resolve(`✓ 运行中 (HTTP ${r.statusCode})`);
+        });
+        rq.on("timeout", () => {
+          rq.destroy();
+          resolve("✗ 无响应");
+        });
+        rq.on("error", () => resolve("✗ 未运行"));
+      });
+      console.log(`  ${name} (:${port})  ${res}`);
+    }
+    console.log("\n提示：收款服务栈由 vmq-stack\\public-link.mjs 守护进程管理（启动收款系统.cmd）");
   });
 
 program.parseAsync(process.argv).catch((err: unknown) => {
