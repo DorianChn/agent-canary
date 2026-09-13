@@ -14,7 +14,8 @@ import { anthropicProvider, openaiCompatibleProvider } from "./eval/providers.js
 import { renderMarkdownReport, runEval } from "./eval/runner.js";
 import { renderDashboard } from "./dashboard.js";
 import { exportCef, exportCsv, exportJson } from "./export.js";
-import { activate, ensureLicensedAsync, licenseServer, UPSELL } from "./license.js";
+import { activate, ensureLicensedAsync, licenseServer, UPSELL, cachedLicense } from "./license.js";
+import { DECOY_TOOLS } from "./decoys.js";
 
 const program = new Command();
 program
@@ -368,6 +369,24 @@ program
       console.error(UPSELL);
       process.exit(1);
     }
+  });
+
+program
+  .command("status")
+  .description("Show edition, license, decoy and event summary")
+  .action(() => {
+    const cfg = loadConfig();
+    const lic = cachedLicense();
+    const tokens = loadTokens();
+    const events = readEvents(undefined, 1_000_000);
+    const real = events.filter((e) => e.kind !== "test").length;
+    console.log(`agent-canary v${VERSION}`);
+    console.log(`  版本        ${lic ? `个人版 Personal（有效期至 ${lic.expiresAt.slice(0, 10)}）` : "免费版 Free"}`);
+    console.log(`  诱饵工具    ${DECOY_TOOLS.length} 个已注册`);
+    console.log(`  金丝雀令牌  ${tokens.length} 个（${tokens.filter((t) => t.planted.length).length} 个已埋放）`);
+    console.log(`  事件        ${events.length} 条（${real} 条真实告警）`);
+    console.log(`  许可服务器  ${licenseServer()}`);
+    console.log(`  事件日志    ${cfg.eventsFile}`);
   });
 
 program.parseAsync(process.argv).catch((err: unknown) => {

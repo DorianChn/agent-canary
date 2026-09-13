@@ -1,6 +1,6 @@
 {
   "name": "agent-canary",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Zero-false-positive tripwires for AI agents: decoy MCP tools plus leak-tracing canary tokens. Know instantly when your agent is compromised.",
   "license": "MIT",
   "author": "DorianChn",

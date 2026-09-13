@@ -44,12 +44,12 @@ const { readEvents } = await import("../src/alerts.js");
 
 test("decoyToolDefs emits native schemas for both formats", () => {
   const openai = sdk.decoyToolDefs("openai");
-  assert.equal(openai.length, 8);
+  assert.ok(openai.length >= 12);
   assert.equal(openai[0].type, "function");
   assert.ok("parameters" in openai[0].function);
 
   const anthropic = sdk.decoyToolDefs("anthropic");
-  assert.equal(anthropic.length, 8);
+  assert.ok(anthropic.length >= 12);
   assert.ok("input_schema" in anthropic[0]);
   assert.equal(anthropic[0].name, openai[0].function.name);
 });

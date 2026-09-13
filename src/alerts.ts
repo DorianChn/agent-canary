@@ -16,9 +16,21 @@ export interface CanaryEvent {
   note?: string;
 }
 
+const MAX_EVENT_BYTES = 5 * 1024 * 1024; // ~5 MB, keeps roughly the last few thousand events
+const KEEP_LINES = 1500;
+
 export function logEvent(ev: CanaryEvent, eventsFile?: string): void {
   const file = eventsFile ?? loadConfig().eventsFile;
   fs.mkdirSync(path.dirname(file), { recursive: true });
+  // retention: rotate when the audit log grows past the cap (keep recent lines)
+  try {
+    if (fs.existsSync(file) && fs.statSync(file).size > MAX_EVENT_BYTES) {
+      const lines = fs.readFileSync(file, "utf8").trim().split("\n");
+      fs.writeFileSync(file, lines.slice(-KEEP_LINES).join("\n") + "\n");
+    }
+  } catch {
+    /* rotation is best-effort */
+  }
   fs.appendFileSync(file, JSON.stringify(ev) + "\n");
 }
 
