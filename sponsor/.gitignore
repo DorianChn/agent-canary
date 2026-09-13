@@ -2,4 +2,6 @@
 orders.json
 subscribers.json
 qr/
+license-keys.json
+activations.json
 node_modules/

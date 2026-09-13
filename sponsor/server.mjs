@@ -160,6 +160,54 @@ function markPaid(id, transactionId) {
 function loadSubs() {
   return readJson(SUBS_FILE, {});
 }
+
+// ---------- Personal Edition license signing (Ed25519) ----------
+// license-keys.json holds the PRIVATE signing key — generated on first run,
+// never committed. The matching public key is baked into the agent-canary CLI.
+const KEYS_FILE = path.join(__dirname, "license-keys.json");
+const ACTIVATIONS_FILE = path.join(__dirname, "activations.json");
+const MAX_MACHINES = Number(process.env.LICENSE_MAX_MACHINES || 3);
+const LICENSE_TTL_DAYS = Number(process.env.LICENSE_TTL_DAYS || 30);
+
+function ensureLicenseKeys() {
+  try {
+    return readJson(KEYS_FILE, null) ?? generateKeys();
+  } catch {
+    return generateKeys();
+  }
+  function generateKeys() {
+    const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
+    const kp = {
+      publicKey: publicKey.export({ type: "spki", format: "pem" }).toString(),
+      privateKey: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+    };
+    writeJson(KEYS_FILE, kp);
+    try { fs.chmodSync(KEYS_FILE, 0o600); } catch {}
+    console.log("[sponsor] generated license signing keypair → license-keys.json (keep it private, back it up)");
+    return kp;
+  }
+}
+const LICENSE_KEYS = ensureLicenseKeys();
+
+function b64u(buf) {
+  return Buffer.from(buf).toString("base64url");
+}
+function signLicensePayload(payloadObj) {
+  const payload = b64u(JSON.stringify(payloadObj));
+  const sig = b64u(crypto.sign(null, Buffer.from(payload), crypto.createPrivateKey(LICENSE_KEYS.privateKey)));
+  return `${payload}.${sig}`;
+}
+
+// activation registry: handle → { machines: { machineHash: lastSeenMs } }
+const rateMap = new Map();
+function rateLimited(ip) {
+  const now = Date.now();
+  const arr = (rateMap.get(ip) ?? []).filter((t) => now - t < 600_000);
+  arr.push(now);
+  rateMap.set(ip, arr);
+  return arr.length > 10;
+}
+
 function extendSubscription(handle, orderId) {
   const subs = loadSubs();
   const now = Date.now();
@@ -575,6 +623,37 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
+    // ---- Personal Edition activation (signed license + machine binding) ----
+    if (req.method === "POST" && url.pathname === "/api/activate") {
+      const ip = req.socket.remoteAddress ?? "?";
+      if (rateLimited(ip)) return send(res, 429, JSON.stringify({ ok: false, error: "too many attempts" }), "application/json");
+      const body = JSON.parse((await readBody(req)) || "{}");
+      const handle = String(body.handle || "").trim().slice(0, 64);
+      const machineHash = String(body.machineHash || "").trim();
+      if (!handle || !/^[0-9a-f]{64}$/.test(machineHash)) {
+        return send(res, 400, JSON.stringify({ ok: false, error: "invalid handle or machineHash" }), "application/json");
+      }
+      const sub = loadSubs()[handle];
+      if (!sub || new Date(sub.expiresAt) <= new Date()) {
+        return send(res, 403, JSON.stringify({ ok: false, error: "no active subscription for this handle" }), "application/json");
+      }
+      const acts = readJson(ACTIVATIONS_FILE, {});
+      const rec = acts[handle] ?? { machines: {} };
+      const MONTH = 45 * 864e5;
+      const activeCount = Object.entries(rec.machines ?? {}).filter(([, t]) => Date.now() - t < MONTH).length;
+      if (!rec.machines[machineHash] && activeCount >= MAX_MACHINES) {
+        writeJson(ACTIVATIONS_FILE, { ...acts, [handle]: rec });
+        return send(res, 403, JSON.stringify({ ok: false, error: `machine limit reached (${MAX_MACHINES})`, code: "machine_limit" }), "application/json");
+      }
+      rec.machines[machineHash] = Date.now();
+      acts[handle] = rec;
+      writeJson(ACTIVATIONS_FILE, acts);
+      const expiresAt = new Date(Math.min(new Date(sub.expiresAt).getTime(), Date.now() + LICENSE_TTL_DAYS * 864e5)).toISOString();
+      const license = signLicensePayload({ handle, machineHash, expiresAt, iat: Date.now() });
+      console.log(`[sponsor] activated "${handle}" machine ${machineHash.slice(0, 12)}… until ${expiresAt}`);
+      return send(res, 200, JSON.stringify({ ok: true, license, revalidateAfter: Date.now() + 3 * 864e5 }), "application/json");
+    }
+
     // ---- demo-mode simulated gateway ----
     if (DEMO && req.method === "GET" && url.pathname.startsWith("/demo/pay/")) {
       const o = orders[url.pathname.split("/")[3]];
@@ -777,6 +856,10 @@ document.getElementById("handle").addEventListener("change", async () => {
 server.listen(PORT, () => {
   console.log(`[sponsor] listening on ${PUBLIC_BASE}`);
   console.log(`[sponsor] mode: ${DEMO ? "DEMO (simulated payments)" : "LIVE"}`);
-  console.log(`[sponsor] personal edition: $${PLAN.personal.usd}/mo = ¥${PLAN.personal.cny}/mo`);
+  console.log(`[sponsor] personal edition: $${PLAN.personal.usd}/mo = ¥${PLAN.personal.cny}/mo · license TTL ${LICENSE_TTL_DAYS}d · max ${MAX_MACHINES} machines`);
+  if (VMQ_READY && (VMQ.key === "admin" || VMQ.key.length < 16)) {
+    console.warn("[sponsor] ⚠ VMQ 通讯密钥过弱（默认值或短于 16 位）——伪造回调可以绕过付费校验！");
+    console.warn("[sponsor] ⚠ 请在 vmq 后台更换强密钥，并同步更新 sponsor/.env 的 VMQ_KEY");
+  }
   if (!DEMO) console.log(`[sponsor] wechat ready=${WECHAT_READY} alipay ready=${ALIPAY_READY}`);
 });

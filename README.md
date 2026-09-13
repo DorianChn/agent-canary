@@ -188,7 +188,7 @@ The core protection stays free forever — that's the deal. Buy a Personal subsc
 agent-canary activate --handle <your GitHub username or email>
 ```
 
-Activation checks your subscription once and caches it locally with offline grace until expiry.
+How licensing works: the sponsor gateway signs a **30-day Ed25519-signed license bound to your machine** (sha256 of hostname/platform/arch/MACs — up to 3 machines per subscription). Activation checks your subscription once and caches the signed license with offline grace; re-activate (same one command) when it expires. The license file is signature-verified on every load — editing `expiresAt` in it invalidates the signature, and system-clock rollback is detected via a high-watermark.
 
 ## Support this project
 

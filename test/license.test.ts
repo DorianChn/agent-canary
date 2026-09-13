@@ -4,77 +4,135 @@ import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import crypto from "node:crypto";
 
 process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-lic-"));
 
-// mock license server: paid-user → active, free-user → inactive
+// test keypair: the mock gateway signs with this; the CLI trusts its public key
+const TEST_KEYS = crypto.generateKeyPairSync("ed25519");
+const TEST_PUB_PEM = TEST_KEYS.publicKey.export({ type: "spki", format: "pem" }).toString();
+const WRONG_KEYS = crypto.generateKeyPairSync("ed25519");
+
+const { __setTrustedPublicKeyForTesting } = await import("../src/license.js");
+__setTrustedPublicKeyForTesting(TEST_PUB_PEM);
+
+// mock gateway: POST /api/activate
+//   handle "paid-user"   → sign ok
+//   handle "expired-user"→ sign with past expiry
+//   handle "no-sub"      → 403 no subscription
+//   handle "other-machine" → sign with a DIFFERENT machineHash (mismatch)
+//   signWith: "wrong"    → sign with the wrong keypair
+let signWith: "test" | "wrong" = "test";
+let forcedExpiry: string | null = null;
+let forceMachineHash: string | null = null;
+
 const server = http.createServer((q, s) => {
-  const handle = decodeURIComponent(new URL(q.url ?? "/", "http://x").pathname.split("/").pop() ?? "");
-  const body =
-    handle === "paid-user"
-      ? { active: true, expiresAt: new Date(Date.now() + 864e5).toISOString() }
-      : { active: false };
-  s.end(JSON.stringify(body));
+  let body = "";
+  q.on("data", (c) => (body += c));
+  q.on("end", () => {
+    const req = JSON.parse(body || "{}");
+    const handle = String(req.handle ?? "");
+    if (handle === "no-sub") {
+      s.end(JSON.stringify({ ok: false, error: "no active subscription for this handle" }));
+      return;
+    }
+    const keys = signWith === "wrong" ? WRONG_KEYS.privateKey : TEST_KEYS.privateKey;
+    const payload = Buffer.from(
+      JSON.stringify({
+        handle,
+        machineHash: forceMachineHash ?? String(req.machineHash ?? ""),
+        expiresAt: forcedExpiry ?? new Date(Date.now() + 30 * 864e5).toISOString(),
+        iat: Date.now(),
+      })
+    ).toString("base64url");
+    const sig = Buffer.from(crypto.sign(null, Buffer.from(payload), keys)).toString("base64url");
+    s.end(JSON.stringify({ ok: true, license: `${payload}.${sig}` }));
+  });
 });
 await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
-server.unref(); // don't hold the test process open
+server.unref();
 const licPort = (server.address() as { port: number }).port;
 process.env.AGENT_CANARY_LICENSE_SERVER = `http://127.0.0.1:${licPort}`;
 
 const { activate, cachedLicense, ensureLicensed, LicenseError, UPSELL } = await import("../src/license.js");
 const sdk = await import("../src/sdk.js");
 
-test("activate with subscribed handle caches license", async () => {
+test("activate with valid gateway signature → licensed", async () => {
+  signWith = "test";
   const r = await activate("paid-user");
-  assert.equal(r.ok, true);
+  assert.equal(r.ok, true, r.message);
   assert.ok(r.expiresAt);
-  assert.ok(cachedLicense(), "license cached after activation");
+  assert.ok(cachedLicense());
+  assert.doesNotThrow(() => ensureLicensed());
+  const guard = sdk.createTokenGuard(); // gated primitive now works
+  assert.ok(guard);
 });
 
-test("activate without subscription fails and clears cache", async () => {
-  const r = await activate("free-user");
+test("license signed by a wrong key is rejected", async () => {
+  fs.rmSync(path.join(process.env.AGENT_CANARY_HOME!, "license.json"), { force: true }); // start unlicensed
+  signWith = "wrong";
+  const r = await activate("paid-user");
   assert.equal(r.ok, false);
-  assert.match(r.message ?? "", /没有生效中的个人版订阅/);
+  assert.match(r.message ?? "", /签名无效/);
   assert.equal(cachedLicense(), null);
 });
 
-test("gated SDK primitives throw LicenseError when unlicensed", async () => {
-  assert.throws(() => sdk.createTokenGuard(), LicenseError);
-  await assert.rejects(() => sdk.runDecoy("canary_transfer_funds", {}), LicenseError);
-  assert.throws(() => sdk.scanCanary("anything"), LicenseError);
-  assert.match((() => { try { ensureLicensed(); return ""; } catch (e) { return (e as Error).message; } })(), /个人版/);
-  assert.ok(UPSELL.includes("activate"));
+test("license bound to a different machine is rejected", async () => {
+  fs.rmSync(path.join(process.env.AGENT_CANARY_HOME!, "license.json"), { force: true });
+  signWith = "test";
+  forceMachineHash = "a".repeat(64);
+  const r = await activate("paid-user");
+  assert.equal(r.ok, false);
+  assert.match(r.message ?? "", /签名无效/);
+  assert.equal(cachedLicense(), null);
+  forceMachineHash = null;
 });
 
-test("sdk primitives work after activation", async () => {
-  await activate("paid-user");
-  const guard = sdk.createTokenGuard(); // must not throw now
-  assert.ok(guard);
-  const res = await sdk.runDecoy("canary_transfer_funds", { from_account: "1", to_account: "2", amount: 1 });
-  assert.match(res.content[0].text, /cnry_/);
+test("expired license token is rejected", async () => {
+  fs.rmSync(path.join(process.env.AGENT_CANARY_HOME!, "license.json"), { force: true });
+  forcedExpiry = new Date(Date.now() - 864e5).toISOString();
+  const r = await activate("paid-user");
+  assert.equal(r.ok, false);
+  assert.equal(cachedLicense(), null);
+  forcedExpiry = null;
 });
 
-test("offline grace: unreachable server + valid cache still activates", async () => {
-  const cached = cachedLicense();
-  assert.ok(cached);
+test("handle without subscription is refused", async () => {
+  fs.rmSync(path.join(process.env.AGENT_CANARY_HOME!, "license.json"), { force: true });
+  const r = await activate("no-sub");
+  assert.equal(r.ok, false);
+  assert.match(r.message ?? "", /no active subscription/);
+  assert.equal(cachedLicense(), null);
+});
+
+test("tampered cache file is rejected on load", async () => {
+  signWith = "test";
+  assert.equal((await activate("paid-user")).ok, true);
+  // tamper: swap the signature
+  const licFile = path.join(process.env.AGENT_CANARY_HOME!, "license.json");
+  const doc = JSON.parse(fs.readFileSync(licFile, "utf8"));
+  doc.license = doc.license.replace(/.$/, doc.license.endsWith("A") ? "B" : "A");
+  fs.writeFileSync(licFile, JSON.stringify(doc));
+  assert.equal(cachedLicense(), null);
+  await assert.rejects(() => Promise.resolve(sdk.runDecoy("canary_transfer_funds", {})), LicenseError);
+  assert.match(UPSELL, /activate/);
+});
+
+test("clock rollback makes the cache untrusted", async () => {
+  assert.equal((await activate("paid-user")).ok, true);
+  assert.ok(cachedLicense());
+  const clockFile = path.join(process.env.AGENT_CANARY_HOME!, "clock.json");
+  fs.writeFileSync(clockFile, JSON.stringify({ max: Date.now() + 30 * 864e5 })); // "future" watermark
+  assert.equal(cachedLicense(), null, "rollback must invalidate the license");
+  fs.rmSync(clockFile);
+  assert.ok(cachedLicense(), "recovers once the clock is sane again");
+});
+
+test("offline grace: unreachable gateway + valid cache still activates", async () => {
+  assert.equal((await activate("paid-user")).ok, true);
   process.env.AGENT_CANARY_LICENSE_SERVER = "http://127.0.0.1:9"; // dead port
   const r = await activate("paid-user");
   assert.equal(r.ok, true);
   assert.equal(r.offline, true);
-});
-
-test("expired cache + dead server refuses", async () => {
-  const licDir = process.env.AGENT_CANARY_HOME!;
-  fs.writeFileSync(
-    path.join(licDir, "license.json"),
-    JSON.stringify({ handle: "paid-user", expiresAt: "2020-01-01T00:00:00Z", server: "http://127.0.0.1:9", checkedAt: "2020-01-01T00:00:00Z" })
-  );
-  const r = await activate("paid-user");
-  assert.equal(r.ok, false);
-  assert.equal(cachedLicense(), null);
-});
-
-test("unlicensed handle + dead server refuses", async () => {
-  const r = await activate("someone-else");
-  assert.equal(r.ok, false);
+  delete process.env.AGENT_CANARY_LICENSE_SERVER;
 });

@@ -15,10 +15,11 @@ const PORT = 8189;
 const BASE = `http://127.0.0.1:${PORT}`;
 
 // 隔离数据文件，避免污染真实 orders/subscribers
-for (const f of ["orders.json", "subscribers.json"]) {
+for (const f of ["orders.json", "subscribers.json", "activations.json"]) {
   try { fs.rmSync(path.join(__dirname, f)); } catch {}
 }
 
+const SUBS_BACKUP = fs.existsSync(path.join(__dirname,"subscribers.json")) ? fs.readFileSync(path.join(__dirname,"subscribers.json"),"utf8") : null;
 const server = spawn(process.execPath, ["server.mjs"], {
   cwd: __dirname,
   env: { ...process.env, PORT: String(PORT), DEMO: "1", PUBLIC_BASE_URL: BASE },
@@ -82,10 +83,30 @@ try {
     body: JSON.stringify({ channel: "alipay", plan: "personal", handle: "manual-test" }),
   })).json();
   check("manual claim accepted", claim.ok === true);
+
+  // license activation: machine binding + limit (LICENSE_MAX_MACHINES default 3)
+  const crypto = await import("node:crypto");
+  fs.writeFileSync(path.join(__dirname, "subscribers.json"),
+    JSON.stringify({ "LH": { handle: "LH", expiresAt: new Date(Date.now() + 864e5).toISOString() } }));
+  const act = (h) => fetch(BASE + "/api/activate", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ handle: "LH", machineHash: crypto.randomBytes(31).toString("hex") + String(h).padStart(2, "0") }),
+  });
+  const r1 = await act(1), r2 = await act(2), r3 = await act(3), r4 = await act(4);
+  if (!(r1.ok && r2.ok && r3.ok)) {
+    console.log("debug r1:", r1.status, await r1.clone().text());
+    console.log("debug r2:", r2.status, await r2.clone().text());
+  }
+  check("activation 1-3 accepted", r1.ok && r2.ok && r3.ok);
+  const r4body = await r4.json();
+  check("4th machine rejected (machine_limit)", r4.status === 403 && r4body.code === "machine_limit");
+  fs.rmSync(path.join(__dirname, "subscribers.json"), { force: true });
 } catch (err) {
   failures++;
   console.log("FAIL - unexpected error:", err.message);
 } finally {
+  if (SUBS_BACKUP !== null) fs.writeFileSync(path.join(__dirname,"subscribers.json"), SUBS_BACKUP);
+  else { try { fs.rmSync(path.join(__dirname,"subscribers.json")); } catch {} }
   server.kill();
 }
 

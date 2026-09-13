@@ -4,13 +4,31 @@ import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import crypto from "node:crypto";
 
 process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-sdk-"));
 
-// gated SDK primitives need an active Personal license — mock license server
-const licServer = http.createServer((q, s) =>
-  s.end(JSON.stringify({ active: true, expiresAt: new Date(Date.now() + 864e5).toISOString() }))
-);
+// gated SDK primitives need an active Personal license — mock gateway signs licenses
+const TEST_KEYS = crypto.generateKeyPairSync("ed25519");
+const { __setTrustedPublicKeyForTesting } = await import("../src/license.js");
+__setTrustedPublicKeyForTesting(TEST_KEYS.publicKey.export({ type: "spki", format: "pem" }).toString());
+const licServer = http.createServer((q, s) => {
+  let body = "";
+  q.on("data", (c) => (body += c));
+  q.on("end", () => {
+    const req = JSON.parse(body || "{}");
+    const payload = Buffer.from(
+      JSON.stringify({
+        handle: String(req.handle ?? ""),
+        machineHash: String(req.machineHash ?? ""),
+        expiresAt: new Date(Date.now() + 864e5).toISOString(),
+        iat: Date.now(),
+      })
+    ).toString("base64url");
+    const sig = Buffer.from(crypto.sign(null, Buffer.from(payload), TEST_KEYS.privateKey)).toString("base64url");
+    s.end(JSON.stringify({ ok: true, license: `${payload}.${sig}` }));
+  });
+});
 await new Promise<void>((r) => licServer.listen(0, "127.0.0.1", r));
 licServer.unref(); // don't hold the test process open
 const licPort = (licServer.address() as { port: number }).port;
