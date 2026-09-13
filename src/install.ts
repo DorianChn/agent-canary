@@ -2,7 +2,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const ENTRY = { command: "npx", args: ["-y", "agent-canary@latest", "serve"] };
+// Windows: npx is a .cmd shim — several MCP clients spawn without a shell and
+// fail with ENOENT unless wrapped in cmd /c (the documented Claude Code pattern).
+const ENTRY =
+  process.platform === "win32"
+    ? { command: "cmd", args: ["/c", "npx", "-y", "agent-canary@latest", "serve"] }
+    : { command: "npx", args: ["-y", "agent-canary@latest", "serve"] };
 
 export type InstallTarget = "claude" | "cursor";
 

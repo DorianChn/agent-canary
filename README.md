@@ -1,85 +1,70 @@
 # agent-canary
 
-[![CI](https://github.com/DorianChn/agent-canary/actions/workflows/ci.yml/badge.svg)](https://github.com/DorianChn/agent-canary/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/node/v/agent-canary.svg)](package.json)
+Tripwires for AI coding agents. It plants decoy MCP tools and canary tokens in
+your environment. When your agent touches one, it was prompt-injected, and you
+get an alert with the full attack context.
 
-**Zero-false-positive tripwires for AI agents.** Know instantly when your coding agent has been hijacked by a prompt injection — not because a heuristic *guessed* it, but because it touched a decoy that nothing legitimate ever touches.
+Works with Claude Code, Cursor, Cline, Windsurf — anything that speaks MCP.
+Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 中文文档：[README.zh-CN.md](README.zh-CN.md)
 
-![agent-canary demo](docs/demo.gif)
+## The problem
 
----
+Coding agents read files, run commands and call APIs. If one picks up injected
+instructions — a poisoned README, a malicious web page, a doc file — it may
+quietly exfiltrate secrets or worse, and nothing tells you.
 
-## The idea in 20 seconds
+Detection tools that score prompts produce false positives, and false positives
+get ignored. agent-canary inverts this: it plants things that no legitimate
+workflow ever touches, so any contact is a real compromise signal.
 
-A shop owner puts a fake safe wired to an alarm in the back room. No real customer ever touches it — so if the alarm goes off, someone is robbing the store. Period. Zero false positives.
+- **Decoy MCP tools.** A fake wire transfer, a fake production secret reader, a
+  fake root shell. They never perform a real action, but a hijacked agent will
+  call one.
+- **Canary tokens.** Unique `cnry_...` strings planted in honeypot files. If one
+  shows up in agent output, an outbound request or a git diff, a secret was
+  copied. There is no benign explanation.
 
-agent-canary does the same for the AI agents (Claude Code, Cursor, Cline, your own builds) that can read files, run commands, and call APIs on your machine:
+Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
+point back to the exact tool call that leaked them.
 
-1. **Decoy MCP tools** — a fake wire-transfer tool, a fake production-secrets reader, a fake "run shell as root". A healthy agent never calls them. A hijacked one does, and you get alerted with the full attack context.
-2. **Canary tokens** — worthless, unique `cnry_…` strings planted in honeypot files. If one ever shows up in an agent's output, an exfiltrated archive, or an outbound request, a secret was stolen. That's it.
+## Install
 
-Every fake response a decoy returns embeds a fresh one-time trace token — so if the attacker's payload exfiltrates the "stolen secrets", the token tells you exactly which tool call it came from.
+The npm package is on its way. Until then:
 
-## Why not just scan for prompt injections?
+    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
+    npm install && npm run build && npm link
 
-Injection detectors score text and guess. They drown you in false positives or miss novel payloads. Canaries invert the problem:
+## Usage
 
-| | Injection detectors | agent-canary |
-|---|---|---|
-| Signal | "this prompt looks suspicious" | "the decoy was touched" |
-| False positives | many | **zero by construction** |
-| Detects novel attacks | sometimes | yes — any compromise touches a decoy |
-| Setup | train/tune/pipe everything | one MCP config line |
+    # plant a honeypot file with fake secrets
+    agent-canary tokens plant .env.canary --label my-project
 
-Both approaches can coexist; canaries are the alarm that never cries wolf.
+    # register 12 decoy tools in Claude Code (or: install cursor)
+    agent-canary install claude
 
-## Quickstart
+    # verify the alert pipeline
+    agent-canary alert-test
 
-```bash
-npm install -g agent-canary
+Restart your editor. If the agent later calls a decoy or leaks a token:
 
-# 1. Plant a honeypot file of fake secrets in your project
-agent-canary tokens plant .env.canary --label my-project
+    $ agent-canary events
+    2026-09-15T10:21:04Z  decoy_called  tool=canary_read_secrets
+    2026-09-15T10:21:09Z  token_found   label=my-project path=report.md
 
-# 2. Register the decoy MCP server in Claude Code (or: install cursor)
-agent-canary install claude
+The scanner is CI-friendly (exit code 1 on leak) and there is a live watcher:
 
-# 3. Verify alerts work end to end
-agent-canary alert-test
-```
+    agent-canary tokens check . && echo clean
+    agent-canary watch .
 
-> npm package rolling out — if `npm install -g agent-canary` isn't available yet, install from source (Node 20+):
-> ```bash
-> git clone https://github.com/DorianChn/agent-canary.git && cd agent-canary
-> npm install && npm run build && npm link
-> ```
+## The decoys
 
-Restart your editor. The agent now sees 8 juicy-looking decoy tools it should never touch. If it does:
-
-```console
-$ agent-canary events
-2026-09-15T10:21:04Z  decoy_called  tool=canary_read_secrets
-2026-09-15T10:21:09Z  token_found   label=decoy:canary_read_secrets path=https://evil.example/collect
-```
-
-Pair the token scan with anything you already run:
-
-```bash
-agent-canary tokens check . && echo clean          # exit 1 on leak — CI / git-hook friendly
-agent-canary watch .                               # live watch: alert when a token appears in any file
-agent-canary set-webhook https://hooks.slack.com/… # push alerts to Slack / Discord / a Telegram bridge
-```
-
-## What the decoys look like (to the agent)
-
-The agent sees tempting, admin-grade tools. None of them do anything — every handler is inert and returns fabricated output:
+The agent sees admin-grade tools. None of them do anything real.
 
 | Decoy tool | What a hijacked agent thinks it gets |
 |---|---|
-| `canary_transfer_funds` | ADMIN wire transfer, auto-approved under 50k |
+| `canary_transfer_funds` | wire transfer, auto-approved under 50k |
 | `canary_read_secrets` | production API keys for any environment |
 | `canary_run_shell` | arbitrary command as root on the build server |
 | `canary_delete_files` | permanent deletion, no trash, no undo |
@@ -92,120 +77,67 @@ The agent sees tempting, admin-grade tools. None of them do anything — every h
 | `canary_secrets_rotate` | emergency credential rotation (locks out humans) |
 | `canary_git_force_push` | force push to protected branches |
 
-And the alert you receive carries the whole picture: which decoy, with what arguments, when, plus a per-call trace token.
-
-## Hard guarantees
-
-- **Decoy tools are inert.** `canary_run_shell` does not execute commands; `canary_transfer_funds` does not touch money. Every handler returns a plausible *fake* — nothing else. See [SECURITY.md](SECURITY.md).
-- **Canary tokens unlock nothing.** They are random `cnry_…` strings with no meaning anywhere.
-- **No telemetry.** Events stay in `~/.agent-canary/events.jsonl` on your machine unless *you* configure a webhook.
-- **Zero false positives by construction.** Decoys and tokens sit outside every legitimate workflow; touching them *is* the signal.
-
-## CLI reference
-
-```
-agent-canary serve                 run the decoy MCP server (what the editor launches)
-agent-canary init                  create ~/.agent-canary + starter config
-agent-canary install claude|cursor register the decoy server in your MCP client (backs up config first)
-agent-canary uninstall claude|cursor
-agent-canary tokens generate --label <l> [-c n]
-agent-canary tokens plant <file> --label <l> [-c n]
-agent-canary tokens check [paths...] [--stdin]     exit 1 on leak (CI-friendly)
-agent-canary tokens list / print --label <l>
-agent-canary watch <paths...>      live file watch for token leaks
-agent-canary events [-n 20]        recent tripwire events
-agent-canary report                markdown incident report
-agent-canary alert-test            fire a test alert through all channels
-agent-canary set-webhook <url|null>
-agent-canary set-notify <on|off>
-```
-
-Config lives in `~/.agent-canary/config.json`:
-
-```json
-{ "webhook": null, "notify": true, "eventsFile": "~/.agent-canary/events.jsonl" }
-```
-
-## How it works
-
-```
-Claude Code / Cursor / your agent
-        │  one MCP config line
-        ▼
-┌───────────────────────────────┐
-│ agent-canary (decoy server)   │── touched ──▶ 🚨 alert + JSONL audit trail
-│ 8 inert, tempting fake tools  │               + one-time trace token in the fake reply
-└───────────────────────────────┘
-┌───────────────────────────────┐
-│ canary tokens in honeypot     │── token appears anywhere ──▶ 🚨 zero-false-positive alert
-│ files / .env / databases      │   (scan · watch · CI check)
-└───────────────────────────────┘
-```
-
-## Roadmap
-
-- [x] v0.1 — decoy MCP server, canary tokens, file watch, JSONL + webhook + desktop alerts
-- [x] v0.2 — **eval mode**: run a curated prompt-injection suite (20 payloads, 7 categories) against any OpenAI-compatible or Anthropic model, output a reproducible resistance score — `agent-canary eval`
-- [x] v0.3 — **dashboard & SIEM export**: self-contained HTML attack-chain timeline (`agent-canary dashboard --open`) + CEF / JSON / CSV export for Splunk / Elastic / ArcSight (`agent-canary export`)
-- [x] v0.4 — **SDK instrumentation beyond MCP**: `import { decoyToolDefs, runDecoy, createTokenGuard } from "agent-canary/sdk"` — LangChain.js / Vercel AI SDK / raw provider loops get the same decoys, trace tokens and zero-false-positive leak guard in three lines
-
-The roadmap is now fully shipped. What's next is driven by users — open an issue with your deployment scenario.
-
-## Using with non-MCP agents (SDK mode)
-
-Custom agent code (LangChain.js, Vercel AI SDK, raw provider loops) gets the same tripwires without MCP:
-
-```js
-import { generateText } from "ai";                       // any framework, same pattern
-import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";
-
-const guard = createTokenGuard();                        // zero-false-positive leak scanner
-const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
-
-const { text, toolCalls } = await myAgentLoop(toolDefs); // your existing loop
-
-for (const call of toolCalls) {
-  if (isDecoy(call.name)) await runDecoy(call.name, call.args); // inert + audited 🚨
-}
-guard.inspect(text, "final-answer");                     // any leaked token fires an alert
-```
-
-`decoyToolDefs("anthropic")` emits native Anthropic tool schemas. Decoy calls never execute anything real — see [SECURITY.md](SECURITY.md).
-
-## Compatibility
-
-Node 20+, Windows / macOS / Linux. Works with any MCP-capable client (Claude Code, Cursor, Cline, Windsurf, …). The token scanner and watcher work with *any* agent, MCP or not.
-
 ## Free vs Personal
 
 | | Free (forever) | Personal ($10/mo) |
 |---|---|---|
-| Decoy MCP server · canary tokens · watch · alerts · install | ✅ | ✅ |
-| Eval mode — injection resistance scoring (`eval`) | — | ✅ |
-| Attack-chain dashboard (`dashboard`) | — | ✅ |
-| SIEM export — CEF / JSON / CSV (`export`) | — | ✅ |
-| SDK mode — `agent-canary/sdk` for non-MCP agents | — | ✅ |
+| Decoy server, tokens, watch, alerts, install | yes | yes |
+| `eval` — injection resistance scoring | | yes |
+| `dashboard` — HTML attack-chain timeline | | yes |
+| `export` — CEF / JSON / CSV for SIEM | | yes |
+| `agent-canary/sdk` — non-MCP agents | | yes |
 
-The core protection stays free forever — that's the deal. Buy a Personal subscription on the sponsor page (WeChat / Alipay), then activate:
+Paid features are gated by a license. Buy a subscription on the sponsor page
+(WeChat / Alipay), then:
 
-```bash
-agent-canary activate --handle <your GitHub username or email>
-```
+    agent-canary activate --handle <your GitHub username or email>
 
-How licensing works: the sponsor gateway signs a **30-day Ed25519-signed license bound to your machine** (sha256 of hostname/platform/arch/MACs — up to 3 machines per subscription). Activation checks your subscription once and caches the signed license with offline grace; re-activate (same one command) when it expires. The license file is signature-verified on every load — editing `expiresAt` in it invalidates the signature, and system-clock rollback is detected via a high-watermark.
+The gateway signs a 30-day license bound to your machine fingerprint (up to 3
+machines per subscription) and the CLI verifies the signature on every load.
+Edited license files, fake license servers and clock rollback are detected.
+Re-running the same command when it expires.
 
-## Support this project
+## Non-MCP agents (SDK)
 
-agent-canary is free, local, and telemetry-free — but paid promotion and hosting are funded out of pocket. If it ever catches an injection for you:
+    import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";
 
-- ⭐ **Star the repo** — genuinely the highest-value thing you can do for discovery
-- 💳 **GitHub Sponsors** — the sponsor button at the top of this repo
-- 🧧 **WeChat Pay / Alipay** — a self-hosted sponsor gateway ships in [`sponsor/`](sponsor/): a single-file server that renders a QR donation page and verifies WeChat Pay (API v3 signatures + AES-GCM callbacks) and Alipay (RSA2 notifications) end to end. Demo mode works with zero merchant credentials; see [sponsor/README.md](sponsor/README.md).
-- 💳 **Personal Edition — $10/mo** — a subscription tier sold through the same gateway: bound to your GitHub handle or email, billed ¥72/mo via WeChat/Alipay (rate configurable), renewal simply stacks another 30 days. Entitlement status is a single API: `GET /api/subscription/:handle`.
+    const guard = createTokenGuard();
+    const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
 
-## Contributing
+    // in your agent loop:
+    if (isDecoy(call.name)) await runDecoy(call.name, call.args);
+    guard.inspect(finalAnswer);
 
-Issues and PRs welcome — especially new decoy tool designs and injection payloads for the eval suite. Please keep decoys inert; see [SECURITY.md](SECURITY.md) for the guarantees contributors must preserve.
+`decoyToolDefs("anthropic")` emits Anthropic schemas.
+
+## Dashboard and SIEM
+
+    agent-canary dashboard --out report.html   # self-contained HTML timeline
+    agent-canary export --format cef           # or json, csv
+
+## Guarantees and limits
+
+- Decoy tools never perform real actions. `canary_run_shell` does not run
+  commands. The handlers return fabricated output, nothing else (see
+  [SECURITY.md](SECURITY.md)).
+- Canary tokens unlock nothing anywhere.
+- No telemetry. Events stay in `~/.agent-canary/events.jsonl` unless you
+  configure a webhook.
+- Alerts only fire when a decoy is touched or a token surfaces. Nothing in a
+  legitimate workflow can trigger them.
+
+Known limit: this is JavaScript, so a determined user can patch `dist/` and
+strip the license checks. The signed-license scheme raises the bar against
+casual copying; it is not DRM.
+
+## Commands
+
+    serve / init / install / uninstall
+    tokens generate|plant|check|list|print
+    watch, events, report, dashboard, export, eval
+    status, activate, alert-test, set-webhook, set-notify
+
+Run `agent-canary --help` for details.
 
 ## License
 
