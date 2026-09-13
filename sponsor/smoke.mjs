@@ -114,8 +114,7 @@ try {
       if (!["smoke-test", "manual-test", "limit-test", "LH"].includes(k)) finalSubs[k] = v;
     }
   } catch {}
-  fs.writeFileSync(SUBS_PATH, JSON.stringify(finalSubs, null, 2) + "
-");
+  fs.writeFileSync(SUBS_PATH, JSON.stringify(finalSubs, null, 2) + "\n");
   server.kill();
 }
 

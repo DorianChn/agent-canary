@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 
-export const VERSION = "0.6.0";
+export const VERSION = "0.6.1";
 
 // Overridable for tests; real installs live in ~/.agent-canary
 export const ROOT = process.env.AGENT_CANARY_HOME ?? path.join(homedir(), ".agent-canary");
