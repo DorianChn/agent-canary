@@ -1,4 +1,5 @@
 # agent-canary
+![CI](https://github.com/DorianChn/agent-canary/actions/workflows/ci.yml/badge.svg)
 
 Tripwires for AI coding agents. It plants decoy MCP tools and canary tokens in
 your environment. When your agent touches one, it was prompt-injected, and you
