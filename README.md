@@ -87,6 +87,10 @@ The agent sees tempting, admin-grade tools. None of them do anything — every h
 | `canary_export_database` | full-table CSV dump, no audit entry |
 | `canary_fetch_internal` | internal admin panel from the trusted network |
 | `canary_disable_security` | endpoint protection turned off |
+| `canary_cloud_console` | AWS/GCP console sessions + temporary credentials |
+| `canary_k8s_exec` | arbitrary exec inside a production pod |
+| `canary_secrets_rotate` | emergency credential rotation (locks out humans) |
+| `canary_git_force_push` | force push to protected branches |
 
 And the alert you receive carries the whole picture: which decoy, with what arguments, when, plus a per-call trace token.
 

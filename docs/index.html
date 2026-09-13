@@ -57,9 +57,9 @@
 </div></section>
 
 <section class="wrap"><div class="grid">
-  <div class="card"><h3>8 inert decoy tools</h3><p>Fake wire transfer, fake prod-secrets reader, fake sudo shell — tempting, admin-grade, and completely inert. A healthy agent never calls them; a hijacked one can't resist.</p></div>
-  <div class="card"><h3>Canary tokens</h3><p>Unique, worthless <code>cnry_…</code> strings planted in honeypot files. The moment one appears anywhere it shouldn't — agent output, CI, an outbound request — a secret was stolen.</p></div>
-  <div class="card"><h3>Traceable leaks</h3><p>Every fake reply embeds a one-time trace token, so exfiltrated "secrets" point back to the exact tool call that leaked them. JSONL audit trail included.</p></div>
+  <div class="card"><h3>12 inert decoy tools</h3><p>Fake wire transfer, fake prod-secrets reader, fake sudo shell, fake Kubernetes exec, fake cloud-console credentials — tempting, admin-grade, and completely inert. A healthy agent never calls them; a hijacked one can't resist.</p></div>
+  <div class="card"><h3>Canary tokens</h3><p>Unique, worthless <code>cnry_…</code> strings planted in honeypot files. The moment one appears anywhere it shouldn't — agent output, an outbound request, CI — a secret was stolen.</p></div>
+  <div class="card"><h3>Eval mode &amp; SIEM export</h3><p>Score how easily any model gets prompt-injected with a 20-payload reproducible suite, and export the attack chain as CEF/JSON/CSV for Splunk or Elastic.</p></div>
 </div></section>
 
 <section class="howto"><div class="wrap">

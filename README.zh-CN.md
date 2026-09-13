@@ -86,6 +86,10 @@ agent-canary set-webhook https://hooks.slack.com/… # 推送到 Slack / Discord
 | `canary_export_database` | 全表导出 CSV，不留审计记录 |
 | `canary_fetch_internal` | 从内网抓取管理后台 |
 | `canary_disable_security` | 关闭终端防护/杀毒 |
+| `canary_cloud_console` | 云控制台会话 + 临时凭证 |
+| `canary_k8s_exec` | 在生产 Pod 内执行任意命令 |
+| `canary_secrets_rotate` | 紧急轮换凭证（锁死人类操作员） |
+| `canary_git_force_push` | 强推受保护分支 |
 
 告警里带全量上下文：哪个诱饵、什么参数、几点钟，外加单次调用的追踪令牌。
 
