@@ -77,9 +77,12 @@ agent 眼里这些都是管理员级工具，但它们什么都不做。
 | `export` CEF / JSON / CSV 导出 | | 有 |
 | `agent-canary/sdk` 非 MCP 接入 | | 有 |
 
-付费功能由许可控制。在赞助页（微信/支付宝）订阅后：
+付费功能由赞助网关签发的签名许可控制，GitHub 仓库本身不是订阅数据库。在赞助页（微信/支付宝）订阅后，先配置网关地址再激活：
 
+    agent-canary set-license-server https://pay.example.com
     agent-canary activate --handle <你的GitHub用户名或邮箱>
+
+本地开发默认使用随附网关的 `http://127.0.0.1:8787`。远程部署必须显式设置网关地址，也可以设置环境变量 `AGENT_CANARY_LICENSE_SERVER`。运行 `agent-canary status` 可查看当前版本和许可服务器。
 
 网关签发 30 天许可，绑定设备指纹（每个订阅最多 3 台机器），CLI 每次加载都验签。改许可文件、架假许可服务器、回拨系统时钟都会被识别。到期重跑同一条命令。
 
@@ -115,7 +118,7 @@ agent 眼里这些都是管理员级工具，但它们什么都不做。
     serve / init / install / uninstall
     tokens generate|plant|check|list|print
     watch, events, report, dashboard, export, eval
-    status, activate, alert-test, set-webhook, set-notify
+    status, activate, set-license-server, alert-test, set-webhook, set-notify
 
 `agent-canary --help` 看详情。
 

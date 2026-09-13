@@ -22,7 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import os from "node:os";
-import { ROOT, ensureDirs, loadConfig } from "./config.js";
+import { DEFAULT_LICENSE_SERVER, ROOT, ensureDirs, loadConfig } from "./config.js";
 
 const LICENSE_FILE = path.join(ROOT, "license.json");
 const CLOCK_FILE = path.join(ROOT, "clock.json");
@@ -41,7 +41,8 @@ export function __setTrustedPublicKeyForTesting(pem: string): void {
 export const UPSELL =
   "此功能属于 agent-canary 个人版 Personal（US$10/月）。\n" +
   "  购买：赞助页扫码（README → Support 章节）\n" +
-  "  已购买？激活：agent-canary activate --handle <你的GitHub用户名或邮箱>";
+  "  已购买？先配置：agent-canary set-license-server <许可服务器地址>\n" +
+  "  然后激活：agent-canary activate --handle <你的GitHub用户名或邮箱>";
 
 export class LicenseError extends Error {
   constructor() {
@@ -55,7 +56,7 @@ export function licenseServer(explicit?: string): string {
     explicit ??
     process.env.AGENT_CANARY_LICENSE_SERVER ??
     (loadConfig() as { licenseServer?: string }).licenseServer ??
-    "http://127.0.0.1:8790";
+    DEFAULT_LICENSE_SERVER;
   return raw.replace(/\/$/, "");
 }
 

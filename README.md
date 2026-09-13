@@ -89,10 +89,18 @@ The agent sees admin-grade tools. None of them do anything real.
 | `export` — CEF / JSON / CSV for SIEM | | yes |
 | `agent-canary/sdk` — non-MCP agents | | yes |
 
-Paid features are gated by a license. Buy a subscription on the sponsor page
-(WeChat / Alipay), then:
+Paid features are gated by a signed license from your sponsor gateway. The
+GitHub repository itself is not the entitlement database. After buying a
+subscription on the sponsor page (WeChat / Alipay), point the CLI at the
+gateway and activate:
 
+    agent-canary set-license-server https://pay.example.com
     agent-canary activate --handle <your GitHub username or email>
+
+The default server is `http://127.0.0.1:8787`, matching the bundled sponsor
+gateway for local development. Remote deployments must set the server URL (or
+`AGENT_CANARY_LICENSE_SERVER`) explicitly. `agent-canary status` shows the
+current edition and endpoint.
 
 The gateway signs a 30-day license bound to your machine fingerprint (up to 3
 machines per subscription) and the CLI verifies the signature on every load.
@@ -137,7 +145,7 @@ casual copying; it is not DRM.
     serve / init / install / uninstall
     tokens generate|plant|check|list|print
     watch, events, report, dashboard, export, eval
-    status, activate, alert-test, set-webhook, set-notify
+    status, activate, set-license-server, alert-test, set-webhook, set-notify
 
 Run `agent-canary --help` for details.
 

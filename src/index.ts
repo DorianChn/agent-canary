@@ -3,7 +3,15 @@ import { Command } from "commander";
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { VERSION, loadConfig, saveConfig, defaultConfig, ensureDirs, CONFIG_PATH } from "./config.js";
+import {
+  VERSION,
+  loadConfig,
+  saveConfig,
+  defaultConfig,
+  ensureDirs,
+  CONFIG_PATH,
+  DEFAULT_LICENSE_SERVER,
+} from "./config.js";
 import { serve } from "./server.js";
 import { generateTokens, loadTokens, plantIntoFile, findTokensInText, scanFile } from "./tokens.js";
 import { logEvent, readEvents, fireAlerts, type CanaryEvent } from "./alerts.js";
@@ -48,6 +56,19 @@ Optional:
 
 function isInstallTarget(t: string): t is InstallTarget {
   return t === "claude" || t === "cursor";
+}
+
+function normalizeLicenseServer(raw: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error("许可服务器必须是 http(s) URL");
+  }
+  if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+    throw new Error("许可服务器必须是没有用户名/密码的 http(s) URL");
+  }
+  return raw.replace(/\/+$/, "");
 }
 
 program
@@ -360,8 +381,9 @@ program
   .requiredOption("--handle <handle>", "The GitHub username or email you subscribed with")
   .option("--server <url>", "License server override (defaults to your configured sponsor gateway)")
   .action(async (opts) => {
-    console.log(`Checking subscription at ${licenseServer(opts.server)} …`);
-    const r = await activate(opts.handle, opts.server);
+    const server = opts.server ? normalizeLicenseServer(opts.server) : undefined;
+    console.log(`Checking subscription at ${licenseServer(server)} …`);
+    const r = await activate(opts.handle, server);
     if (r.ok) {
       console.log(`✓ 个人版已激活，有效期至 ${r.expiresAt}${r.offline ? "（使用本地缓存，离线宽限）" : ""}`);
       console.log("已解锁：eval（注入评测）· dashboard（攻击链面板）· export（SIEM 导出）· sdk（SDK 埋点）");
@@ -370,6 +392,24 @@ program
       console.error(UPSELL);
       process.exit(1);
     }
+  });
+
+program
+  .command("set-license-server")
+  .argument("<url|null>", "许可服务器 URL，使用 null 恢复本机默认网关")
+  .description("Persist the sponsor gateway used for Personal Edition activation")
+  .action((raw: string) => {
+    const cfg = loadConfig();
+    if (raw === "null") {
+      cfg.licenseServer = DEFAULT_LICENSE_SERVER;
+      saveConfig(cfg);
+      console.log(`许可服务器已恢复为 ${DEFAULT_LICENSE_SERVER}`);
+      return;
+    }
+    const server = normalizeLicenseServer(raw);
+    cfg.licenseServer = server;
+    saveConfig(cfg);
+    console.log(`许可服务器已设置为 ${server}`);
   });
 
 program
@@ -423,7 +463,6 @@ program
     console.log("  收款服务栈（本机）");
     const probes: Array<[number, string]> = [
       [8890, "V免签"],
-      [8790, "赞助网关"],
       [8793, "路由器"],
     ];
     for (const [port, name] of probes) {

@@ -12,6 +12,11 @@ export const CONFIG_PATH = path.join(ROOT, "config.json");
 export const TOKENS_PATH = path.join(ROOT, "tokens.json");
 export const EVENTS_PATH = path.join(ROOT, "events.jsonl");
 
+// The sponsor gateway listens on 8787 by default. Remote deployments should
+// set AGENT_CANARY_LICENSE_SERVER or persist another value with
+// `agent-canary set-license-server`.
+export const DEFAULT_LICENSE_SERVER = "http://127.0.0.1:8787";
+
 export interface CanaryConfig {
   webhook: string | null;
   notify: boolean;
@@ -21,7 +26,12 @@ export interface CanaryConfig {
 }
 
 export function defaultConfig(): CanaryConfig {
-  return { webhook: null, notify: true, eventsFile: EVENTS_PATH };
+  return {
+    webhook: null,
+    notify: true,
+    eventsFile: EVENTS_PATH,
+    licenseServer: process.env.AGENT_CANARY_LICENSE_SERVER ?? DEFAULT_LICENSE_SERVER,
+  };
 }
 
 export function ensureDirs(): void {
