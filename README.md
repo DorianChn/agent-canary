@@ -79,9 +79,9 @@ The agent sees admin-grade tools. None of them do anything real.
 | `canary_secrets_rotate` | emergency credential rotation (locks out humans) |
 | `canary_git_force_push` | force push to protected branches |
 
-## Free vs Personal
+## Public V1 / Cooperation releases
 
-| | Free (forever) | Personal ($10/mo) |
+| | Public V1 | Cooperation release |
 |---|---|---|
 | Decoy server, tokens, watch, alerts, install | yes | yes |
 | `eval` — injection resistance scoring | | yes |
@@ -89,23 +89,27 @@ The agent sees admin-grade tools. None of them do anything real.
 | `export` — CEF / JSON / CSV for SIEM | | yes |
 | `agent-canary/sdk` — non-MCP agents | | yes |
 
-Paid features are gated by a signed license from your sponsor gateway. The
-GitHub repository itself is not the entitlement database. After buying a
-subscription on the sponsor page (WeChat / Alipay), point the CLI at the
-gateway and activate:
+During the testing phase, only the V1 release line is published publicly. The
+current 0.x bootstrap releases remain free; V2 and later are cooperation
+releases and are not distributed as public downloads. If you need a newer
+version, private integration, or custom support, contact the maintainer via
+GitHub Discussions to discuss cooperation.
+
+## Support this project
+
+V1 is the public testing release and is free to use. Sponsorship supports
+maintenance but does not automatically grant access to unreleased versions.
+If you need V2+, a private integration, or custom support, contact the
+maintainer through [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+to discuss cooperation. Never post receipts, keys, or other private data publicly.
+
+For an approved cooperation build, configure the sponsor gateway before
+activation. The bundled local gateway defaults to `http://127.0.0.1:8787`:
 
     agent-canary set-license-server https://pay.example.com
     agent-canary activate --handle <your GitHub username or email>
 
-The default server is `http://127.0.0.1:8787`, matching the bundled sponsor
-gateway for local development. Remote deployments must set the server URL (or
-`AGENT_CANARY_LICENSE_SERVER`) explicitly. `agent-canary status` shows the
-current edition and endpoint.
-
-The gateway signs a 30-day license bound to your machine fingerprint (up to 3
-machines per subscription) and the CLI verifies the signature on every load.
-Edited license files, fake license servers and clock rollback are detected.
-Re-running the same command when it expires.
+Use `agent-canary set-license-server null` to restore the local default.
 
 ## Non-MCP agents (SDK)
 

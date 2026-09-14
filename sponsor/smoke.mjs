@@ -23,6 +23,7 @@ const server = spawn(process.execPath, ["server.mjs"], {
     ...process.env,
     PORT: String(PORT),
     DEMO: "1",
+    COOPERATION_ORDERS: "1",
     PUBLIC_BASE_URL: BASE,
     DATA_DIR: TEST_DATA_DIR,
   },
@@ -50,23 +51,40 @@ try {
   check("server boots in demo mode", up);
 
   const page = await (await fetch(BASE + "/")).text();
-  check("page renders personal plan card", page.includes("个人版 Personal"));
+  check("page renders cooperation plan card", page.includes("合作授权"));
   check("page renders donation section (demo)", page.includes("一次性赞助"));
 
   const qrRes = await fetch(BASE + "/api/qr?text=hello");
   check("qr endpoint serves png", qrRes.status === 200 && qrRes.headers.get("content-type") === "image/png");
+  check(
+    "payment responses are not cached",
+    qrRes.headers.get("cache-control") === "no-store"
+  );
+  check(
+    "payment responses have a restrictive CSP",
+    (qrRes.headers.get("content-security-policy") || "").includes("frame-ancestors 'none'")
+  );
+  const publicQr = await fetch(BASE + "/qr-image/wechat", { redirect: "manual" });
+  check("unconfigured QR does not fall back to public CDN", publicQr.status === 404);
 
   const order = await (await fetch(BASE + "/api/order", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ channel: "wechat", plan: "personal", handle: "smoke-test" }),
   })).json();
-  check("personal order created", order.ok === undefined && !!order.orderId && order.qr.includes("/demo/pay/"));
+  check("cooperation order created in internal demo", order.ok === undefined && !!order.orderId && order.qr.includes("/demo/pay/"));
 
   const payPage = await fetch(BASE + `/demo/pay/${order.orderId}`);
   check("demo pay page renders", payPage.status === 200);
   await fetch(BASE + `/demo/confirm/${order.orderId}`);
 
+  const xssOrder = await (await fetch(BASE + "/api/order", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ channel: "wechat", plan: "personal", handle: '<img src=x onerror="alert(1)">' }),
+  })).json();
+  const xssPage = await (await fetch(BASE + "/demo/pay/" + xssOrder.orderId)).text();
+  check("demo pay page escapes user handle", xssPage.includes("&lt;img") && !xssPage.includes("<img src=x"));
   const status = await (await fetch(BASE + "/api/order/" + order.orderId)).json();
   check("order auto-confirms in demo", status.status === "paid");
 
@@ -78,7 +96,7 @@ try {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ channel: "wechat", plan: "personal" }),
   });
-  check("personal order without handle rejected", bad.status === 400);
+  check("cooperation order without handle rejected", bad.status === 400);
 
   const claim = await (await fetch(BASE + "/api/manual-claim", {
     method: "POST",

@@ -5,13 +5,10 @@
  * WeChat Pay (Native scan-to-pay, API v3) and Alipay (当面付 precreate) —
  * used to fund paid promotion and hosting.
  *
- * Monetization:
+ * Public release policy:
  *  - one-off donations (presets / custom amount)
- *  - Personal Edition subscription: $10/month (billed in CNY), bound to a
- *    GitHub handle or email. WeChat/Alipay have no auto-debit for this use
- *    case, so a subscription = a 30-day entitlement; paying again extends
- *    from the current expiry (stackable), and GET /api/subscription/:handle
- *    is the single source of truth for "is this person entitled".
+ *  - V1 is the only release line published during testing
+ *  - V2+ cooperation authorization is kept behind explicit maintainer approval
  *
  * Run `npm i && npm start` inside sponsor/. With DEMO=1 (default until you
  * fill .env) the whole flow works end-to-end with simulated payments, so you
@@ -27,6 +24,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import QRCode from "qrcode";
 
@@ -52,6 +50,21 @@ const PORT = Number(process.env.PORT || 8787);
 // 收款系统只服务本机回环：公网流量经隧道/路由器进来，局域网设备无需也不应直接访问
 const HOST = process.env.HOST || "127.0.0.1";
 const PUBLIC_BASE = (process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
+function isLoopbackBase(raw) {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "http:" && ["localhost", "127.0.0.1", "::1", "[::1]"].includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+function isSecureBase(raw) {
+  try {
+    return new URL(raw).protocol === "https:" || isLoopbackBase(raw);
+  } catch {
+    return false;
+  }
+}
 const WECHAT = {
   mchid: process.env.WECHAT_MCHID || "",
   serial: process.env.WECHAT_SERIAL || "",
@@ -97,9 +110,12 @@ const qrFiles = {
 };
 const MANUAL_READY = Boolean(qrFiles.wechat || qrFiles.alipay);
 const DEMO = process.env.DEMO === "1" || (!WECHAT_READY && !ALIPAY_READY && !EPAY_READY && !VMQ_READY && !MANUAL_READY && process.env.DEMO !== "0");
+if (!DEMO && !isSecureBase(PUBLIC_BASE)) {
+  throw new Error("LIVE sponsor gateway requires PUBLIC_BASE_URL to be HTTPS (localhost is allowed only for local development)");
+}
 const PRESETS = [5, 10, 25, 50]; // CNY, one-off donations
 
-// Personal Edition plan: $10/month, billed in CNY (rate configurable).
+// Cooperation authorization plan: terms are agreed with the maintainer.
 const PLAN = {
   personal: {
     usd: Number(process.env.PERSONAL_USD || 10),
@@ -107,11 +123,12 @@ const PLAN = {
     days: 30,
   },
 };
+const COOPERATION_ORDERS = process.env.COOPERATION_ORDERS === "1";
 
 // ---------- order store ----------
 // Tests can point persistence at an isolated temporary directory. Production
-// keeps the historical sponsor/ location when DATA_DIR is not set.
-const DATA_DIR = path.resolve(process.env.DATA_DIR || __dirname);
+// defaults to a private directory outside the source checkout.
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(os.homedir(), ".agent-canary-sponsor"));
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 const SUBS_FILE = path.join(DATA_DIR, "subscribers.json");
@@ -123,7 +140,8 @@ function readJson(file, fallback) {
   }
 }
 function writeJson(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
+  fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n", { mode: 0o600 });
+  try { fs.chmodSync(file, 0o600); } catch {}
 }
 const orders = readJson(ORDERS_FILE, {});
 function saveOrders() {
@@ -175,7 +193,7 @@ function loadSubs() {
   return readJson(SUBS_FILE, {});
 }
 
-// ---------- Personal Edition license signing (Ed25519) ----------
+// ---------- Cooperation authorization signing (Ed25519) ----------
 // license-keys.json holds the PRIVATE signing key — generated on first run,
 // never committed. The matching public key is baked into the agent-canary CLI.
 const KEYS_FILE = path.join(DATA_DIR, "license-keys.json");
@@ -183,12 +201,57 @@ const ACTIVATIONS_FILE = path.join(DATA_DIR, "activations.json");
 const MAX_MACHINES = Number(process.env.LICENSE_MAX_MACHINES || 3);
 const LICENSE_TTL_DAYS = Number(process.env.LICENSE_TTL_DAYS || 30);
 
-function ensureLicenseKeys() {
+const CLI_PUBLIC_KEY =
+  "-----BEGIN PUBLIC KEY-----\n" +
+  "MCowBQYDK2VwAyEA/EuB78D0nLimALPsllVTuvFZtCaOU8CDs2kd03SpdV0=\n" +
+  "-----END PUBLIC KEY-----\n";
+function normalizePem(value) {
+  return String(value || "").replace(/\r/g, "").trim();
+}
+function keyMatchesCli(kp) {
+  if (!kp || typeof kp.privateKey !== "string") return false;
   try {
-    return readJson(KEYS_FILE, null) ?? generateKeys();
+    const derived = crypto
+      .createPublicKey(crypto.createPrivateKey(kp.privateKey))
+      .export({ type: "spki", format: "pem" })
+      .toString();
+    return (
+      normalizePem(derived) === normalizePem(CLI_PUBLIC_KEY) &&
+      (!kp.publicKey || normalizePem(kp.publicKey) === normalizePem(CLI_PUBLIC_KEY))
+    );
   } catch {
-    return generateKeys();
+    return false;
   }
+}
+function ensureLicenseKeys() {
+  const configuredPrivateKey = process.env.LICENSE_PRIVATE_KEY_PATH;
+  if (configuredPrivateKey) {
+    let privateKey;
+    try {
+      privateKey = fs.readFileSync(path.resolve(configuredPrivateKey), "utf8");
+    } catch {
+      throw new Error("LICENSE_PRIVATE_KEY_PATH cannot be read");
+    }
+    const kp = {
+      publicKey: crypto.createPublicKey(privateKey).export({ type: "spki", format: "pem" }).toString(),
+      privateKey,
+    };
+    if (!keyMatchesCli(kp)) {
+      throw new Error("Configured license private key does not match the public key shipped in the CLI");
+    }
+    return kp;
+  }
+  const stored = readJson(KEYS_FILE, null);
+  if (stored) {
+    if (!keyMatchesCli(stored)) {
+      throw new Error("sponsor/license-keys.json does not match the public key shipped in the CLI");
+    }
+    return stored;
+  }
+  if (!DEMO) {
+    throw new Error("LIVE sponsor gateway requires LICENSE_PRIVATE_KEY_PATH or a matching sponsor/license-keys.json");
+  }
+  return generateKeys();
   function generateKeys() {
     const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
     const kp = {
@@ -198,6 +261,7 @@ function ensureLicenseKeys() {
     writeJson(KEYS_FILE, kp);
     try { fs.chmodSync(KEYS_FILE, 0o600); } catch {}
     console.log("[sponsor] generated license signing keypair → license-keys.json (keep it private, back it up)");
+    console.warn("[sponsor] DEMO signing key is temporary and cannot activate a production CLI");
     return kp;
   }
 }
@@ -230,12 +294,21 @@ function isLoopback(ip) {
 function extendSubscription(handle, orderId) {
   const subs = loadSubs();
   const now = Date.now();
-  const current = subs[handle]?.expiresAt ? Date.parse(subs[handle].expiresAt) : 0;
+  const parsedCurrent = subs[handle]?.expiresAt ? Date.parse(subs[handle].expiresAt) : 0;
+  const current = Number.isFinite(parsedCurrent) ? parsedCurrent : 0;
   const expiresAt = new Date(Math.max(now, current) + PLAN.personal.days * 864e5).toISOString();
   subs[handle] = { handle, expiresAt, lastOrderId: orderId, updatedAt: new Date().toISOString() };
   writeJson(SUBS_FILE, subs);
   console.log(`[sponsor] personal edition for "${handle}" active until ${expiresAt}`);
   return expiresAt;
+}
+
+function orderAmountMatches(order, received, unit = "yuan") {
+  const expected = Math.round(Number(order?.amount) * 100);
+  const actual = Number(received);
+  if (!Number.isFinite(expected) || !Number.isFinite(actual)) return false;
+  if (unit === "fen") return Number.isInteger(actual) && actual === expected;
+  return Math.round(actual * 100) === expected;
 }
 
 // ---------- WeChat Pay v3 helpers ----------
@@ -320,7 +393,7 @@ async function createWechatOrder(order) {
   const res = await wechatRequest("POST", "/v3/pay/transactions/native", {
     appid: WECHAT.appid,
     mchid: WECHAT.mchid,
-    description: order.plan === "personal" ? "agent-canary Personal Edition" : "agent-canary sponsorship",
+    description: order.plan === "personal" ? "agent-canary cooperation authorization" : "agent-canary sponsorship",
     out_trade_no: order.outTradeNo,
     notify_url: `${PUBLIC_BASE}/callback/wechat`,
     amount: { total: Math.round(order.amount * 100), currency: "CNY" },
@@ -369,7 +442,7 @@ async function createAlipayOrder(order) {
     biz_content: JSON.stringify({
       out_trade_no: order.outTradeNo,
       total_amount: order.amount.toFixed(2),
-      subject: order.plan === "personal" ? "agent-canary Personal Edition" : "agent-canary sponsorship",
+      subject: order.plan === "personal" ? "agent-canary cooperation authorization" : "agent-canary sponsorship",
     }),
   };
   params.sign = alipaySign(params);
@@ -414,7 +487,7 @@ function createEpayOrder(order) {
     out_trade_no: order.outTradeNo,
     notify_url: `${PUBLIC_BASE}/callback/epay`,
     return_url: `${PUBLIC_BASE}/return`,
-    name: order.plan === "personal" ? "agent-canary Personal Edition" : "agent-canary sponsorship",
+    name: order.plan === "personal" ? "agent-canary cooperation authorization" : "agent-canary sponsorship",
     money: order.amount.toFixed(2),
     sitename: "agent-canary",
   };
@@ -481,23 +554,45 @@ async function createPayment(order) {
 }
 
 // ---------- tiny HTTP framework ----------
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[ch]);
+}
+
 function send(res, status, body, type = "text/plain; charset=utf-8") {
   res.writeHead(status, {
     "Content-Type": type,
     "x-content-type-options": "nosniff",
     "x-frame-options": "DENY",
     "referrer-policy": "no-referrer",
+    "cache-control": "no-store",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    "content-security-policy":
+      "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; connect-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'",
   });
   res.end(body);
 }
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let data = "";
+    let rejected = false;
     req.on("data", (c) => {
+      if (rejected) return;
       data += c;
-      if (data.length > 1e6) reject(new Error("body too large"));
+      if (data.length > 1e6) {
+        rejected = true;
+        req.destroy();
+        reject(new Error("body too large"));
+      }
     });
-    req.on("end", () => resolve(data));
+    req.on("end", () => {
+      if (!rejected) resolve(data);
+    });
     req.on("error", reject);
   });
 }
@@ -520,7 +615,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, png, "image/png");
     }
 
-    // ---- API: create order (donation or Personal Edition subscription) ----
+    // ---- API: create order (donation or maintainer-approved cooperation) ----
     if (req.method === "POST" && url.pathname === "/api/order") {
       const ip = req.socket.remoteAddress ?? "?";
       if (rateLimited("order:" + ip, 10)) {
@@ -530,6 +625,14 @@ const server = http.createServer(async (req, res) => {
       const channel = input.channel === "alipay" ? "alipay" : "wechat";
       let order;
       if (input.plan === "personal") {
+        if (!COOPERATION_ORDERS) {
+          return send(
+            res,
+            403,
+            JSON.stringify({ ok: false, error: "V2+ is cooperation-only; contact the maintainer before requesting access" }),
+            "application/json"
+          );
+        }
         const handle = String(input.handle || "").trim().slice(0, 64);
         if (!handle) {
           return send(res, 400, JSON.stringify({ error: "handle required (GitHub 用户名或邮箱)" }), "application/json");
@@ -560,15 +663,14 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
-    // ---- 个人收款码图片（零成本模式；无本地文件时回退到仓库 CDN 版） ----
+    // ---- 个人收款码图片（零成本模式；未配置本地文件时返回 404） ----
     if (req.method === "GET" && url.pathname.startsWith("/qr-image/")) {
       const ch = url.pathname.split("/")[2] === "alipay" ? "alipay" : "wechat";
       if (qrFiles[ch]) {
         const type = qrFiles[ch].endsWith(".png") ? "image/png" : qrFiles[ch].endsWith(".webp") ? "image/webp" : "image/jpeg";
         return send(res, 200, fs.readFileSync(qrFiles[ch]), type);
       }
-      res.writeHead(302, { Location: `https://cdn.jsdelivr.net/gh/DorianChn/agent-canary@main/docs/pay/${ch}.jpg` });
-      return res.end();
+      return send(res, 404, "payment QR not configured");
     }
 
     // ---- 零成本模式：付款登记（作者用 grant.mjs 人工确认后生效） ----
@@ -625,7 +727,16 @@ const server = http.createServer(async (req, res) => {
       if (!evt) return send(res, 401, JSON.stringify({ code: "FAIL", message: "bad signature" }), "application/json");
       const resource = evt.decrypted ?? {};
       const order = Object.values(orders).find((o) => o.outTradeNo === resource.out_trade_no);
-      if (order && resource.trade_state === "SUCCESS") markPaid(order.id, resource.transaction_id);
+      if (
+        order &&
+        resource.trade_state === "SUCCESS" &&
+        resource.mchid === WECHAT.mchid &&
+        resource.appid === WECHAT.appid &&
+        resource.amount?.currency === "CNY" &&
+        orderAmountMatches(order, resource.amount?.total, "fen")
+      ) {
+        markPaid(order.id, resource.transaction_id);
+      }
       return send(res, 200, JSON.stringify({ code: "SUCCESS" }), "application/json");
     }
 
@@ -635,7 +746,12 @@ const server = http.createServer(async (req, res) => {
       const form = Object.fromEntries(new URLSearchParams(raw));
       if (!verifyAlipayNotify(form)) return send(res, 401, "fail");
       const order = Object.values(orders).find((o) => o.outTradeNo === form.out_trade_no);
-      if (order && (form.trade_status === "TRADE_SUCCESS" || form.trade_status === "TRADE_FINISHED")) {
+      if (
+        order &&
+        form.app_id === ALIPAY.appId &&
+        orderAmountMatches(order, form.total_amount) &&
+        (form.trade_status === "TRADE_SUCCESS" || form.trade_status === "TRADE_FINISHED")
+      ) {
         markPaid(order.id, form.trade_no);
       }
       return send(res, 200, "success");
@@ -646,7 +762,9 @@ const server = http.createServer(async (req, res) => {
       const form = Object.fromEntries(url.searchParams);
       if (!EPAY_READY || form.sign !== epaySign(form, EPAY.key)) return send(res, 401, "fail");
       const order = Object.values(orders).find((o) => o.outTradeNo === form.out_trade_no);
-      if (order && form.trade_status === "TRADE_SUCCESS") markPaid(order.id, form.trade_no);
+      if (order && form.pid === EPAY.pid && orderAmountMatches(order, form.money) && form.trade_status === "TRADE_SUCCESS") {
+        markPaid(order.id, form.trade_no);
+      }
       return send(res, 200, "success");
     }
 
@@ -658,8 +776,10 @@ const server = http.createServer(async (req, res) => {
       );
       if (!VMQ_READY || form.sign !== expect) return send(res, 401, "error_sign");
       const order = Object.values(orders).find((o) => o.outTradeNo === form.payId);
-      // reallyPrice 含金额尾数浮动（防撞单），验签通过即可信任
-      if (order) markPaid(order.id, `vmq:${form.param ?? ""}`);
+      // reallyPrice 含金额尾数浮动（防撞单）；同时绑定订单号和原始订单金额。
+      if (order && form.param === order.id && orderAmountMatches(order, form.price)) {
+        markPaid(order.id, `vmq:${form.param ?? ""}`);
+      }
       return send(res, 200, "success");
     }
 
@@ -676,7 +796,7 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
-    // ---- Personal Edition activation (signed license + machine binding) ----
+    // ---- Cooperation activation (signed license + machine binding) ----
     if (req.method === "POST" && url.pathname === "/api/activate") {
       const ip = req.socket.remoteAddress ?? "?";
       if (DEMO && !isLoopback(ip)) {
@@ -715,13 +835,14 @@ const server = http.createServer(async (req, res) => {
     if (DEMO && req.method === "GET" && url.pathname.startsWith("/demo/pay/")) {
       const o = orders[url.pathname.split("/")[3]];
       if (!o) return send(res, 404, "no such order");
-      const what = o.plan === "personal" ? "个人版订阅" : "赞助";
+      const what = o.plan === "personal" ? "合作授权测试" : "赞助";
+      const safeHandle = o.handle ? ` · ${escapeHtml(o.handle)}` : "";
       return send(
         res,
         200,
         `<body style="font-family:sans-serif;background:#0d1117;color:#c9d1d9;text-align:center;padding-top:60px">
           <h2>演示模式 — 模拟${o.channel === "wechat" ? "微信支付" : "支付宝"} · ${what}</h2>
-          <p>订单 ${o.id.slice(0, 8)}… · ¥${o.amount.toFixed(2)}${o.handle ? ` · ${o.handle}` : ""}</p>
+          <p>订单 ${o.id.slice(0, 8)}… · ¥${o.amount.toFixed(2)}${safeHandle}</p>
           <a href="/demo/confirm/${o.id}" style="display:inline-block;margin-top:20px;padding:12px 28px;background:#3fb950;color:#0d1117;border-radius:8px;text-decoration:none;font-weight:700">确认支付（模拟回调）</a>
         </body>`,
         "text/html; charset=utf-8"
@@ -783,25 +904,25 @@ button.ghost{background:transparent;border:1px solid #30363d;color:var(--fg)}
 ${DEMO ? '<div class="demo">演示模式：扫码后打开的是模拟支付页，不会产生真实扣款。配置 .env 后自动切换为真实收款。</div>' : ""}
 
 <div class="plan">
-  <h2>个人版 Personal — ¥${p.cny}/月 <small>≈ US$${p.usd}/mo</small></h2>
+  <h2>合作授权 <small>V2+ 需作者确认</small></h2>
   <ul>
     <li>赞助者名单署名（README + 落地页）</li>
-    <li>Issue 优先响应 + 个人版标签</li>
-    <li>新功能早期访问（评测模式 beta 等）</li>
+    <li>私有集成与定制支持</li>
+    <li>新版本早期访问（按合作方案确认）</li>
   </ul>
-  <input id="handle" placeholder="GitHub 用户名或邮箱（识别你的订阅）" maxlength="64">
-  <button id="sub">订阅个人版 · ¥${p.cny}/月</button>
-  <div class="fine">按 30 天为一期，到期后再次支付即自动顺延（可叠加）。绑定标识仅用于权益核对。</div>
+  <input id="handle" placeholder="GitHub 用户名或邮箱（合作联系标识）" maxlength="64">
+  <button id="sub">提交合作申请（需作者确认）</button>
+  <div class="fine">测试期只公开 V1；本页不提供 V2+ 公开自助购买。请先通过 GitHub Discussions 联系作者。</div>
   <div class="fine" id="subcheck"></div>
 </div>
 ${MANUAL_READY ? `
 <div class="plan" style="border-color:#30363d">
-  <h2>或扫码个人收款码 <small>零手续费 · 人工确认</small></h2>
+  <h2>合作登记收款信息 <small>仅合作方 · 人工确认</small></h2>
   <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
     ${qrFiles.wechat ? `<div style="text-align:center"><img src="/qr-image/wechat" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="微信收款码"><div class="fine">微信支付</div></div>` : ""}
     ${qrFiles.alipay ? `<div style="text-align:center"><img src="/qr-image/alipay" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="支付宝收款码"><div class="fine">支付宝</div></div>` : ""}
   </div>
-  <div class="fine">转账时备注你的 GitHub 用户名；完成付款后下方登记，作者人工确认后开通（个人版 ¥${p.cny} = 30 天）。</div>
+  <div class="fine">如已与作者确认合作方案，再按约定完成登记；作者人工确认后才会开通合作授权。</div>
   <div style="display:flex;gap:8px;margin-top:8px">
     <select id="m-channel" style="width:110px;padding:11px;border:1px solid #30363d;border-radius:8px;background:#010409;color:var(--fg);font-size:14px">
       <option value="wechat">微信</option>
@@ -866,7 +987,7 @@ async function startOrder(body) {
       document.getElementById("st").style.display = "none";
       if (j.plan === "personal") {
         const sub = await (await fetch("/api/subscription/" + encodeURIComponent(j.handle))).json();
-        document.getElementById("ok").textContent = "✓ 个人版已生效，有效期至 " + (sub.expiresAt || "").slice(0, 10);
+        document.getElementById("ok").textContent = "✓ 合作授权已生效，有效期至 " + (sub.expiresAt || "").slice(0, 10);
       }
       document.getElementById("ok").style.display = "block";
     }
@@ -914,7 +1035,7 @@ server.listen(PORT, HOST, () => {
   console.log(`[sponsor] listening on ${PUBLIC_BASE}`);
   console.log(`[sponsor] mode: ${DEMO ? "DEMO (simulated payments)" : "LIVE"}`);
   console.log(`[sponsor] personal edition: $${PLAN.personal.usd}/mo = ¥${PLAN.personal.cny}/mo · license TTL ${LICENSE_TTL_DAYS}d · max ${MAX_MACHINES} machines`);
-  if (!/^https:\/\/|^http:\/\/(localhost|127\.0\.0\.1)/.test(PUBLIC_BASE)) {
+  if (!isSecureBase(PUBLIC_BASE)) {
     console.warn("[sponsor] ⚠ PUBLIC_BASE_URL 是明文 HTTP —— 付款二维码可能被中间人替换，生产环境请使用 HTTPS");
   }
   if (VMQ_READY && (VMQ.key === "admin" || VMQ.key.length < 16)) {

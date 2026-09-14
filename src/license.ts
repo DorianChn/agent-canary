@@ -1,5 +1,5 @@
 /**
- * Personal Edition licensing (v0.6 hardened).
+ * Cooperation authorization licensing (v0.6 hardened).
  *
  * Design:
  *  - the sponsor gateway signs short-lived licenses with its Ed25519 PRIVATE
@@ -22,7 +22,15 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import os from "node:os";
-import { DEFAULT_LICENSE_SERVER, ROOT, ensureDirs, loadConfig } from "./config.js";
+import {
+  DEFAULT_LICENSE_SERVER,
+  FREE_MAX_MAJOR,
+  ROOT,
+  VERSION,
+  ensureDirs,
+  loadConfig,
+  releaseRequiresLicense,
+} from "./config.js";
 
 const LICENSE_FILE = path.join(ROOT, "license.json");
 const CLOCK_FILE = path.join(ROOT, "clock.json");
@@ -39,14 +47,21 @@ export function __setTrustedPublicKeyForTesting(pem: string): void {
 }
 
 export const UPSELL =
-  "此功能属于 agent-canary 个人版 Personal（US$10/月）。\n" +
-  "  购买：赞助页扫码（README → Support 章节）\n" +
-  "  已购买？先配置：agent-canary set-license-server <许可服务器地址>\n" +
-  "  然后激活：agent-canary activate --handle <你的GitHub用户名或邮箱>";
+  "此功能不属于公开测试版 V1。\n" +
+  "  测试期间新版本和进阶能力仅向合作方提供。\n" +
+  "  需要合作？请通过 GitHub Discussions 联系作者。\n" +
+  "  已获得合作授权？先配置：agent-canary set-license-server <许可服务器地址>\n" +
+  "  已获得合作授权？agent-canary activate --handle <你的GitHub用户名或邮箱>";
+
+export const RELEASE_UPSELL =
+  `当前版本 agent-canary v${VERSION} 已超出公开测试版 v${FREE_MAX_MAJOR}.x。\n` +
+  "  测试期间仅公开发布 v1.x；v2 及后续版本不公开分发。\n" +
+  "  需要新版本或私有集成？请联系作者洽谈合作。\n" +
+  "  已获得合作授权？agent-canary activate --handle <你的GitHub用户名或邮箱>";
 
 export class LicenseError extends Error {
-  constructor() {
-    super(UPSELL);
+  constructor(message = UPSELL) {
+    super(message);
     this.name = "LicenseError";
   }
 }
@@ -65,6 +80,25 @@ interface LicensePayload {
   machineHash: string;
   expiresAt: string;
   iat: number;
+}
+
+function isLicensePayload(value: unknown): value is LicensePayload {
+  if (!value || typeof value !== "object") return false;
+  const p = value as Partial<LicensePayload>;
+  const expiry = typeof p.expiresAt === "string" ? Date.parse(p.expiresAt) : NaN;
+  return (
+    typeof p.handle === "string" &&
+    p.handle === p.handle.trim() &&
+    p.handle.length > 0 &&
+    p.handle.length <= 64 &&
+    typeof p.machineHash === "string" &&
+    /^[0-9a-f]{64}$/.test(p.machineHash) &&
+    typeof p.expiresAt === "string" &&
+    Number.isFinite(expiry) &&
+    typeof p.iat === "number" &&
+    Number.isSafeInteger(p.iat) &&
+    p.iat > 0
+  );
 }
 
 function b64uToBuf(s: string): Buffer {
@@ -96,34 +130,47 @@ function clockRolledBack(): boolean {
   if (now > max) {
     ensureDirs();
     fs.writeFileSync(CLOCK_FILE, JSON.stringify({ max: now }));
+    try { fs.chmodSync(CLOCK_FILE, 0o600); } catch {}
     return false;
   }
   return now + 864e5 < max; // more than a day behind the watermark
 }
 
 function verifyLicenseToken(token: string): LicensePayload | null {
-  const [payload, sig] = token.split(".");
-  if (!payload || !sig) return null;
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [payload, sig] = parts;
+  if (
+    !payload ||
+    !sig ||
+    !/^[A-Za-z0-9_-]+$/.test(payload) ||
+    !/^[A-Za-z0-9_-]+$/.test(sig)
+  ) return null;
+  const signature = b64uToBuf(sig);
+  if (signature.length !== 64) return null;
   let signatureOk = false;
   try {
     signatureOk = crypto.verify(
       null,
       Buffer.from(payload),
       crypto.createPublicKey(TRUSTED_PUBLIC_KEY),
-      b64uToBuf(sig)
+      signature
     );
   } catch {
     return null;
   }
   if (!signatureOk) return null;
-  let p: LicensePayload;
+  let parsed: unknown;
   try {
-    p = JSON.parse(b64uToBuf(payload).toString("utf8")) as LicensePayload;
+    parsed = JSON.parse(b64uToBuf(payload).toString("utf8"));
   } catch {
     return null;
   }
-  if (!p.handle || p.machineHash !== machineHash()) return null; // bound to a different machine
-  if (new Date(p.expiresAt) <= new Date()) return null; // expired
+  if (!isLicensePayload(parsed)) return null;
+  const p = parsed;
+  if (p.machineHash !== machineHash()) return null; // bound to a different machine
+  const expiry = Date.parse(p.expiresAt);
+  if (!Number.isFinite(expiry) || expiry <= Date.now()) return null; // expired or malformed
   if (clockRolledBack()) return null; // clock tampering
   return p;
 }
@@ -139,7 +186,8 @@ function readStored(): string | null {
 
 function writeStored(token: string): void {
   ensureDirs();
-  fs.writeFileSync(LICENSE_FILE, JSON.stringify({ license: token }, null, 2) + "\n");
+  fs.writeFileSync(LICENSE_FILE, JSON.stringify({ license: token }, null, 2) + "\n", { mode: 0o600 });
+  try { fs.chmodSync(LICENSE_FILE, 0o600); } catch {}
 }
 
 function clearStored(): void {
@@ -161,6 +209,11 @@ export function ensureLicensed(): void {
   if (!cachedLicense()) throw new LicenseError();
 }
 
+/** New major releases are cooperation-only; keep activation and status available to V1 users. */
+export function ensureReleaseAccess(): void {
+  if (releaseRequiresLicense() && !cachedLicense()) throw new LicenseError(RELEASE_UPSELL);
+}
+
 export interface ActivateResult {
   ok: boolean;
   expiresAt?: string;
@@ -175,22 +228,23 @@ export interface ActivateResult {
  * passes (grace until its expiresAt).
  */
 export async function activate(handle: string, explicitServer?: string): Promise<ActivateResult> {
+  const requestedHandle = handle.trim().slice(0, 64);
+  if (!requestedHandle) return { ok: false, message: "handle required (GitHub username or email)" };
   const server = licenseServer(explicitServer);
   try {
-    const res = await fetch(`${server}/api/activate`, {
+    const res = await fetch(server + "/api/activate", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ handle, machineHash: machineHash() }),
+      body: JSON.stringify({ handle: requestedHandle, machineHash: machineHash() }),
       signal: AbortSignal.timeout(6000),
     });
     const j = (await res.json()) as { ok?: boolean; license?: string; error?: string };
     if (j.ok && j.license) {
       const token = j.license;
-      const [payload] = token.split(".");
       const p = verifyLicenseToken(token);
       if (!p) return { ok: false, message: "网关返回的许可签名无效（公钥不匹配或已过期）" };
+      if (p.handle !== requestedHandle) return { ok: false, message: "网关返回的许可标识与请求不一致" };
       writeStored(token);
-      void payload;
       return { ok: true, expiresAt: p.expiresAt };
     }
     return { ok: false, message: j.error ?? "激活被拒绝" };
@@ -198,7 +252,7 @@ export async function activate(handle: string, explicitServer?: string): Promise
     // offline: fall back to a cached, signed, unexpired license
     const token = readStored();
     const p = token ? verifyLicenseToken(token) : null;
-    if (p && p.handle === handle) return { ok: true, expiresAt: p.expiresAt, offline: true };
+    if (p && p.handle === requestedHandle) return { ok: true, expiresAt: p.expiresAt, offline: true };
     return { ok: false, message: "许可服务器不可达，且本地没有有效许可" };
   }
 }

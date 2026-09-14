@@ -97,6 +97,15 @@ test("expired license token is rejected", async () => {
   forcedExpiry = null;
 });
 
+test("malformed expiry is rejected", async () => {
+  fs.rmSync(path.join(process.env.AGENT_CANARY_HOME!, "license.json"), { force: true });
+  forcedExpiry = "not-a-date";
+  const r = await activate("paid-user");
+  assert.equal(r.ok, false);
+  assert.equal(cachedLicense(), null);
+  forcedExpiry = null;
+});
+
 test("handle without subscription is refused", async () => {
   fs.rmSync(path.join(process.env.AGENT_CANARY_HOME!, "license.json"), { force: true });
   const r = await activate("no-sub");
