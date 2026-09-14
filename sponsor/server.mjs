@@ -7,8 +7,7 @@
  *
  * Public release policy:
  *  - one-off donations (presets / custom amount)
- *  - V1 is the only release line published during testing
- *  - V2+ cooperation authorization is kept behind explicit maintainer approval
+ *  - V1 remains free; V2 Personal is paid and explicitly enabled per gateway
  *
  * Run `npm i && npm start` inside sponsor/. With DEMO=1 (default until you
  * fill .env) the whole flow works end-to-end with simulated payments, so you
@@ -115,7 +114,7 @@ if (!DEMO && !isSecureBase(PUBLIC_BASE)) {
 }
 const PRESETS = [5, 10, 25, 50]; // CNY, one-off donations
 
-// Cooperation authorization plan: terms are agreed with the maintainer.
+// V2 Personal paid plan. Prices are server-authoritative and configurable.
 const PLAN = {
   personal: {
     usd: Number(process.env.PERSONAL_USD || 10),
@@ -123,7 +122,8 @@ const PLAN = {
     days: 30,
   },
 };
-const COOPERATION_ORDERS = process.env.COOPERATION_ORDERS === "1";
+// Keep the old name as a migration alias, but make the V2 switch explicit.
+const V2_PAID_ORDERS = process.env.V2_PAID_ORDERS === "1" || process.env.COOPERATION_ORDERS === "1";
 
 // ---------- order store ----------
 // Tests can point persistence at an isolated temporary directory. Production
@@ -193,13 +193,17 @@ function loadSubs() {
   return readJson(SUBS_FILE, {});
 }
 
-// ---------- Cooperation authorization signing (Ed25519) ----------
+// ---------- V2 paid-edition signing (Ed25519) ----------
 // license-keys.json holds the PRIVATE signing key — generated on first run,
 // never committed. The matching public key is baked into the agent-canary CLI.
 const KEYS_FILE = path.join(DATA_DIR, "license-keys.json");
 const ACTIVATIONS_FILE = path.join(DATA_DIR, "activations.json");
 const MAX_MACHINES = Number(process.env.LICENSE_MAX_MACHINES || 3);
 const LICENSE_TTL_DAYS = Number(process.env.LICENSE_TTL_DAYS || 30);
+const LICENSE_RELEASE_MAJOR = Number(process.env.LICENSE_RELEASE_MAJOR || 2);
+if (!Number.isSafeInteger(LICENSE_RELEASE_MAJOR) || LICENSE_RELEASE_MAJOR < 2 || LICENSE_RELEASE_MAJOR > 100) {
+  throw new Error("LICENSE_RELEASE_MAJOR must be an integer between 2 and 100");
+}
 
 const CLI_PUBLIC_KEY =
   "-----BEGIN PUBLIC KEY-----\n" +
@@ -299,7 +303,7 @@ function extendSubscription(handle, orderId) {
   const expiresAt = new Date(Math.max(now, current) + PLAN.personal.days * 864e5).toISOString();
   subs[handle] = { handle, expiresAt, lastOrderId: orderId, updatedAt: new Date().toISOString() };
   writeJson(SUBS_FILE, subs);
-  console.log(`[sponsor] personal edition for "${handle}" active until ${expiresAt}`);
+  console.log(`[sponsor] V2 Personal for "${handle}" active until ${expiresAt}`);
   return expiresAt;
 }
 
@@ -393,7 +397,7 @@ async function createWechatOrder(order) {
   const res = await wechatRequest("POST", "/v3/pay/transactions/native", {
     appid: WECHAT.appid,
     mchid: WECHAT.mchid,
-    description: order.plan === "personal" ? "agent-canary cooperation authorization" : "agent-canary sponsorship",
+    description: order.plan === "personal" ? "agent-canary V2 Personal Edition" : "agent-canary sponsorship",
     out_trade_no: order.outTradeNo,
     notify_url: `${PUBLIC_BASE}/callback/wechat`,
     amount: { total: Math.round(order.amount * 100), currency: "CNY" },
@@ -442,7 +446,7 @@ async function createAlipayOrder(order) {
     biz_content: JSON.stringify({
       out_trade_no: order.outTradeNo,
       total_amount: order.amount.toFixed(2),
-      subject: order.plan === "personal" ? "agent-canary cooperation authorization" : "agent-canary sponsorship",
+      subject: order.plan === "personal" ? "agent-canary V2 Personal Edition" : "agent-canary sponsorship",
     }),
   };
   params.sign = alipaySign(params);
@@ -487,7 +491,7 @@ function createEpayOrder(order) {
     out_trade_no: order.outTradeNo,
     notify_url: `${PUBLIC_BASE}/callback/epay`,
     return_url: `${PUBLIC_BASE}/return`,
-    name: order.plan === "personal" ? "agent-canary cooperation authorization" : "agent-canary sponsorship",
+    name: order.plan === "personal" ? "agent-canary V2 Personal Edition" : "agent-canary sponsorship",
     money: order.amount.toFixed(2),
     sitename: "agent-canary",
   };
@@ -615,7 +619,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, png, "image/png");
     }
 
-    // ---- API: create order (donation or maintainer-approved cooperation) ----
+    // ---- API: create order (donation or V2 Personal purchase) ----
     if (req.method === "POST" && url.pathname === "/api/order") {
       const ip = req.socket.remoteAddress ?? "?";
       if (rateLimited("order:" + ip, 10)) {
@@ -625,11 +629,11 @@ const server = http.createServer(async (req, res) => {
       const channel = input.channel === "alipay" ? "alipay" : "wechat";
       let order;
       if (input.plan === "personal") {
-        if (!COOPERATION_ORDERS) {
+        if (!V2_PAID_ORDERS) {
           return send(
             res,
-            403,
-            JSON.stringify({ ok: false, error: "V2+ is cooperation-only; contact the maintainer before requesting access" }),
+            503,
+            JSON.stringify({ ok: false, error: "V2 paid orders are not enabled on this gateway" }),
             "application/json"
           );
         }
@@ -796,7 +800,7 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
-    // ---- Cooperation activation (signed license + machine binding) ----
+    // ---- V2 activation (signed license + machine binding) ----
     if (req.method === "POST" && url.pathname === "/api/activate") {
       const ip = req.socket.remoteAddress ?? "?";
       if (DEMO && !isLoopback(ip)) {
@@ -807,8 +811,12 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.parse((await readBody(req)) || "{}");
       const handle = String(body.handle || "").trim().slice(0, 64);
       const machineHash = String(body.machineHash || "").trim();
+      const requestedReleaseMajor = Number(body.releaseMajor || 0);
       if (!handle || !/^[0-9a-f]{64}$/.test(machineHash)) {
         return send(res, 400, JSON.stringify({ ok: false, error: "invalid handle or machineHash" }), "application/json");
+      }
+      if (requestedReleaseMajor !== LICENSE_RELEASE_MAJOR) {
+        return send(res, 400, JSON.stringify({ ok: false, error: `unsupported release major; this gateway issues V${LICENSE_RELEASE_MAJOR} licenses` }), "application/json");
       }
       const sub = loadSubs()[handle];
       if (!sub || new Date(sub.expiresAt) <= new Date()) {
@@ -826,7 +834,13 @@ const server = http.createServer(async (req, res) => {
       acts[handle] = rec;
       writeJson(ACTIVATIONS_FILE, acts);
       const expiresAt = new Date(Math.min(new Date(sub.expiresAt).getTime(), Date.now() + LICENSE_TTL_DAYS * 864e5)).toISOString();
-      const license = signLicensePayload({ handle, machineHash, expiresAt, iat: Date.now() });
+      const license = signLicensePayload({
+        releaseMajor: LICENSE_RELEASE_MAJOR,
+        handle,
+        machineHash,
+        expiresAt,
+        iat: Date.now(),
+      });
       console.log(`[sponsor] activated "${handle}" machine ${machineHash.slice(0, 12)}… until ${expiresAt}`);
       return send(res, 200, JSON.stringify({ ok: true, license, revalidateAfter: Date.now() + 3 * 864e5 }), "application/json");
     }
@@ -835,7 +849,7 @@ const server = http.createServer(async (req, res) => {
     if (DEMO && req.method === "GET" && url.pathname.startsWith("/demo/pay/")) {
       const o = orders[url.pathname.split("/")[3]];
       if (!o) return send(res, 404, "no such order");
-      const what = o.plan === "personal" ? "合作授权测试" : "赞助";
+      const what = o.plan === "personal" ? "V2 Personal 测试" : "赞助";
       const safeHandle = o.handle ? ` · ${escapeHtml(o.handle)}` : "";
       return send(
         res,
@@ -904,25 +918,25 @@ button.ghost{background:transparent;border:1px solid #30363d;color:var(--fg)}
 ${DEMO ? '<div class="demo">演示模式：扫码后打开的是模拟支付页，不会产生真实扣款。配置 .env 后自动切换为真实收款。</div>' : ""}
 
 <div class="plan">
-  <h2>合作授权 <small>V2+ 需作者确认</small></h2>
+  <h2>V2 Personal 付费版 <small>¥${p.cny}/30 天</small></h2>
   <ul>
-    <li>赞助者名单署名（README + 落地页）</li>
-    <li>私有集成与定制支持</li>
-    <li>新版本早期访问（按合作方案确认）</li>
+    <li>V2 评测与导出能力</li>
+    <li>短期许可证 + 设备绑定</li>
+    <li>付款成功后自动进入激活流程</li>
   </ul>
-  <input id="handle" placeholder="GitHub 用户名或邮箱（合作联系标识）" maxlength="64">
-  <button id="sub">提交合作申请（需作者确认）</button>
-  <div class="fine">测试期只公开 V1；本页不提供 V2+ 公开自助购买。请先通过 GitHub Discussions 联系作者。</div>
+  <input id="handle" placeholder="GitHub 用户名或邮箱（许可证标识）" maxlength="64">
+  <button id="sub">购买并激活 V2 Personal</button>
+  <div class="fine">支付成功后按 30 天授予 V2 许可证；每台设备单独激活，实际价格以网关配置为准。</div>
   <div class="fine" id="subcheck"></div>
 </div>
 ${MANUAL_READY ? `
 <div class="plan" style="border-color:#30363d">
-  <h2>合作登记收款信息 <small>仅合作方 · 人工确认</small></h2>
+  <h2>V2 Personal 人工收款 <small>付款后由管理员确认</small></h2>
   <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
     ${qrFiles.wechat ? `<div style="text-align:center"><img src="/qr-image/wechat" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="微信收款码"><div class="fine">微信支付</div></div>` : ""}
     ${qrFiles.alipay ? `<div style="text-align:center"><img src="/qr-image/alipay" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="支付宝收款码"><div class="fine">支付宝</div></div>` : ""}
   </div>
-  <div class="fine">如已与作者确认合作方案，再按约定完成登记；作者人工确认后才会开通合作授权。</div>
+  <div class="fine">如使用人工收款，请在付款后登记许可证标识；确认到账后由管理员开通 V2 Personal。</div>
   <div style="display:flex;gap:8px;margin-top:8px">
     <select id="m-channel" style="width:110px;padding:11px;border:1px solid #30363d;border-radius:8px;background:#010409;color:var(--fg);font-size:14px">
       <option value="wechat">微信</option>
@@ -987,7 +1001,7 @@ async function startOrder(body) {
       document.getElementById("st").style.display = "none";
       if (j.plan === "personal") {
         const sub = await (await fetch("/api/subscription/" + encodeURIComponent(j.handle))).json();
-        document.getElementById("ok").textContent = "✓ 合作授权已生效，有效期至 " + (sub.expiresAt || "").slice(0, 10);
+        document.getElementById("ok").textContent = "✓ V2 Personal 已生效，有效期至 " + (sub.expiresAt || "").slice(0, 10);
       }
       document.getElementById("ok").style.display = "block";
     }
@@ -1034,7 +1048,7 @@ document.getElementById("handle").addEventListener("change", async () => {
 server.listen(PORT, HOST, () => {
   console.log(`[sponsor] listening on ${PUBLIC_BASE}`);
   console.log(`[sponsor] mode: ${DEMO ? "DEMO (simulated payments)" : "LIVE"}`);
-  console.log(`[sponsor] personal edition: $${PLAN.personal.usd}/mo = ¥${PLAN.personal.cny}/mo · license TTL ${LICENSE_TTL_DAYS}d · max ${MAX_MACHINES} machines`);
+  console.log(`[sponsor] V2 Personal: $${PLAN.personal.usd}/30d = ¥${PLAN.personal.cny}/30d · paid orders ${V2_PAID_ORDERS ? "enabled" : "disabled"} · license TTL ${LICENSE_TTL_DAYS}d · max ${MAX_MACHINES} machines`);
   if (!isSecureBase(PUBLIC_BASE)) {
     console.warn("[sponsor] ⚠ PUBLIC_BASE_URL 是明文 HTTP —— 付款二维码可能被中间人替换，生产环境请使用 HTTPS");
   }

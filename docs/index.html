@@ -72,8 +72,8 @@
 </div></section>
 
 <section class="wrap" id="pricing" style="padding-bottom:56px">
-  <h2 style="color:#fff;font-size:28px;text-align:center">公开测试版 V1 / 合作版本</h2>
-  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">测试期只公开 V1 · V2+ 不公开下载 · 需要新版本请联系作者合作</p>
+  <h2 style="color:#fff;font-size:28px;text-align:center">公开测试版 V1 / V2 Personal 付费版</h2>
+  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">V1 可免费使用 · V2 Personal 按 30 天授权 · 价格与设备数由授权网关配置</p>
   <div class="grid" style="grid-template-columns:1fr 1fr">
     <div class="card">
       <h3 style="margin-bottom:14px">公开 V1 — 测试期</h3>
@@ -81,13 +81,13 @@
       <a class="btn ghost" href="https://github.com/DorianChn/agent-canary#quickstart" style="margin-top:14px;display:inline-block">直接用 →</a>
     </div>
     <div class="card" style="border-color:var(--y)">
-      <h3 style="margin-bottom:14px">合作版本</h3>
-      <p style="line-height:2">V2+ 新版本<br>私有部署与定制集成<br>进阶评测与 SIEM 支持<br>具体范围按合作方案确认</p>
-      <a class="btn" href="https://github.com/DorianChn/agent-canary/discussions" style="margin-top:14px;display:inline-block;color:#0d1117">联系作者合作 →</a>
+      <h3 style="margin-bottom:14px">V2 Personal 付费版</h3>
+      <p style="line-height:2">V2 进阶评测与 SIEM 导出<br>签名许可证与设备绑定<br>30 天授权与续期<br>需要定制集成可另行联系</p>
+      <a class="btn" href="https://github.com/DorianChn/agent-canary#support-this-project" style="margin-top:14px;display:inline-block;color:#0d1117">查看购买与激活说明 →</a>
     </div>
   </div>
   <p id="payment-note" style="color:var(--dim);text-align:center;margin:18px auto 0;max-width:700px">
-    测试期只公开 V1；需要 V2+、私有集成或定制支持，请通过 GitHub Discussions 联系作者。
+    V1 免费；V2 Personal 通过授权网关购买并激活。私有部署或定制支持再通过 GitHub Discussions 联系作者。
   </p>
 </section>
 
@@ -131,7 +131,7 @@
     ) return false;
     document.querySelectorAll("[data-sponsor-url]").forEach((a) => (a.href = u.toString()));
     const note = document.getElementById("payment-note");
-    if (note) note.textContent = "测试期只公开 V1；演示模式不扣款，新版本与私有集成请联系作者合作。";
+    if (note) note.textContent = "V1 免费；V2 Personal 在演示模式不扣款，真实购买需配置授权网关。";
     return true;
   }
   applySponsorUrl(fallback);

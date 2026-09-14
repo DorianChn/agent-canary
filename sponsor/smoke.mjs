@@ -23,7 +23,7 @@ const server = spawn(process.execPath, ["server.mjs"], {
     ...process.env,
     PORT: String(PORT),
     DEMO: "1",
-    COOPERATION_ORDERS: "1",
+    V2_PAID_ORDERS: "1",
     PUBLIC_BASE_URL: BASE,
     DATA_DIR: TEST_DATA_DIR,
   },
@@ -51,7 +51,7 @@ try {
   check("server boots in demo mode", up);
 
   const page = await (await fetch(BASE + "/")).text();
-  check("page renders cooperation plan card", page.includes("合作授权"));
+  check("page renders V2 paid plan card", page.includes("V2 Personal"));
   check("page renders donation section (demo)", page.includes("一次性赞助"));
 
   const qrRes = await fetch(BASE + "/api/qr?text=hello");
@@ -72,7 +72,7 @@ try {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ channel: "wechat", plan: "personal", handle: "smoke-test" }),
   })).json();
-  check("cooperation order created in internal demo", order.ok === undefined && !!order.orderId && order.qr.includes("/demo/pay/"));
+  check("V2 paid order created in demo", order.ok === undefined && !!order.orderId && order.qr.includes("/demo/pay/"));
 
   const payPage = await fetch(BASE + `/demo/pay/${order.orderId}`);
   check("demo pay page renders", payPage.status === 200);
@@ -96,23 +96,26 @@ try {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ channel: "wechat", plan: "personal" }),
   });
-  check("cooperation order without handle rejected", bad.status === 400);
+  check("V2 order without handle rejected", bad.status === 400);
 
   const claim = await (await fetch(BASE + "/api/manual-claim", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ channel: "alipay", plan: "personal", handle: "manual-test" }),
   })).json();
-  check("manual claim accepted", claim.ok === true);
+  check("V2 manual claim accepted", claim.ok === true);
 
   // license activation: machine binding + limit (LICENSE_MAX_MACHINES default 3)
   const crypto = await import("node:crypto");
   fs.writeFileSync(path.join(TEST_DATA_DIR, "subscribers.json"),
     JSON.stringify({ "LH": { handle: "LH", expiresAt: new Date(Date.now() + 864e5).toISOString() } }));
-  const act = (h) => fetch(BASE + "/api/activate", {
+  const act = (h, releaseMajor = 2) => fetch(BASE + "/api/activate", {
     method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ handle: "LH", machineHash: crypto.randomBytes(31).toString("hex") + String(h).padStart(2, "0") }),
+    body: JSON.stringify({ handle: "LH", machineHash: crypto.randomBytes(31).toString("hex") + String(h).padStart(2, "0"), releaseMajor }),
   });
+  const oldRelease = await act(0, 1);
+  const oldReleaseBody = await oldRelease.json();
+  check("older release activation rejected", oldRelease.status === 400 && oldReleaseBody.error.includes("unsupported release major"));
   const r1 = await act(1), r2 = await act(2), r3 = await act(3), r4 = await act(4);
   if (!(r1.ok && r2.ok && r3.ok)) {
     console.log("debug r1:", r1.status, await r1.clone().text());

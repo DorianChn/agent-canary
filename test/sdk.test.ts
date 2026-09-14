@@ -19,6 +19,7 @@ const licServer = http.createServer((q, s) => {
     const req = JSON.parse(body || "{}");
     const payload = Buffer.from(
       JSON.stringify({
+        releaseMajor: Number(req.releaseMajor ?? 0),
         handle: String(req.handle ?? ""),
         machineHash: String(req.machineHash ?? ""),
         expiresAt: new Date(Date.now() + 864e5).toISOString(),

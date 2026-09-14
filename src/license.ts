@@ -1,5 +1,5 @@
 /**
- * Cooperation authorization licensing (v0.6 hardened).
+ * Paid-edition licensing (V2, hardened).
  *
  * Design:
  *  - the sponsor gateway signs short-lived licenses with its Ed25519 PRIVATE
@@ -25,6 +25,7 @@ import os from "node:os";
 import {
   DEFAULT_LICENSE_SERVER,
   FREE_MAX_MAJOR,
+  RELEASE_MAJOR,
   ROOT,
   VERSION,
   ensureDirs,
@@ -47,17 +48,16 @@ export function __setTrustedPublicKeyForTesting(pem: string): void {
 }
 
 export const UPSELL =
-  "此功能不属于公开测试版 V1。\n" +
-  "  测试期间新版本和进阶能力仅向合作方提供。\n" +
-  "  需要合作？请通过 GitHub Discussions 联系作者。\n" +
-  "  已获得合作授权？先配置：agent-canary set-license-server <许可服务器地址>\n" +
-  "  已获得合作授权？agent-canary activate --handle <你的GitHub用户名或邮箱>";
+  "此功能属于 agent-canary V2 付费版。\n" +
+  "  V1 基础能力仍可免费使用；V2 需要有效的付费许可证。\n" +
+  "  购买后先配置：agent-canary set-license-server <许可服务器地址>\n" +
+  "  然后激活：agent-canary activate --handle <你的GitHub用户名或邮箱>";
 
 export const RELEASE_UPSELL =
   `当前版本 agent-canary v${VERSION} 已超出公开测试版 v${FREE_MAX_MAJOR}.x。\n` +
-  "  测试期间仅公开发布 v1.x；v2 及后续版本不公开分发。\n" +
-  "  需要新版本或私有集成？请联系作者洽谈合作。\n" +
-  "  已获得合作授权？agent-canary activate --handle <你的GitHub用户名或邮箱>";
+  "  V2 是付费版本，需要通过官方 V2 许可服务器购买并激活。\n" +
+  "  购买入口由部署者配置，不要向不可信服务器提交账号或付款信息。\n" +
+  "  已完成购买？agent-canary activate --handle <你的GitHub用户名或邮箱>";
 
 export class LicenseError extends Error {
   constructor(message = UPSELL) {
@@ -76,6 +76,7 @@ export function licenseServer(explicit?: string): string {
 }
 
 interface LicensePayload {
+  releaseMajor: number;
   handle: string;
   machineHash: string;
   expiresAt: string;
@@ -87,6 +88,10 @@ function isLicensePayload(value: unknown): value is LicensePayload {
   const p = value as Partial<LicensePayload>;
   const expiry = typeof p.expiresAt === "string" ? Date.parse(p.expiresAt) : NaN;
   return (
+    typeof p.releaseMajor === "number" &&
+    Number.isSafeInteger(p.releaseMajor) &&
+    p.releaseMajor >= 1 &&
+    p.releaseMajor <= 100 &&
     typeof p.handle === "string" &&
     p.handle === p.handle.trim() &&
     p.handle.length > 0 &&
@@ -197,11 +202,11 @@ function clearStored(): void {
 }
 
 /** Valid signed license for THIS machine, unexpired, clock sane. */
-export function cachedLicense(): { handle: string; expiresAt: string } | null {
+export function cachedLicense(): { releaseMajor: number; handle: string; expiresAt: string } | null {
   const token = readStored();
   if (!token) return null;
   const p = verifyLicenseToken(token);
-  return p ? { handle: p.handle, expiresAt: p.expiresAt } : null;
+  return p ? { releaseMajor: p.releaseMajor, handle: p.handle, expiresAt: p.expiresAt } : null;
 }
 
 /** Sync check for gated SDK primitives. Throws LicenseError when unlicensed. */
@@ -211,7 +216,9 @@ export function ensureLicensed(): void {
 
 /** New major releases are cooperation-only; keep activation and status available to V1 users. */
 export function ensureReleaseAccess(): void {
-  if (releaseRequiresLicense() && !cachedLicense()) throw new LicenseError(RELEASE_UPSELL);
+  if (!releaseRequiresLicense()) return;
+  const license = cachedLicense();
+  if (!license || license.releaseMajor < RELEASE_MAJOR) throw new LicenseError(RELEASE_UPSELL);
 }
 
 export interface ActivateResult {
@@ -235,7 +242,7 @@ export async function activate(handle: string, explicitServer?: string): Promise
     const res = await fetch(server + "/api/activate", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ handle: requestedHandle, machineHash: machineHash() }),
+      body: JSON.stringify({ handle: requestedHandle, machineHash: machineHash(), releaseMajor: RELEASE_MAJOR }),
       signal: AbortSignal.timeout(6000),
     });
     const j = (await res.json()) as { ok?: boolean; license?: string; error?: string };
@@ -243,6 +250,7 @@ export async function activate(handle: string, explicitServer?: string): Promise
       const token = j.license;
       const p = verifyLicenseToken(token);
       if (!p) return { ok: false, message: "网关返回的许可签名无效（公钥不匹配或已过期）" };
+      if (p.releaseMajor < RELEASE_MAJOR) return { ok: false, message: `网关许可证只支持 V${p.releaseMajor}，当前版本需要 V${RELEASE_MAJOR}` };
       if (p.handle !== requestedHandle) return { ok: false, message: "网关返回的许可标识与请求不一致" };
       writeStored(token);
       return { ok: true, expiresAt: p.expiresAt };
@@ -252,7 +260,9 @@ export async function activate(handle: string, explicitServer?: string): Promise
     // offline: fall back to a cached, signed, unexpired license
     const token = readStored();
     const p = token ? verifyLicenseToken(token) : null;
-    if (p && p.handle === requestedHandle) return { ok: true, expiresAt: p.expiresAt, offline: true };
+    if (p && p.handle === requestedHandle && p.releaseMajor >= RELEASE_MAJOR) {
+      return { ok: true, expiresAt: p.expiresAt, offline: true };
+    }
     return { ok: false, message: "许可服务器不可达，且本地没有有效许可" };
   }
 }
