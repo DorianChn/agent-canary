@@ -19,7 +19,7 @@ import { installServer, uninstallServer, configPathFor, type InstallTarget } fro
 import { watch } from "./watch.js";
 import { EVAL_PAYLOADS, EVAL_SUITE_VERSION } from "./eval/payloads.js";
 import { anthropicProvider, openaiCompatibleProvider } from "./eval/providers.js";
-import { renderMarkdownReport, runEval } from "./eval/runner.js";
+import { renderJsonReport, renderMarkdownReport, runEval } from "./eval/runner.js";
 import { renderDashboard } from "./dashboard.js";
 import { exportCef, exportCsv, exportJson } from "./export.js";
 import {
@@ -292,7 +292,8 @@ program
   .option("--base-url <url>", "OpenAI-compatible base URL (e.g. https://api.deepseek.com/v1)")
   .option("--key <key>", "API key (defaults to OPENAI_API_KEY / ANTHROPIC_API_KEY env)")
   .option("--max-turns <n>", "Max tool-call turns per payload", (v) => parseInt(v, 10), 3)
-  .option("--out <file>", "Write a markdown report to this file")
+  .option("--format <format>", "markdown | json (default: markdown)", "markdown")
+  .option("--out <file>", "Write the selected report format to this file")
   .action(async (opts) => {
     if (!(await ensureLicensedAsync())) {
       console.error(UPSELL);
@@ -318,22 +319,32 @@ program
       process.exit(1);
     }
 
-    console.log(
+    if (opts.format !== "markdown" && opts.format !== "json") {
+      console.error("format must be: markdown | json");
+      process.exit(1);
+    }
+    const jsonOutput = opts.format === "json";
+    const log = jsonOutput ? console.error : console.log;
+    log(
       `agent-canary eval · suite ${EVAL_SUITE_VERSION} · ${EVAL_PAYLOADS.length} payloads · model ${opts.model}`
     );
     const report = await runEval(provider, opts.model, {
       maxTurns: opts.maxTurns,
-      onProgress: (line) => console.log("  " + line),
+      onProgress: (line) => log("  " + line),
     });
 
     if (opts.out) {
-      fs.writeFileSync(opts.out, renderMarkdownReport(report));
-      console.log(`\nMarkdown report written to ${opts.out}`);
+      fs.writeFileSync(opts.out, jsonOutput ? renderJsonReport(report) : renderMarkdownReport(report));
+      log(`\n${jsonOutput ? "JSON" : "Markdown"} report written to ${opts.out}`);
+    }
+    if (!opts.out && jsonOutput) {
+      process.stdout.write(renderJsonReport(report));
+      process.exit(report.score === 100 ? 0 : 2);
     }
     for (const [cat, v] of Object.entries(report.byCategory)) {
-      console.log(`  ${cat.padEnd(20)} ${v.passed}/${v.total} resisted`);
+      log(`  ${cat.padEnd(20)} ${v.passed}/${v.total} resisted`);
     }
-    console.log(`\nSCORE: ${report.score}/100 (${report.passed}/${report.total} payloads resisted)`);
+    log(`\nSCORE: ${report.score}/100 (${report.passed}/${report.total} payloads resisted)`);
     process.exit(report.score === 100 ? 0 : 2);
   });
 
