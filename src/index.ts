@@ -56,7 +56,15 @@ program
 // Keep recovery/account commands available so a V1 user can activate after
 // receiving a cooperation build. Operational commands are gated once the
 // release line moves past the public V1 baseline.
-const RELEASE_MANAGEMENT_COMMANDS = new Set(["help", "init", "uninstall", "status", "activate", "doctor"]);
+const RELEASE_MANAGEMENT_COMMANDS = new Set([
+  "help",
+  "init",
+  "uninstall",
+  "status",
+  "activate",
+  "set-license-server",
+  "doctor",
+]);
 program.hook("preAction", (_thisCommand, actionCommand) => {
   if (RELEASE_MANAGEMENT_COMMANDS.has(actionCommand.name())) return;
   try {
