@@ -124,6 +124,16 @@ const PLAN = {
 };
 // Keep the old name as a migration alias, but make the V2 switch explicit.
 const V2_PAID_ORDERS = process.env.V2_PAID_ORDERS === "1" || process.env.COOPERATION_ORDERS === "1";
+const PAYMENT_CHANNELS = Object.freeze([
+  ...(WECHAT_READY ? ["wechat"] : []),
+  ...(ALIPAY_READY ? ["alipay"] : []),
+  ...(VMQ_READY ? ["vmq"] : []),
+  ...(EPAY_READY ? ["epay"] : []),
+  ...(MANUAL_READY ? ["manual"] : []),
+]);
+if (!DEMO && PAYMENT_CHANNELS.length === 0) {
+  throw new Error("LIVE sponsor gateway has no payment channel; configure WeChat, Alipay, Vmq, Epay, or a local QR code");
+}
 
 // ---------- order store ----------
 // Tests can point persistence at an isolated temporary directory. Production
@@ -146,6 +156,17 @@ function writeJson(file, data) {
 const orders = readJson(ORDERS_FILE, {});
 function saveOrders() {
   writeJson(ORDERS_FILE, orders);
+}
+
+function normalizeHandle(value) {
+  const handle = String(value ?? "").trim();
+  if (!handle || handle.length > 64 || /[\u0000-\u001f\u007f]/.test(handle)) return null;
+  return handle;
+}
+
+function channelReady(channel) {
+  if (DEMO || EPAY_READY || VMQ_READY) return true;
+  return channel === "wechat" ? WECHAT_READY : ALIPAY_READY;
 }
 
 function newOrder(channel, amountYuan, note, plan = null, handle = null) {
@@ -609,6 +630,29 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, sponsorPage(), "text/html; charset=utf-8");
     }
 
+    // ---- API: safe operational health/status (never returns credentials) ----
+    if (req.method === "GET" && url.pathname === "/api/health") {
+      return send(
+        res,
+        200,
+        JSON.stringify({
+          ok: true,
+          mode: DEMO ? "demo" : "live",
+          v2PaidOrders: V2_PAID_ORDERS,
+          publicHttps: isSecureBase(PUBLIC_BASE),
+          channels: {
+            wechat: WECHAT_READY,
+            alipay: ALIPAY_READY,
+            vmq: VMQ_READY,
+            epay: EPAY_READY,
+            manual: MANUAL_READY,
+          },
+          plan: { usd: PLAN.personal.usd, cny: PLAN.personal.cny, days: PLAN.personal.days },
+        }),
+        "application/json"
+      );
+    }
+
     // ---- QR raster endpoint (page uses this for both real and demo QR) ----
     if (req.method === "GET" && url.pathname === "/api/qr") {
       const ip = req.socket.remoteAddress ?? "?";
@@ -627,6 +671,14 @@ const server = http.createServer(async (req, res) => {
       }
       const input = JSON.parse((await readBody(req)) || "{}");
       const channel = input.channel === "alipay" ? "alipay" : "wechat";
+      if (!channelReady(channel)) {
+        return send(
+          res,
+          503,
+          JSON.stringify({ ok: false, error: `${channel === "wechat" ? "WeChat" : "Alipay"} payment is not configured on this gateway` }),
+          "application/json"
+        );
+      }
       let order;
       if (input.plan === "personal") {
         if (!V2_PAID_ORDERS) {
@@ -637,7 +689,7 @@ const server = http.createServer(async (req, res) => {
             "application/json"
           );
         }
-        const handle = String(input.handle || "").trim().slice(0, 64);
+        const handle = normalizeHandle(input.handle);
         if (!handle) {
           return send(res, 400, JSON.stringify({ error: "handle required (GitHub 用户名或邮箱)" }), "application/json");
         }
@@ -683,8 +735,11 @@ const server = http.createServer(async (req, res) => {
       if (rateLimited("claim:" + ip, 10)) {
         return send(res, 429, JSON.stringify({ ok: false, error: "too many claims" }), "application/json");
       }
+      if (!MANUAL_READY && !DEMO) {
+        return send(res, 503, JSON.stringify({ ok: false, error: "manual payment QR is not configured" }), "application/json");
+      }
       const input = JSON.parse((await readBody(req)) || "{}");
-      const handle = String(input.handle || "").trim().slice(0, 64);
+      const handle = normalizeHandle(input.handle);
       const channel = input.channel === "alipay" ? "alipay" : "wechat";
       // plan orders are server-priced; donations need an explicit amount
       const amount = input.plan === "personal" ? PLAN.personal.cny : Number(input.amount);
@@ -705,7 +760,20 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname.startsWith("/api/order/")) {
       const o = orders[url.pathname.split("/")[3]];
       if (!o) return send(res, 404, "no such order");
-      return send(res, 200, JSON.stringify({ status: o.status, amount: o.amount, channel: o.channel, plan: o.plan }), "application/json");
+      return send(
+        res,
+        200,
+        JSON.stringify({
+          ok: true,
+          status: o.status,
+          amount: o.amount,
+          channel: o.channel,
+          plan: o.plan,
+          paidAt: o.paidAt,
+          ...(o.status === "failed" ? { error: "payment initialization failed" } : {}),
+        }),
+        "application/json"
+      );
     }
 
     // ---- API: subscription status — single source of truth for entitlement ----
@@ -913,20 +981,25 @@ button.ghost{background:transparent;border:1px solid #30363d;color:var(--fg)}
 .note{color:var(--dim);font-size:12px;margin-top:18px;line-height:1.6}
 .demo{background:#2d2a12;color:var(--y);border:1px solid #5a4d12;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:16px}
 </style></head><body><div class="box">
-<h1>支持 <span>agent-canary</span></h1>
-<p class="sub">资金用于付费推广、服务器与持续开发 · Funds ads, hosting and development.</p>
-${DEMO ? '<div class="demo">演示模式：扫码后打开的是模拟支付页，不会产生真实扣款。配置 .env 后自动切换为真实收款。</div>' : ""}
+<h1><span>agent-canary</span> 购买与支持</h1>
+<p class="sub">检测 AI agent 是否被提示注入劫持：诱饵工具 + 金丝雀令牌 + 可追踪告警。</p>
+${DEMO ? '<div class="demo">演示模式：此页面不会产生真实扣款，也不会发放真实生产许可证。配置并审核 .env 后才可切换为真实收款。</div>' : ""}
+
+<div class="plan" style="border-color:#30363d">
+  <h2>项目作用</h2>
+  <div class="fine" style="font-size:13px">正常 agent 永远不会调用假的转账、密钥读取或 root shell 工具；一旦调用，或蜜罐令牌出现在输出、外发请求、CI 日志或 git diff 中，就是需要调查的入侵信号。工具本身不会执行真实转账、命令或删除。</div>
+</div>
 
 <div class="plan">
   <h2>V2 Personal 付费版 <small>¥${p.cny}/30 天</small></h2>
   <ul>
-    <li>V2 评测与导出能力</li>
+    <li>V2 进阶评测、攻击链面板与 SIEM 导出</li>
     <li>短期许可证 + 设备绑定</li>
-    <li>付款成功后自动进入激活流程</li>
+    <li>付款回调验签成功后自动进入激活流程</li>
   </ul>
   <input id="handle" placeholder="GitHub 用户名或邮箱（许可证标识）" maxlength="64">
   <button id="sub">购买并激活 V2 Personal</button>
-  <div class="fine">支付成功后按 30 天授予 V2 许可证；每台设备单独激活，实际价格以网关配置为准。</div>
+  <div class="fine">V1 永久免费；V2 Personal 是 30 天许可证。真实购买支持微信、支付宝、Vmq 或 Epay（以当前网关实际配置为准），付款成功后才会开通，单纯赞助不会授予许可证。</div>
   <div class="fine" id="subcheck"></div>
 </div>
 ${MANUAL_READY ? `
@@ -936,7 +1009,7 @@ ${MANUAL_READY ? `
     ${qrFiles.wechat ? `<div style="text-align:center"><img src="/qr-image/wechat" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="微信收款码"><div class="fine">微信支付</div></div>` : ""}
     ${qrFiles.alipay ? `<div style="text-align:center"><img src="/qr-image/alipay" style="width:168px;height:168px;background:#fff;padding:8px;border-radius:10px" alt="支付宝收款码"><div class="fine">支付宝</div></div>` : ""}
   </div>
-  <div class="fine">如使用人工收款，请在付款后登记许可证标识；确认到账后由管理员开通 V2 Personal。</div>
+  <div class="fine">人工收款只在本机配置了收款码时显示。付款后登记许可证标识，管理员核对到账后手动开通；不要在备注里填写密码、私钥或付款截图。</div>
   <div style="display:flex;gap:8px;margin-top:8px">
     <select id="m-channel" style="width:110px;padding:11px;border:1px solid #30363d;border-radius:8px;background:#010409;color:var(--fg);font-size:14px">
       <option value="wechat">微信</option>
@@ -950,17 +1023,17 @@ ${MANUAL_READY ? `
 </div>
 ` : ""}
 ${DEMO || EPAY_READY || WECHAT_READY || ALIPAY_READY || VMQ_READY ? `
-<div class="donate-title">或一次性赞助：</div>
+<div class="donate-title">额外支持项目（不包含 V2 授权）：</div>
 <div class="tabs"><div class="tab on" id="t-wechat">微信支付</div><div class="tab" id="t-alipay">支付宝</div></div>
 <div class="amts" id="amts"></div>
 <input id="note" placeholder="留言（可选，120 字以内）" maxlength="120">
 <button id="go" class="ghost">生成付款码</button>
 <div class="qrbox" id="qrbox"><img id="qr" alt="付款二维码"><div id="st" class="sub" style="margin-top:10px">等待支付…</div><div class="ok" id="ok">✓ 支付成功，感谢支持！</div></div>
 ` : ""}
-<p class="note">本页为自托管收款服务：线上通道回调均经过签名验证。<br>项目：github.com/DorianChn/agent-canary</p>
+<p class="note">本页为自托管收款服务：线上通道回调均经过签名验证，服务器不保存支付密钥到代码仓库。<br>项目：github.com/DorianChn/agent-canary</p>
 </div>
 <script>
-const MODE = "${DEMO ? "demo" : !EPAY_READY && !WECHAT_READY && !ALIPAY_READY && MANUAL_READY ? "manual" : "auto"}";
+const MODE = "${DEMO ? "demo" : MANUAL_READY && !EPAY_READY && !WECHAT_READY && !ALIPAY_READY && !VMQ_READY ? "manual" : "auto"}";
 const PLAN_CNY = ${p.cny};
 let ch = "wechat", amount = null;
 
@@ -984,28 +1057,52 @@ function setTab(c) {
 async function startOrder(body) {
   const qrEl = document.getElementById("qr");
   if (!qrEl) { alert("当前模式不支持在线支付，请使用下方扫码登记"); return; }
-  const r = await fetch("/api/order", {
-    method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ channel: ch, ...body })
-  });
-  const j = await r.json();
-  if (j.error) { alert("下单失败: " + j.error); return; }
-  qrEl.src = "/api/qr?text=" + encodeURIComponent(j.qr);
-  document.getElementById("qrbox").style.display = "block";
-  document.getElementById("ok").style.display = "none";
-  document.getElementById("st").style.display = "block";
-  const iv = setInterval(async () => {
-    const s = await (await fetch("/api/order/" + j.orderId)).json();
-    if (s.status === "paid") {
-      clearInterval(iv);
-      document.getElementById("st").style.display = "none";
-      if (j.plan === "personal") {
-        const sub = await (await fetch("/api/subscription/" + encodeURIComponent(j.handle))).json();
-        document.getElementById("ok").textContent = "✓ V2 Personal 已生效，有效期至 " + (sub.expiresAt || "").slice(0, 10);
+  try {
+    const r = await fetch("/api/order", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ channel: ch, ...body })
+    });
+    const j = await r.json();
+    if (!r.ok || j.error) { alert("下单失败: " + (j.error || "服务暂不可用")); return; }
+    qrEl.src = "/api/qr?text=" + encodeURIComponent(j.qr);
+    document.getElementById("qrbox").style.display = "block";
+    document.getElementById("ok").style.display = "none";
+    const st = document.getElementById("st");
+    st.textContent = "等待支付回调…";
+    st.style.display = "block";
+    const deadline = Date.now() + 15 * 60 * 1000;
+    const iv = setInterval(async () => {
+      if (Date.now() > deadline) {
+        clearInterval(iv);
+        st.textContent = "订单已超时，请重新下单；如已付款请保留订单页面并联系作者。";
+        return;
       }
-      document.getElementById("ok").style.display = "block";
-    }
-  }, 2000);
+      try {
+        const sr = await fetch("/api/order/" + j.orderId);
+        const s = await sr.json();
+        if (s.status === "failed") {
+          clearInterval(iv);
+          st.textContent = "支付通道初始化失败，请更换方式或联系作者。";
+          return;
+        }
+        if (s.status === "paid") {
+          clearInterval(iv);
+          st.style.display = "none";
+          if (j.plan === "personal") {
+            const sub = await (await fetch("/api/subscription/" + encodeURIComponent(j.handle))).json();
+            document.getElementById("ok").textContent = sub.active
+              ? "✓ V2 Personal 已生效，有效期至 " + (sub.expiresAt || "").slice(0, 10)
+              : "✓ 已收到付款，许可证正在同步，请稍后查询状态";
+          }
+          document.getElementById("ok").style.display = "block";
+        }
+      } catch {
+        st.textContent = "网络暂时中断，正在继续查询订单…";
+      }
+    }, 2000);
+  } catch {
+    alert("网络错误：无法创建订单，请稍后重试");
+  }
 }
 async function manualClaim(body, okEl) {
   const r = await fetch("/api/manual-claim", {

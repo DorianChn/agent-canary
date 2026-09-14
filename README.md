@@ -31,9 +31,25 @@ workflow ever touches, so any contact is a real compromise signal.
 Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
 point back to the exact tool call that leaked them.
 
+## What it does — and what it does not
+
+agent-canary is a detection layer for MCP and other tool-using agents. It gives
+you three useful signals:
+
+1. **Tool-use signal:** inert decoy tools expose tempting but fake capabilities;
+   calling one is a compromise indicator.
+2. **Token signal:** unique canary values are planted in honeypot files and
+   detected if they appear in output, requests, logs, or a diff.
+3. **Evidence signal:** events contain the tool, arguments, trace token, time,
+   and source context so an incident can be investigated or exported to a SIEM.
+
+It does not execute the fake transfer, shell, deletion, or credential actions;
+it is not an access-control system, a secret store, or DRM. Keep real secrets
+out of honeypots and treat every alert as an investigation trigger.
+
 ## Install
 
-The npm package is on its way. Until then:
+The repository is the current public distribution:
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
     npm install && npm run build && npm link
@@ -94,11 +110,26 @@ and SDK features require a signed, machine-bound license issued after a paid
 order. The gateway must explicitly enable `V2_PAID_ORDERS=1`; credentials and
 production payment settings are never committed to this repository.
 
-## Support this project
+## Buy V2 Personal or support the project
 
-V1 is free to use. V2 Personal is a paid 30-day license with a configurable
-price, machine limit, and renewal policy. Sponsorship alone does not grant a
-V2 license. Never post receipts, keys, or other private data publicly.
+V1 is free during the public test period. V2 Personal is a paid 30-day
+license with a configurable price, machine limit, and renewal policy. V2 adds
+the advanced evaluation, dashboard, SIEM export, and SDK capabilities listed
+above. A donation or sponsorship alone does **not** grant a V2 license. Never
+post receipts, payment codes, private keys, or other private data publicly.
+
+The self-hosted sponsor gateway can use official WeChat Pay or Alipay
+credentials, V免签/Vmq with an Android monitor, or a compatible Epay adapter.
+The payment flow is: create a server-priced order → pay → verify the provider
+callback → issue a signed, machine-bound license. No activation occurs from a
+client-side success page alone. Demo mode simulates the flow and never charges
+money.
+
+For a real gateway, configure `DEMO=0`, `V2_PAID_ORDERS=1`, a public HTTPS
+`PUBLIC_BASE_URL`, the private Ed25519 license key, and at least one payment
+channel in `sponsor/.env`. Keep QR images, merchant keys, Vmq keys, order data,
+and signing keys outside git. See [sponsor/README.md](sponsor/README.md) and
+[`sponsor/.env.example`](sponsor/.env.example) for the checklist.
 
 For a V2 purchase, configure the authorized sponsor gateway before activation.
 The bundled local gateway defaults to `http://127.0.0.1:8787`:

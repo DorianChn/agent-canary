@@ -1,12 +1,18 @@
-# agent-canary 赞助收款网关
+# agent-canary V2 购买与项目支持网关
 
-单文件自托管收款服务：**微信支付（Native 扫码，API v3）+ 支付宝（当面付 precreate）**，用于把项目流量转化为资金（赞助 → 付费推广预算 / 服务器费用）。
+单文件自托管收款服务：**微信支付（Native 扫码，API v3）+ 支付宝（当面付 precreate）**，
+也支持 Vmq 和兼容 Epay 的通道。它同时处理两类订单：V2 Personal 购买（付款后签发许可证）
+和项目赞助（只支持项目，不自动授予 V2）。
 
 - 零框架、零遥测，只依赖 `qrcode` 一个包
 - 微信回调：平台证书验签（RSA-SHA256）+ AES-256-GCM 资源解密，验不过直接 401
 - 支付宝异步通知：RSA2 验签，验不过直接 401
 - 金额服务端校验（1–10000 元），前端不决定价格
 - 订单、订阅、激活记录和许可私钥默认写入源码目录之外的私有数据目录（记得备份，不要提交进 git）
+
+项目本身的作用是检测 AI agent 是否被提示注入劫持：诱饵工具和金丝雀令牌只产生告警与证据，
+不会执行真实转账、shell、删除或密钥读取。收款网关只负责订单、回调验签和许可证发放，不是
+agent-canary 的安全检测替代品。
 
 ## 上线前必查
 
@@ -15,6 +21,9 @@
   网关不会再自动生成一个客户端无法验证的生产密钥。
 - 可选的个人收款码只放在本机的 sponsor/qr/，不要放进仓库或公开 CDN。
 - DEMO 付款是模拟流程，只用于验收页面和订单状态，不代表真实收款已开通。
+- `GET /api/health` 只返回脱敏的运行模式、V2 开关和可用通道，适合上线探活；不会返回支付密钥。
+- 正式收款至少要完成一次小额端到端测试：创建订单 → 实际付款 → 回调验签 → 订单变为 paid →
+  `GET /api/subscription/:handle` 显示有效期 → CLI 激活成功。
 
 ## V2 Personal 付费版
 
@@ -29,6 +38,20 @@ V1 保持免费；V2 Personal 是按 30 天计的付费许可证。V2 命令和 
 - 激活请求必须声明 `releaseMajor: 2`，许可证也会写入 V2 版本声明，V1 许可证不能解锁 V2
 - `DEMO=1` 只模拟订单，不代表真实收款；演示模式的远程激活会被拒绝
 - 页面内置状态自查；真实付款凭据、签名私钥和二维码不得提交到 Git
+
+正式收款的最小配置：
+
+```env
+DEMO=0
+V2_PAID_ORDERS=1
+PUBLIC_BASE_URL=https://pay.example.com
+LICENSE_PRIVATE_KEY_PATH=/absolute/path/to/license-signing-key.pem
+# 再配置 WeChat、Alipay、Vmq、Epay 或本地人工收款码中的至少一种
+```
+
+启动后先访问 `https://pay.example.com/api/health`；只有 `mode` 为 `live`、
+`v2PaidOrders` 为 `true`、`publicHttps` 为 `true` 且至少一个 `channels` 为 `true`，
+才应对外发布购买链接。
 
 ## V2 授权管理工具
 
