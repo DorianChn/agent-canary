@@ -72,20 +72,23 @@
 </div></section>
 
 <section class="wrap" id="pricing" style="padding-bottom:56px">
-  <h2 style="color:#fff;font-size:28px;text-align:center">Free / Personal</h2>
-  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">核心防护永久免费 · Personal 解锁进阶工具（$10/月）</p>
+  <h2 style="color:#fff;font-size:28px;text-align:center">公开测试版 V1 / 合作版本</h2>
+  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">测试期只公开 V1 · V2+ 不公开下载 · 需要新版本请联系作者合作</p>
   <div class="grid" style="grid-template-columns:1fr 1fr">
     <div class="card">
-      <h3 style="margin-bottom:14px">Free — 永久</h3>
-      <p style="line-height:2">12 诱饵工具<br>金丝雀令牌 + 泄露扫描<br>实时监控 + 告警<br>MCP 一键安装</p>
+      <h3 style="margin-bottom:14px">公开 V1 — 测试期</h3>
+      <p style="line-height:2">12 诱饵工具<br>金丝雀令牌 + 泄露扫描<br>实时监控 + 告警<br>MCP 一键安装<br>测试期只发布 V1</p>
       <a class="btn ghost" href="https://github.com/DorianChn/agent-canary#quickstart" style="margin-top:14px;display:inline-block">直接用 →</a>
     </div>
     <div class="card" style="border-color:var(--y)">
-      <h3 style="margin-bottom:14px">Personal — <span style="color:var(--y)">$10/月</span></h3>
-      <p style="line-height:2">评测模式（注入抗性评分）<br>攻击链可视化面板<br>SIEM 导出（CEF/JSON/CSV）<br>SDK 非 MCP 接入</p>
-      <a class="btn" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project" style="margin-top:14px;display:inline-block;color:#0d1117">获取个人版 →</a>
+      <h3 style="margin-bottom:14px">合作版本</h3>
+      <p style="line-height:2">V2+ 新版本<br>私有部署与定制集成<br>进阶评测与 SIEM 支持<br>具体范围按合作方案确认</p>
+      <a class="btn" href="https://github.com/DorianChn/agent-canary/discussions" style="margin-top:14px;display:inline-block;color:#0d1117">联系作者合作 →</a>
     </div>
   </div>
+  <p id="payment-note" style="color:var(--dim);text-align:center;margin:18px auto 0;max-width:700px">
+    测试期只公开 V1；需要 V2+、私有集成或定制支持，请通过 GitHub Discussions 联系作者。
+  </p>
 </section>
 
 <section class="howto"><div class="wrap">
@@ -108,20 +111,36 @@
   <span><a data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ 赞助支持</a> · <a href="https://github.com/DorianChn/agent-canary">GitHub</a></span>
 </div></footer>
 <script>
-// 赞助链接动态解析：读取仓库里的当前公网地址（隧道域名变化时由 public-link.mjs 自动更新）
+// 只接受 HTTPS 稳定地址；轮换隧道不会覆盖稳定的付费说明入口。
 (function () {
+  const fallback = "https://github.com/DorianChn/agent-canary#support-this-project";
   const sources = [
     "https://cdn.jsdelivr.net/gh/DorianChn/agent-canary@main/docs/pay/url.txt",
     "https://raw.githubusercontent.com/DorianChn/agent-canary/main/docs/pay/url.txt"
   ];
+  function applySponsorUrl(raw) {
+    let u;
+    try {
+      u = new URL(raw.trim());
+    } catch {
+      return false;
+    }
+    if (
+      u.protocol !== "https:" ||
+      /(?:pinggy-free\.link|trycloudflare\.com|loca\.lt|ngrok-free\.app|serveo\.net)$/i.test(u.hostname)
+    ) return false;
+    document.querySelectorAll("[data-sponsor-url]").forEach((a) => (a.href = u.toString()));
+    const note = document.getElementById("payment-note");
+    if (note) note.textContent = "测试期只公开 V1；演示模式不扣款，新版本与私有集成请联系作者合作。";
+    return true;
+  }
+  applySponsorUrl(fallback);
   (function next(i) {
     if (i >= sources.length) return;
     fetch(sources[i] + "?t=" + Date.now(), { cache: "no-store" })
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
       .then((t) => {
-        const u = t.trim();
-        if (!/^https:\/\/[a-z0-9.-]+/.test(u)) throw new Error("bad url");
-        document.querySelectorAll("[data-sponsor-url]").forEach((a) => (a.href = u + "/"));
+        if (!applySponsorUrl(t)) throw new Error("unstable or invalid payment url");
       })
       .catch(() => next(i + 1));
   })(0);

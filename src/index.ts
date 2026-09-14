@@ -3,7 +3,15 @@ import { Command } from "commander";
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { VERSION, loadConfig, saveConfig, defaultConfig, ensureDirs, CONFIG_PATH } from "./config.js";
+import {
+  VERSION,
+  loadConfig,
+  saveConfig,
+  defaultConfig,
+  ensureDirs,
+  CONFIG_PATH,
+  releaseRequiresLicense,
+} from "./config.js";
 import { serve } from "./server.js";
 import { generateTokens, loadTokens, plantIntoFile, findTokensInText, scanFile } from "./tokens.js";
 import { logEvent, readEvents, fireAlerts, type CanaryEvent } from "./alerts.js";
@@ -14,7 +22,14 @@ import { anthropicProvider, openaiCompatibleProvider } from "./eval/providers.js
 import { renderMarkdownReport, runEval } from "./eval/runner.js";
 import { renderDashboard } from "./dashboard.js";
 import { exportCef, exportCsv, exportJson } from "./export.js";
-import { activate, ensureLicensedAsync, licenseServer, UPSELL, cachedLicense } from "./license.js";
+import {
+  activate,
+  ensureLicensedAsync,
+  ensureReleaseAccess,
+  licenseServer,
+  UPSELL,
+  cachedLicense,
+} from "./license.js";
 import { DECOY_TOOLS } from "./decoys.js";
 import http from "node:http";
 
@@ -23,6 +38,20 @@ program
   .name("agent-canary")
   .description("Zero-false-positive tripwires for AI agents: decoy MCP tools + leak-tracing canary tokens.")
   .version(VERSION);
+
+// Keep recovery/account commands available so a V1 user can activate after
+// receiving a cooperation build. Operational commands are gated once the
+// release line moves past the public V1 baseline.
+const RELEASE_MANAGEMENT_COMMANDS = new Set(["help", "init", "uninstall", "status", "activate", "doctor"]);
+program.hook("preAction", (_thisCommand, actionCommand) => {
+  if (RELEASE_MANAGEMENT_COMMANDS.has(actionCommand.name())) return;
+  try {
+    ensureReleaseAccess();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : "此版本需要合作授权，请联系作者");
+    process.exit(1);
+  }
+});
 
 program
   .command("serve")
@@ -356,14 +385,14 @@ program
 
 program
   .command("activate")
-  .description("Activate Personal Edition with your sponsor handle (GitHub username or email)")
+  .description("Activate a maintainer-approved cooperation build with your handle")
   .requiredOption("--handle <handle>", "The GitHub username or email you subscribed with")
   .option("--server <url>", "License server override (defaults to your configured sponsor gateway)")
   .action(async (opts) => {
     console.log(`Checking subscription at ${licenseServer(opts.server)} …`);
     const r = await activate(opts.handle, opts.server);
     if (r.ok) {
-      console.log(`✓ 个人版已激活，有效期至 ${r.expiresAt}${r.offline ? "（使用本地缓存，离线宽限）" : ""}`);
+      console.log(`✓ 合作授权已激活，有效期至 ${r.expiresAt}${r.offline ? "（使用本地缓存，离线宽限）" : ""}`);
       console.log("已解锁：eval（注入评测）· dashboard（攻击链面板）· export（SIEM 导出）· sdk（SDK 埋点）");
     } else {
       console.error(`✗ 激活失败：${r.message}`);
@@ -382,7 +411,8 @@ program
     const events = readEvents(undefined, 1_000_000);
     const real = events.filter((e) => e.kind !== "test").length;
     console.log(`agent-canary v${VERSION}`);
-    console.log(`  版本        ${lic ? `个人版 Personal（有效期至 ${lic.expiresAt.slice(0, 10)}）` : "免费版 Free"}`);
+    console.log(`  版本        ${lic ? `合作授权（有效期至 ${lic.expiresAt.slice(0, 10)}）` : "公开 V1"}`);
+    console.log(`  发布线      ${releaseRequiresLicense() ? "v2+（仅合作提供）" : "v1 公开测试线"}`);
     console.log(`  诱饵工具    ${DECOY_TOOLS.length} 个已注册`);
     console.log(`  金丝雀令牌  ${tokens.length} 个（${tokens.filter((t) => t.planted.length).length} 个已埋放）`);
     console.log(`  事件        ${events.length} 条（${real} 条真实告警）`);
@@ -404,8 +434,8 @@ program
 
     console.log(`agent-canary doctor (v${VERSION})`);
     console.log("  环境");
-    if (lic) ok(`授权：个人版 Personal，有效期至 ${lic.expiresAt.slice(0, 10)}`);
-    else info("授权：免费版 Free（eval/dashboard/export/sdk 需个人版）");
+    if (lic) ok(`授权：合作版本，有效期至 ${lic.expiresAt.slice(0, 10)}`);
+    else info(`授权：公开 V1（${releaseRequiresLicense() ? "当前发布线需合作授权" : "进阶能力需合作确认"}）`);
     info(`配置文件：${fs.existsSync(CONFIG_PATH) ? CONFIG_PATH : "未创建（agent-canary init）"}`);
     info(`诱饵工具：${DECOY_TOOLS.length} 个 · 令牌：${tokens.length} 个（${tokens.filter((t) => t.planted.length).length} 已埋放）`);
     info(`事件：${events.length} 条 · 日志 ${cfg.eventsFile}`);

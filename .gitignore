@@ -4,3 +4,19 @@ dist/
 .env
 .agent-canary/
 package-lock.json.bak
+
+# Sponsor runtime state and private payment/license material.
+sponsor/.env
+sponsor/qr/
+sponsor/orders.json
+sponsor/subscribers.json
+sponsor/activations.json
+sponsor/license-keys.json
+sponsor/*.pem
+sponsor/*.key
+
+# Payment QR images are personal data; keep only docs/pay/url.txt if needed.
+docs/pay/*.png
+docs/pay/*.jpg
+docs/pay/*.jpeg
+docs/pay/*.webp
