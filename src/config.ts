@@ -2,11 +2,10 @@ import { homedir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 
-export const VERSION = "0.8.0";
+export const VERSION = "2.0.0";
 
-// The public testing release line is the v1 baseline. v2 and later are
-// distributed only through maintainer-approved cooperation; current 0.x
-// bootstrap releases remain usable for free.
+// V1 remains the free public baseline. V2 is a paid release line backed by a
+// short-lived, machine-bound license from the sponsor gateway.
 export const FREE_MAX_MAJOR = 1;
 
 export function majorVersion(version: string): number {
@@ -18,6 +17,8 @@ export function releaseRequiresLicense(version: string = VERSION): boolean {
   return majorVersion(version) > FREE_MAX_MAJOR;
 }
 
+export const RELEASE_MAJOR = majorVersion(VERSION);
+
 // Overridable for tests; real installs live in ~/.agent-canary
 export const ROOT = process.env.AGENT_CANARY_HOME ?? path.join(homedir(), ".agent-canary");
 
@@ -26,16 +27,26 @@ export const CONFIG_PATH = path.join(ROOT, "config.json");
 export const TOKENS_PATH = path.join(ROOT, "tokens.json");
 export const EVENTS_PATH = path.join(ROOT, "events.jsonl");
 
+// The sponsor gateway listens on 8787 by default. Remote deployments should
+// set AGENT_CANARY_LICENSE_SERVER or persist another value with
+// `agent-canary set-license-server`.
+export const DEFAULT_LICENSE_SERVER = "http://127.0.0.1:8787";
+
 export interface CanaryConfig {
   webhook: string | null;
   notify: boolean;
   eventsFile: string;
-  /** Cooperation authorization server (sponsor gateway) */
+  /** V2 paid-edition license server (sponsor gateway) */
   licenseServer?: string;
 }
 
 export function defaultConfig(): CanaryConfig {
-  return { webhook: null, notify: true, eventsFile: EVENTS_PATH };
+  return {
+    webhook: null,
+    notify: true,
+    eventsFile: EVENTS_PATH,
+    licenseServer: process.env.AGENT_CANARY_LICENSE_SERVER ?? DEFAULT_LICENSE_SERVER,
+  };
 }
 
 export function ensureDirs(): void {

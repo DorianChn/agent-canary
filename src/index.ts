@@ -10,6 +10,7 @@ import {
   defaultConfig,
   ensureDirs,
   CONFIG_PATH,
+  DEFAULT_LICENSE_SERVER,
   releaseRequiresLicense,
 } from "./config.js";
 import { serve } from "./server.js";
@@ -33,6 +34,19 @@ import {
 import { DECOY_TOOLS } from "./decoys.js";
 import http from "node:http";
 
+function normalizeLicenseServer(raw: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error("许可服务器必须是 http(s) URL");
+  }
+  if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) {
+    throw new Error("许可服务器必须是没有用户名/密码的 http(s) URL");
+  }
+  return raw.replace(/\/+$/, "");
+}
+
 const program = new Command();
 program
   .name("agent-canary")
@@ -40,15 +54,23 @@ program
   .version(VERSION);
 
 // Keep recovery/account commands available so a V1 user can activate after
-// receiving a cooperation build. Operational commands are gated once the
+// receiving a paid V2 Personal license. Operational commands are gated once the
 // release line moves past the public V1 baseline.
-const RELEASE_MANAGEMENT_COMMANDS = new Set(["help", "init", "uninstall", "status", "activate", "doctor"]);
+const RELEASE_MANAGEMENT_COMMANDS = new Set([
+  "help",
+  "init",
+  "uninstall",
+  "status",
+  "activate",
+  "set-license-server",
+  "doctor",
+]);
 program.hook("preAction", (_thisCommand, actionCommand) => {
   if (RELEASE_MANAGEMENT_COMMANDS.has(actionCommand.name())) return;
   try {
     ensureReleaseAccess();
   } catch (err) {
-    console.error(err instanceof Error ? err.message : "此版本需要合作授权，请联系作者");
+    console.error(err instanceof Error ? err.message : "此版本需要 V2 Personal 付费许可证，请先购买并激活");
     process.exit(1);
   }
 });
@@ -385,20 +407,39 @@ program
 
 program
   .command("activate")
-  .description("Activate a maintainer-approved cooperation build with your handle")
+  .description("Activate a paid V2 Personal license with your handle")
   .requiredOption("--handle <handle>", "The GitHub username or email you subscribed with")
   .option("--server <url>", "License server override (defaults to your configured sponsor gateway)")
   .action(async (opts) => {
-    console.log(`Checking subscription at ${licenseServer(opts.server)} …`);
-    const r = await activate(opts.handle, opts.server);
+    const server = opts.server ? normalizeLicenseServer(opts.server) : undefined;
+    console.log(`Checking subscription at ${licenseServer(server)} …`);
+    const r = await activate(opts.handle, server);
     if (r.ok) {
-      console.log(`✓ 合作授权已激活，有效期至 ${r.expiresAt}${r.offline ? "（使用本地缓存，离线宽限）" : ""}`);
+      console.log(`✓ V2 Personal 许可证已激活，有效期至 ${r.expiresAt}${r.offline ? "（使用本地缓存，离线宽限）" : ""}`);
       console.log("已解锁：eval（注入评测）· dashboard（攻击链面板）· export（SIEM 导出）· sdk（SDK 埋点）");
     } else {
       console.error(`✗ 激活失败：${r.message}`);
       console.error(UPSELL);
       process.exit(1);
     }
+  });
+
+program
+.command("set-license-server")
+  .argument("<url|null>", "许可服务器 URL，使用 null 恢复本机默认网关")
+  .description("Persist the V2 Personal license gateway used for paid activation")
+  .action((raw: string) => {
+    const cfg = loadConfig();
+    if (raw === "null") {
+      cfg.licenseServer = DEFAULT_LICENSE_SERVER;
+      saveConfig(cfg);
+      console.log(`许可服务器已恢复为 ${DEFAULT_LICENSE_SERVER}`);
+      return;
+    }
+    const server = normalizeLicenseServer(raw);
+    cfg.licenseServer = server;
+    saveConfig(cfg);
+    console.log(`许可服务器已设置为 ${server}`);
   });
 
 program
@@ -411,8 +452,8 @@ program
     const events = readEvents(undefined, 1_000_000);
     const real = events.filter((e) => e.kind !== "test").length;
     console.log(`agent-canary v${VERSION}`);
-    console.log(`  版本        ${lic ? `合作授权（有效期至 ${lic.expiresAt.slice(0, 10)}）` : "公开 V1"}`);
-    console.log(`  发布线      ${releaseRequiresLicense() ? "v2+（仅合作提供）" : "v1 公开测试线"}`);
+    console.log(`  版本        ${lic ? `V${lic.releaseMajor} Personal（有效期至 ${lic.expiresAt.slice(0, 10)}）` : "公开 V1（未激活）"}`);
+    console.log(`  发布线      ${releaseRequiresLicense() ? "V2 Personal（需付费许可证）" : "V1 公开测试线"}`);
     console.log(`  诱饵工具    ${DECOY_TOOLS.length} 个已注册`);
     console.log(`  金丝雀令牌  ${tokens.length} 个（${tokens.filter((t) => t.planted.length).length} 个已埋放）`);
     console.log(`  事件        ${events.length} 条（${real} 条真实告警）`);
@@ -434,8 +475,8 @@ program
 
     console.log(`agent-canary doctor (v${VERSION})`);
     console.log("  环境");
-    if (lic) ok(`授权：合作版本，有效期至 ${lic.expiresAt.slice(0, 10)}`);
-    else info(`授权：公开 V1（${releaseRequiresLicense() ? "当前发布线需合作授权" : "进阶能力需合作确认"}）`);
+    if (lic) ok(`授权：V${lic.releaseMajor} Personal，有效期至 ${lic.expiresAt.slice(0, 10)}`);
+    else info(`授权：公开 V1（${releaseRequiresLicense() ? "当前 V2 发布线需要付费许可证" : "V1 可免费使用"}）`);
     info(`配置文件：${fs.existsSync(CONFIG_PATH) ? CONFIG_PATH : "未创建（agent-canary init）"}`);
     info(`诱饵工具：${DECOY_TOOLS.length} 个 · 令牌：${tokens.length} 个（${tokens.filter((t) => t.planted.length).length} 已埋放）`);
     info(`事件：${events.length} 条 · 日志 ${cfg.eventsFile}`);
