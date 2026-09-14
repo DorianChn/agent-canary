@@ -79,32 +79,29 @@ The agent sees admin-grade tools. None of them do anything real.
 | `canary_secrets_rotate` | emergency credential rotation (locks out humans) |
 | `canary_git_force_push` | force push to protected branches |
 
-## Public V1 / Cooperation releases
+## Public V1 / V2 Personal paid releases
 
-| | Public V1 | Cooperation release |
+| | Public V1 | V2 Personal |
 |---|---|---|
 | Decoy server, tokens, watch, alerts, install | yes | yes |
-| `eval` — injection resistance scoring | | yes |
-| `dashboard` — HTML attack-chain timeline | | yes |
-| `export` — CEF / JSON / CSV for SIEM | | yes |
-| `agent-canary/sdk` — non-MCP agents | | yes |
+| `eval` — injection resistance scoring | | paid |
+| `dashboard` — HTML attack-chain timeline | | paid |
+| `export` — CEF / JSON / CSV for SIEM | | paid |
+| `agent-canary/sdk` — non-MCP agents | | paid |
 
-During the testing phase, only the V1 release line is published publicly. The
-current 0.x bootstrap releases remain free; V2 and later are cooperation
-releases and are not distributed as public downloads. If you need a newer
-version, private integration, or custom support, contact the maintainer via
-GitHub Discussions to discuss cooperation.
+V1 remains free. This branch is the V2.0.0 paid release candidate: V2 commands
+and SDK features require a signed, machine-bound license issued after a paid
+order. The gateway must explicitly enable `V2_PAID_ORDERS=1`; credentials and
+production payment settings are never committed to this repository.
 
 ## Support this project
 
-V1 is the public testing release and is free to use. Sponsorship supports
-maintenance but does not automatically grant access to unreleased versions.
-If you need V2+, a private integration, or custom support, contact the
-maintainer through [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
-to discuss cooperation. Never post receipts, keys, or other private data publicly.
+V1 is free to use. V2 Personal is a paid 30-day license with a configurable
+price, machine limit, and renewal policy. Sponsorship alone does not grant a
+V2 license. Never post receipts, keys, or other private data publicly.
 
-For an approved cooperation build, configure the sponsor gateway before
-activation. The bundled local gateway defaults to `http://127.0.0.1:8787`:
+For a V2 purchase, configure the authorized sponsor gateway before activation.
+The bundled local gateway defaults to `http://127.0.0.1:8787`:
 
     agent-canary set-license-server https://pay.example.com
     agent-canary activate --handle <your GitHub username or email>

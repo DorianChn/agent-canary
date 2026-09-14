@@ -2,11 +2,10 @@ import { homedir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 
-export const VERSION = "0.8.0";
+export const VERSION = "2.0.0";
 
-// The public testing release line is the v1 baseline. v2 and later are
-// distributed only through maintainer-approved cooperation; current 0.x
-// bootstrap releases remain usable for free.
+// V1 remains the free public baseline. V2 is a paid release line backed by a
+// short-lived, machine-bound license from the sponsor gateway.
 export const FREE_MAX_MAJOR = 1;
 
 export function majorVersion(version: string): number {
@@ -17,6 +16,8 @@ export function majorVersion(version: string): number {
 export function releaseRequiresLicense(version: string = VERSION): boolean {
   return majorVersion(version) > FREE_MAX_MAJOR;
 }
+
+export const RELEASE_MAJOR = majorVersion(VERSION);
 
 // Overridable for tests; real installs live in ~/.agent-canary
 export const ROOT = process.env.AGENT_CANARY_HOME ?? path.join(homedir(), ".agent-canary");
@@ -35,7 +36,7 @@ export interface CanaryConfig {
   webhook: string | null;
   notify: boolean;
   eventsFile: string;
-  /** Cooperation authorization server (sponsor gateway) */
+  /** V2 paid-edition license server (sponsor gateway) */
   licenseServer?: string;
 }
 

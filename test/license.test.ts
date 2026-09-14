@@ -24,6 +24,7 @@ __setTrustedPublicKeyForTesting(TEST_PUB_PEM);
 //   signWith: "wrong"    → sign with the wrong keypair
 let signWith: "test" | "wrong" = "test";
 let forcedExpiry: string | null = null;
+let forcedReleaseMajor: number | null = null;
 let forceMachineHash: string | null = null;
 
 const server = http.createServer((q, s) => {
@@ -39,6 +40,7 @@ const server = http.createServer((q, s) => {
     const keys = signWith === "wrong" ? WRONG_KEYS.privateKey : TEST_KEYS.privateKey;
     const payload = Buffer.from(
       JSON.stringify({
+        releaseMajor: forcedReleaseMajor ?? Number(req.releaseMajor ?? 0),
         handle,
         machineHash: forceMachineHash ?? String(req.machineHash ?? ""),
         expiresAt: forcedExpiry ?? new Date(Date.now() + 30 * 864e5).toISOString(),
@@ -54,7 +56,7 @@ server.unref();
 const licPort = (server.address() as { port: number }).port;
 process.env.AGENT_CANARY_LICENSE_SERVER = `http://127.0.0.1:${licPort}`;
 
-const { activate, cachedLicense, ensureLicensed, LicenseError, UPSELL } = await import("../src/license.js");
+const { activate, cachedLicense, ensureLicensed, ensureReleaseAccess, LicenseError, UPSELL } = await import("../src/license.js");
 const sdk = await import("../src/sdk.js");
 
 test("activate with valid gateway signature → licensed", async () => {
@@ -63,7 +65,9 @@ test("activate with valid gateway signature → licensed", async () => {
   assert.equal(r.ok, true, r.message);
   assert.ok(r.expiresAt);
   assert.ok(cachedLicense());
+  assert.equal(cachedLicense()?.releaseMajor, 2);
   assert.doesNotThrow(() => ensureLicensed());
+  assert.doesNotThrow(() => ensureReleaseAccess());
   const guard = sdk.createTokenGuard(); // gated primitive now works
   assert.ok(guard);
 });
@@ -75,6 +79,17 @@ test("license signed by a wrong key is rejected", async () => {
   assert.equal(r.ok, false);
   assert.match(r.message ?? "", /签名无效/);
   assert.equal(cachedLicense(), null);
+});
+
+test("older release license cannot unlock the V2 build", async () => {
+  fs.rmSync(path.join(process.env.AGENT_CANARY_HOME!, "license.json"), { force: true });
+  signWith = "test";
+  forcedReleaseMajor = 1;
+  const r = await activate("paid-user");
+  assert.equal(r.ok, false);
+  assert.match(r.message ?? "", /当前版本需要 V2/);
+  assert.equal(cachedLicense(), null);
+  forcedReleaseMajor = null;
 });
 
 test("license bound to a different machine is rejected", async () => {

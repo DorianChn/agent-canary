@@ -4,8 +4,8 @@
  *
  * 用法（在 sponsor/ 目录下）：
  *   node grant.mjs pending                 列出待确认的付款登记
- *   node grant.mjs list                    列出合作授权及到期时间
- *   node grant.mjs grant <handle> [月数]   为合作方开通授权（默认 1 个月=30 天，可叠加）
+ *   node grant.mjs list                    列出 V2 Personal 许可证及到期时间
+ *   node grant.mjs grant <handle> [月数]   开通/延长 V2 Personal（默认 1 个月=30 天，可叠加）
  *   node grant.mjs revoke <handle>         撤销后续激活（已签发许可到期前仍会有效）
  *
  * 流程：付款人在赞助页登记 → 你在微信/支付宝账单里看到钱到账 → node grant.mjs grant xxx
@@ -37,7 +37,7 @@ function printSubscriptions(subs) {
   const now = Date.now();
   const rows = Object.values(subs).sort((a, b) => String(a.handle).localeCompare(String(b.handle)));
   if (rows.length === 0) {
-    console.log("没有合作授权。");
+    console.log("没有 V2 Personal 许可证。");
     return;
   }
   for (const s of rows) {
@@ -51,8 +51,8 @@ function usage() {
   console.log(
     "用法:\n" +
       "  node grant.mjs pending                 列出待确认登记\n" +
-      "  node grant.mjs list                    列出合作授权\n" +
-      "  node grant.mjs grant <handle> [月数]   开通/延长合作授权\n" +
+      "  node grant.mjs list                    列出 V2 Personal 许可证\n" +
+      "  node grant.mjs grant <handle> [月数]   开通/延长 V2 Personal\n" +
       "  node grant.mjs revoke <handle>         撤销后续激活"
   );
 }
@@ -108,7 +108,7 @@ function main() {
     }
     if (confirmed) write(ORDERS_FILE, orders);
 
-    console.log(`✓ ${handle} 合作授权已开通，有效期至 ${expiresAt}` + (confirmed ? `（已确认 ${confirmed} 条待审登记）` : ""));
+    console.log(`✓ ${handle} 的 V2 Personal 已开通，有效期至 ${expiresAt}` + (confirmed ? `（已确认 ${confirmed} 条待审登记）` : ""));
     return;
   }
 
@@ -125,7 +125,7 @@ function main() {
     }
     const subs = read(SUBS_FILE, {});
     if (!subs[handle]) {
-      console.log(`没有找到合作授权：${handle}`);
+      console.log(`没有找到 V2 Personal 许可证：${handle}`);
       process.exitCode = 1;
       return;
     }
