@@ -24,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify stable public sponsor URL
+        run: |
+          test "$(tr -d '\\r\\n' < docs/pay/url.txt)" = "https://github.com/DorianChn/agent-canary#support-this-project"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
