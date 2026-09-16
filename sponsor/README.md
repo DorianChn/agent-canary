@@ -30,6 +30,25 @@ V1 保持免费；V2 Personal 是按 30 天计的付费许可证。V2 命令和 
 - `DEMO=1` 只模拟订单，不代表真实收款；演示模式的远程激活会被拒绝
 - 页面内置状态自查；真实付款凭据、签名私钥和二维码不得提交到 Git
 
+## 推荐销售渠道：Polar hosted checkout
+
+如果要把项目从 GitHub 变成可购买的软件，推荐使用 Polar 作为国际收款入口，
+而不是把个人微信/支付宝收款码当作长期商业收款系统。Polar 官方支持软件、订阅、
+许可证、订单 webhook 和 Merchant of Record 税务处理；中国大陆卖家是否能完成具体
+提现仍以账号实名认证和 Stripe Connect Express 审核结果为准。
+
+1. 在 Polar 创建 V2 Personal 产品（一次性 30 天或按月订阅），价格先用测试价验证。
+2. 添加必填 checkout custom field，slug 必须是 `handle`，用于接收 GitHub 用户名或邮箱。
+3. 创建 Checkout Link，把链接填入 `POLAR_CHECKOUT_URL`，把产品 ID 填入 `POLAR_PRODUCT_ID`。
+4. 新建 Raw webhook endpoint：`https://你的域名/callback/polar`，订阅 `order.paid` 和 `order.refunded`，
+   将密钥填入 `POLAR_WEBHOOK_SECRET`。
+5. 确认 `PUBLIC_BASE_URL` 是公网 HTTPS，设置 `V2_PAID_ORDERS=1`，再用 Polar Sandbox
+   完成“付款 → webhook → 订阅 → CLI 激活”测试，最后再切生产。
+
+配置完成后，网关购买按钮会把用户带到 Polar 结账页；收到已验签的 `order.paid` 后，
+网关才会为对应 handle 延长 V2 Personal，并保留去重记录。未配置 Polar 时，原有
+微信/支付宝、易支付、V免签和演示流程不变。
+
 ## V2 授权管理工具
 
 人工登记仍可作为线下收款的兜底流程；付款确认后由管理员执行授权。

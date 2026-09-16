@@ -26,6 +26,7 @@ import http from "node:http";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import QRCode from "qrcode";
+import { extractPolarHandle, verifyPolarWebhook } from "./polar-webhook.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -94,6 +95,13 @@ const VMQ = {
   key: process.env.VMQ_KEY || "",
 };
 const VMQ_READY = Boolean(VMQ.url && VMQ.key);
+const POLAR = {
+  checkoutUrl: (process.env.POLAR_CHECKOUT_URL || "").trim(),
+  productId: (process.env.POLAR_PRODUCT_ID || "").trim(),
+  webhookSecret: (process.env.POLAR_WEBHOOK_SECRET || "").trim(),
+};
+const POLAR_CHECKOUT_READY = Boolean(POLAR.checkoutUrl);
+const POLAR_WEBHOOK_READY = Boolean(POLAR.productId && POLAR.webhookSecret);
 
 // 零成本模式：个人收款码 + 人工确认。把你的个人收款码图片放到 sponsor/qr/ 下即可自动启用：
 //   sponsor/qr/wechat.png (或 .jpg)   sponsor/qr/alipay.png (或 .jpg)
@@ -132,6 +140,7 @@ const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(os.homedir(), ".
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 const SUBS_FILE = path.join(DATA_DIR, "subscribers.json");
+const POLAR_ORDERS_FILE = path.join(DATA_DIR, "polar-orders.json");
 function readJson(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -144,8 +153,12 @@ function writeJson(file, data) {
   try { fs.chmodSync(file, 0o600); } catch {}
 }
 const orders = readJson(ORDERS_FILE, {});
+const polarOrders = readJson(POLAR_ORDERS_FILE, {});
 function saveOrders() {
   writeJson(ORDERS_FILE, orders);
+}
+function savePolarOrders() {
+  writeJson(POLAR_ORDERS_FILE, polarOrders);
 }
 
 function newOrder(channel, amountYuan, note, plan = null, handle = null) {
@@ -715,13 +728,64 @@ const server = http.createServer(async (req, res) => {
       }
       const handle = decodeURIComponent(url.pathname.split("/")[3] || "").trim();
       const s = loadSubs()[handle];
-      const active = Boolean(s && Date.parse(s.expiresAt) > Date.now());
+      const active = Boolean(s && !s.revokedAt && Date.parse(s.expiresAt) > Date.now());
       return send(
         res,
         200,
         JSON.stringify({ handle, plan: "personal", active, expiresAt: s?.expiresAt ?? null, price: { usd: PLAN.personal.usd, cny: PLAN.personal.cny } }),
         "application/json"
       );
+    }
+
+    // ---- Polar hosted checkout webhook ----
+    if (req.method === "POST" && url.pathname === "/callback/polar") {
+      const raw = await readBody(req);
+      if (!POLAR_WEBHOOK_READY) {
+        return send(res, 503, JSON.stringify({ ok: false, error: "Polar webhook is not configured" }), "application/json");
+      }
+      if (!verifyPolarWebhook(raw, req.headers, POLAR.webhookSecret)) {
+        return send(res, 403, JSON.stringify({ ok: false, error: "bad Polar signature" }), "application/json");
+      }
+      let event;
+      try { event = JSON.parse(raw); } catch {
+        return send(res, 400, JSON.stringify({ ok: false, error: "invalid JSON" }), "application/json");
+      }
+      const data = event.data || {};
+      const orderId = String(data.id || "").trim();
+      if (!orderId || data.product_id !== POLAR.productId) {
+        return send(res, 202, JSON.stringify({ ok: true, ignored: true }), "application/json");
+      }
+      if (!V2_PAID_ORDERS) {
+        return send(res, 503, JSON.stringify({ ok: false, error: "V2 paid orders are not enabled" }), "application/json");
+      }
+      if (event.type === "order.refunded") {
+        const record = polarOrders[orderId];
+        if (record && !record.refundedAt) {
+          const subs = loadSubs();
+          if (subs[record.handle]) {
+            subs[record.handle] = { ...subs[record.handle], revokedAt: new Date().toISOString() };
+            writeJson(SUBS_FILE, subs);
+          }
+          polarOrders[orderId] = { ...record, refundedAt: new Date().toISOString() };
+          savePolarOrders();
+          console.log(`[sponsor] Polar order ${orderId.slice(0, 12)}… refunded; future activations revoked for "${record.handle}"`);
+        }
+        return send(res, 202, JSON.stringify({ ok: true }), "application/json");
+      }
+      if (event.type !== "order.paid" || data.paid !== true) {
+        return send(res, 202, JSON.stringify({ ok: true, ignored: true }), "application/json");
+      }
+      if (polarOrders[orderId]) return send(res, 202, JSON.stringify({ ok: true, duplicate: true }), "application/json");
+      const handle = extractPolarHandle(data);
+      if (!handle) {
+        console.error(`[sponsor] Polar order ${orderId.slice(0, 12)}… has no handle; entitlement not granted`);
+        return send(res, 202, JSON.stringify({ ok: false, error: "missing handle; no entitlement granted" }), "application/json");
+      }
+      const expiresAt = extendSubscription(handle, `polar:${orderId}`);
+      polarOrders[orderId] = { handle, paidAt: new Date().toISOString(), expiresAt };
+      savePolarOrders();
+      console.log(`[sponsor] Polar order ${orderId.slice(0, 12)}… paid; V2 Personal for "${handle}" until ${expiresAt}`);
+      return send(res, 202, JSON.stringify({ ok: true }), "application/json");
     }
 
     // ---- WeChat async callback ----
@@ -819,7 +883,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 400, JSON.stringify({ ok: false, error: `unsupported release major; this gateway issues V${LICENSE_RELEASE_MAJOR} licenses` }), "application/json");
       }
       const sub = loadSubs()[handle];
-      if (!sub || new Date(sub.expiresAt) <= new Date()) {
+      if (!sub || sub.revokedAt || new Date(sub.expiresAt) <= new Date()) {
         return send(res, 403, JSON.stringify({ ok: false, error: "no active subscription for this handle" }), "application/json");
       }
       const acts = readJson(ACTIVATIONS_FILE, {});
@@ -882,6 +946,7 @@ const server = http.createServer(async (req, res) => {
 // ---------- sponsor page ----------
 function sponsorPage() {
   const p = PLAN.personal;
+  const polarCheckoutJson = JSON.stringify(POLAR.checkoutUrl).replace(/</g, "\\u003c");
   return `<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sponsor agent-canary</title><style>
@@ -925,7 +990,7 @@ ${DEMO ? '<div class="demo">演示模式：扫码后打开的是模拟支付页�
     <li>付款成功后自动进入激活流程</li>
   </ul>
   <input id="handle" placeholder="GitHub 用户名或邮箱（许可证标识）" maxlength="64">
-  <button id="sub">购买并激活 V2 Personal</button>
+  <button id="sub">${POLAR_CHECKOUT_READY ? "前往安全结账并购买 V2 Personal" : "购买并激活 V2 Personal"}</button>
   <div class="fine">支付成功后按 30 天授予 V2 许可证；每台设备单独激活，实际价格以网关配置为准。</div>
   <div class="fine" id="subcheck"></div>
 </div>
@@ -961,6 +1026,7 @@ ${DEMO || EPAY_READY || WECHAT_READY || ALIPAY_READY || VMQ_READY ? `
 </div>
 <script>
 const MODE = "${DEMO ? "demo" : !EPAY_READY && !WECHAT_READY && !ALIPAY_READY && MANUAL_READY ? "manual" : "auto"}";
+const POLAR_CHECKOUT_URL = ${polarCheckoutJson};
 const PLAN_CNY = ${p.cny};
 let ch = "wechat", amount = null;
 
@@ -1019,6 +1085,15 @@ async function manualClaim(body, okEl) {
 document.getElementById("sub").onclick = () => {
   const handle = document.getElementById("handle").value.trim();
   if (!handle) { alert("先填 GitHub 用户名或邮箱"); return; }
+  if (POLAR_CHECKOUT_URL) {
+    const checkout = new URL(POLAR_CHECKOUT_URL);
+    checkout.searchParams.set("custom_field_data.handle", handle);
+    checkout.searchParams.set("utm_source", "agent-canary");
+    checkout.searchParams.set("utm_medium", "project-site");
+    checkout.searchParams.set("utm_campaign", "v2-launch");
+    window.location.href = checkout.toString();
+    return;
+  }
   if (MODE === "manual") return manualClaim({ plan: "personal", handle, amount: PLAN_CNY, note: document.getElementById("m-note")?.value || "" }, "subcheck");
   startOrder({ plan: "personal", handle, note: document.getElementById("note")?.value || "" });
 };

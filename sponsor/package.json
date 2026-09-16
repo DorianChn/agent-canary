@@ -4,9 +4,12 @@
   "private": true,
   "description": "Self-hosted sponsor gateway for agent-canary: WeChat Pay Native + Alipay face-to-face, with a credential-free demo mode.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "test": "node --test polar-webhook.test.mjs"
   },
   "dependencies": {
     "qrcode": "^1.5.4"
