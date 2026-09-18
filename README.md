@@ -9,6 +9,10 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 中文文档：[README.zh-CN.md](README.zh-CN.md)
 
+[Live demo & sponsor](https://dorianchn.github.io/agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+
+![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
+
 ## The problem
 
 Coding agents read files, run commands and call APIs. If one picks up injected

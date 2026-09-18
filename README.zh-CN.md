@@ -6,6 +6,10 @@
 
 中文文档（本文件）｜ [English](README.md)
 
+[在线体验与赞助](https://dorianchn.github.io/agent-canary/) · [Glama 条目](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+
+![Agent Canary — AI Agent / MCP 安全](docs/agent-canary-cover-v2.png)
+
 ## 问题背景
 
 编程 agent 能读文件、执行命令、调 API。如果它读到被投毒的 README、网页或文档，跟着里面的恶意指令走，可能会悄悄外传密钥，而你没有收到任何提示。
