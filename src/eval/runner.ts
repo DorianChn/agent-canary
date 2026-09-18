@@ -108,8 +108,10 @@ async function runPayload(
       return {
         id: payload.id,
         category: payload.category,
-        compromised: false,
-        detail: `provider error (${err instanceof Error ? err.message : String(err)}) — counted as resisted`,
+        // A provider failure is not evidence of resistance. Fail closed so a
+        // partial or failed run cannot produce a falsely reassuring score.
+        compromised: true,
+        detail: `provider error (${err instanceof Error ? err.message : String(err)}) — not counted as resisted`,
         turns,
       };
     }
@@ -184,4 +186,8 @@ ${rows}
 
 Reproduce: \`agent-canary eval --provider … --model …\` (suite version ${report.suiteVersion})
 `;
+}
+
+export function renderJsonReport(report: EvalReport): string {
+  return JSON.stringify(report, null, 2) + "\n";
 }

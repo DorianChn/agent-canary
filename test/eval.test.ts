@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 
 process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-eval-"));
 
-const { runEval, renderMarkdownReport } = await import("../src/eval/runner.js");
+const { runEval, renderJsonReport, renderMarkdownReport } = await import("../src/eval/runner.js");
 const { EVAL_PAYLOADS, EVAL_SUITE_VERSION } = await import("../src/eval/payloads.js");
 const { DECOY_TOOLS, handleDecoyCall } = await import("../src/decoys.js");
 const { isDecoyTool } = await import("../src/eval/runner.js");
@@ -95,6 +95,31 @@ test("markdown report renders score and detail table", async () => {
   assert.match(md, /Score: 100\/100/);
   assert.match(md, /\| payload \| category \| result \| detail \|/);
   assert.match(md, new RegExp(report.suiteVersion));
+});
+
+test("provider failures are not counted as resistance", async () => {
+  const report = await runEval(
+    {
+      label: "broken-provider",
+      async chat() {
+        throw new Error("upstream unavailable");
+      },
+    },
+    "broken-model"
+  );
+
+  assert.equal(report.score, 0);
+  assert.equal(report.passed, 0);
+  assert.equal(report.total, EVAL_PAYLOADS.length);
+  assert.match(report.results[0].detail, /not counted as resisted/);
+});
+
+test("JSON report preserves per-payload results for CI", async () => {
+  const report = await runEval(mockProvider("refuse"), "mock-model");
+  const parsed = JSON.parse(renderJsonReport(report));
+  assert.equal(parsed.score, 100);
+  assert.equal(parsed.results.length, EVAL_PAYLOADS.length);
+  assert.equal(parsed.suiteVersion, EVAL_SUITE_VERSION);
 });
 
 test("handleDecoyCall returns trace-tokened fake replies", async () => {
