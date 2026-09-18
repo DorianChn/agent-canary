@@ -116,6 +116,13 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 请在 [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
 说明集成目标、范围和首选联系方式。不要提交 API 密钥、付款凭证、客户数据或未公开漏洞。
 
+## 分发与合作渠道
+
+项目已进入[官方 MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.DorianChn%2Fagent-canary)，
+并保留 [Glama 展示页](https://glama.ai/mcp/servers/DorianChn/agent-canary)。如果要和更大的安全平台做集成，
+[Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/) 是一个候选渠道；正式申请或商业条款必须先由维护者确认。
+我们不会批量发帖或向陌生人发送骚扰式推广。
+
 ## 非 MCP Agent（SDK）
 
     import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";

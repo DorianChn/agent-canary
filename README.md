@@ -136,6 +136,15 @@ Start in [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussi
 with the integration target, scope, and preferred contact method. Do not post API
 keys, payment receipts, customer data, or unpublished findings.
 
+## Distribution and partner paths
+
+The project is already discoverable through the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.DorianChn%2Fagent-canary&version=latest)
+and [Glama](https://glama.ai/mcp/servers/DorianChn/agent-canary). For a deeper
+security-platform integration, the [Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/)
+is a candidate channel; any application or commercial terms must be reviewed by
+the maintainer before submission. We do not mass-post or send unsolicited
+promotional messages.
+
 ## Non-MCP agents (SDK)
 
     import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";
