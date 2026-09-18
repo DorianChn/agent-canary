@@ -23,7 +23,7 @@
 
 ```bash
 node grant.mjs pending          # 列出待确认登记
-node grant.mjs grant <handle>   # 开通个人版 30 天（可加月数参数，自动叠加）
+node grant.mjs code [月数]       # 生成一次性 V2 激活码（付款确认后执行）
 ```
 
 - 费率 **0%**（个人收款码微信/支付宝都不收手续费），无需任何资质
