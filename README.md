@@ -31,6 +31,10 @@ point back to the exact tool call that leaked them.
 
 ## Install
 
+Download the compiled V2 Personal software package from the
+[GitHub Release](https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal).
+It is one CLI package: V1 works free, and V2 features appear after activation.
+
 The npm package is on its way. Until then:
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
@@ -78,6 +82,10 @@ The agent sees admin-grade tools. None of them do anything real.
 | `canary_git_force_push` | force push to protected branches |
 
 ## Free vs Personal
+
+This repository publishes the free V1 baseline. V2 Personal is described here
+for subscribers, but its paid implementation, signing keys, customer records,
+and delivery package are kept outside the public repository.
 
 | | Free (forever) | Personal ($10/mo) |
 |---|---|---|

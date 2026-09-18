@@ -29,6 +29,10 @@
   .card h3 { color:#fff; font-size:17px; margin-bottom:10px; }
   .card h3::before { content:"▲ "; color:var(--yellow); }
   .card p { color:var(--dim); font-size:14.5px; }
+  .price { border-color:var(--yellow); }
+  .price h3 { font-size:20px; }
+  .price strong { color:#fff; font-size:24px; }
+  .steps { color:var(--dim); font-size:14px; line-height:1.9; }
   pre.term { background:#010409; border:1px solid #21262d; border-radius:12px; padding:22px 26px; font-size:15px; overflow-x:auto; }
   pre.term .c { color:var(--dim); } pre.term .g { color:var(--green); } pre.term .y { color:var(--yellow); }
   .howto { padding:24px 0 72px; }
@@ -54,6 +58,7 @@
   <h1>Your agent got hijacked.<br>You'd never <em>know</em>.</h1>
   <p class="sub">agent-canary plants tripwires nothing legitimate ever touches. When your AI agent hits one — it's compromised. Zero false positives, by construction.</p>
   <div class="demo"><img src="demo.gif" alt="agent-canary demo"></div>
+  <p style="margin-top:24px"><a class="btn" href="https://github.com/DorianChn/agent-canary/archive/refs/heads/main.zip">免费下载 V1 →</a></p>
 </div></section>
 
 <section class="wrap"><div class="grid">
@@ -61,6 +66,27 @@
   <div class="card"><h3>Canary tokens</h3><p>Unique, worthless <code>cnry_…</code> strings planted in honeypot files. The moment one appears anywhere it shouldn't — agent output, an outbound request, CI — a secret was stolen.</p></div>
   <div class="card"><h3>Eval mode &amp; SIEM export</h3><p>Score how easily any model gets prompt-injected with a 20-payload reproducible suite, and export the attack chain as CEF/JSON/CSV for Splunk or Elastic.</p></div>
 </div></section>
+
+<section class="wrap" id="plans" style="padding-bottom:24px">
+  <h2 style="color:#fff;font-size:28px;text-align:center">V1 免费 / V2 订阅解锁</h2>
+  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">公开仓库只提供 V1；V2 只展示权益，不公开源码。</p>
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="card price">
+      <h3>V1 基础版 · 免费</h3>
+      <p><strong>永久免费</strong></p>
+      <p class="steps">诱饵工具 · 金丝雀令牌 · 泄露扫描 · 本地告警 · MCP 安装</p>
+      <a class="btn ghost" href="https://github.com/DorianChn/agent-canary/archive/refs/heads/main.zip" style="margin-top:14px;display:inline-block">下载 V1</a>
+    </div>
+    <div class="card price">
+      <h3>V2 Personal · 付费</h3>
+      <p><strong>订阅后激活</strong></p>
+      <p class="steps">进阶评测 · 攻击链面板 · SIEM 导出 · SDK · 签名许可证</p>
+      <a class="btn" href="https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal" style="margin-top:14px;display:inline-block">下载软件 →</a>
+      <a class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project" style="margin-top:14px;display:inline-block">订阅并激活</a>
+    </div>
+  </div>
+  <p style="color:var(--dim);text-align:center;font-size:13px;max-width:720px;margin:0 auto">付款后请提供 GitHub 用户名或邮箱；管理员确认支付宝/微信实际到账后发放 V2 激活资格。未配置正式网关时不会自动扣款，也不会公开激活私钥。</p>
+</section>
 
 <section class="howto"><div class="wrap">
   <h2>One command to arm</h2>
@@ -94,7 +120,7 @@
       .then((t) => {
         const u = t.trim();
         if (!/^https:\/\/[a-z0-9.-]+/.test(u)) throw new Error("bad url");
-        document.querySelectorAll("[data-sponsor-url]").forEach((a) => (a.href = u + "/"));
+        document.querySelectorAll("[data-sponsor-url]").forEach((a) => (a.href = u));
       })
       .catch(() => next(i + 1));
   })(0);
