@@ -35,7 +35,16 @@ Download the compiled V2 Personal software package from the
 [GitHub Release](https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal).
 It is one CLI package: V1 works free, and V2 features appear after activation.
 
-The npm package is on its way. Until then:
+Download the compiled V2 Personal package:
+
+    https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz
+
+Install it with:
+
+    npm install -g ./agent-canary-2.0.0.tgz
+    agent-canary --help
+
+You can also install from source:
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
     npm install && npm run build && npm link

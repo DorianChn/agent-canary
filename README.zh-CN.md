@@ -19,7 +19,16 @@
 
 ## 安装
 
-npm 包在准备中，目前从源码装：
+下载安装包：
+
+    https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz
+
+安装：
+
+    npm install -g ./agent-canary-2.0.0.tgz
+    agent-canary --help
+
+也可以从源码安装：
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
     npm install && npm run build && npm link
