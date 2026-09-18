@@ -53,7 +53,7 @@
   <a class="logo" href="#">agent<span>-canary</span></a>
   <div>
     <a class="btn ghost" href="https://github.com/DorianChn/agent-canary">GitHub</a>
-    <a class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ Sponsor</a>
+    <a class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#buy-v2-personal-or-support-the-project">Buy V2</a>
     <a class="btn" href="https://github.com/DorianChn/agent-canary#quickstart">Get started</a>
   </div>
 </nav></div></header>
@@ -69,11 +69,12 @@
   <div class="card"><h3>12 inert decoy tools</h3><p>Fake wire transfer, fake prod-secrets reader, fake sudo shell, fake Kubernetes exec, fake cloud-console credentials — tempting, admin-grade, and completely inert. A healthy agent never calls them; a hijacked one can't resist.</p></div>
   <div class="card"><h3>Canary tokens</h3><p>Unique, worthless <code>cnry_…</code> strings planted in honeypot files. The moment one appears anywhere it shouldn't — agent output, an outbound request, CI — a secret was stolen.</p></div>
   <div class="card"><h3>Eval mode &amp; SIEM export</h3><p>Score how easily any model gets prompt-injected with a 20-payload reproducible suite, and export the attack chain as CEF/JSON/CSV for Splunk or Elastic.</p></div>
+  <div class="card"><h3>What it protects</h3><p>It detects suspicious tool use and copied canary values; it does not execute decoys, replace access control, or store real secrets. Treat every hit as an incident signal.</p></div>
 </div></section>
 
 <section class="wrap" id="pricing" style="padding-bottom:56px">
   <h2 style="color:#fff;font-size:28px;text-align:center">公开测试版 V1 / V2 Personal 付费版</h2>
-  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">V1 可免费使用 · V2 Personal 按 30 天授权 · 价格与设备数由授权网关配置</p>
+  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">V1 测试期免费 · V2 Personal 按 30 天授权 · 真实付款由自托管网关验签后开通</p>
   <div class="grid" style="grid-template-columns:1fr 1fr">
     <div class="card">
       <h3 style="margin-bottom:14px">公开 V1 — 测试期</h3>
@@ -82,12 +83,12 @@
     </div>
     <div class="card" style="border-color:var(--y)">
       <h3 style="margin-bottom:14px">V2 Personal 付费版</h3>
-      <p style="line-height:2">V2 进阶评测与 SIEM 导出<br>签名许可证与设备绑定<br>30 天授权与续期<br>需要定制集成可另行联系</p>
-      <a class="btn" href="https://github.com/DorianChn/agent-canary#support-this-project" style="margin-top:14px;display:inline-block;color:#0d1117">查看购买与激活说明 →</a>
+      <p style="line-height:2">V2 进阶评测与 SIEM 导出<br>签名许可证与设备绑定<br>30 天授权与续期<br>微信 / 支付宝 / Vmq / Epay（按网关配置）</p>
+      <a class="btn" href="https://github.com/DorianChn/agent-canary#buy-v2-personal-or-support-the-project" style="margin-top:14px;display:inline-block;color:#0d1117">查看购买与激活说明 →</a>
     </div>
   </div>
   <p id="payment-note" style="color:var(--dim);text-align:center;margin:18px auto 0;max-width:700px">
-    V1 免费；V2 Personal 通过授权网关购买并激活。私有部署或定制支持再通过 GitHub Discussions 联系作者。
+    V1 免费；V2 Personal 只有在真实网关完成付款回调验签后才会激活，演示模式不会扣款。私有部署或定制支持再通过 GitHub Discussions 联系作者。
   </p>
 </section>
 
@@ -108,12 +109,12 @@
 
 <footer><div class="wrap" style="display:flex;justify-content:space-between;width:100%">
   <span>agent-canary — the alarm that never cries wolf.</span>
-  <span><a data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ 赞助支持</a> · <a href="https://github.com/DorianChn/agent-canary">GitHub</a></span>
+  <span><a data-sponsor-url href="https://github.com/DorianChn/agent-canary#buy-v2-personal-or-support-the-project">购买 V2 / 支持项目</a> · <a href="https://github.com/DorianChn/agent-canary">GitHub</a></span>
 </div></footer>
 <script>
 // 只接受 HTTPS 稳定地址；轮换隧道不会覆盖稳定的付费说明入口。
 (function () {
-  const fallback = "https://github.com/DorianChn/agent-canary#support-this-project";
+  const fallback = "https://github.com/DorianChn/agent-canary#buy-v2-personal-or-support-the-project";
   const sources = [
     "https://cdn.jsdelivr.net/gh/DorianChn/agent-canary@main/docs/pay/url.txt",
     "https://raw.githubusercontent.com/DorianChn/agent-canary/main/docs/pay/url.txt"

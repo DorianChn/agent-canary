@@ -50,9 +50,16 @@ try {
   const up = await waitFor(async () => (await fetch(BASE + "/")).status === 200);
   check("server boots in demo mode", up);
 
+  const health = await (await fetch(BASE + "/api/health")).json();
+  check(
+    "health endpoint reports safe demo state",
+    health.ok === true && health.mode === "demo" && health.v2PaidOrders === true && health.channels.vmq === false
+  );
+  check("health endpoint does not expose credentials", !JSON.stringify(health).toLowerCase().includes("private_key"));
+
   const page = await (await fetch(BASE + "/")).text();
   check("page renders V2 paid plan card", page.includes("V2 Personal"));
-  check("page renders donation section (demo)", page.includes("一次性赞助"));
+  check("page separates project support from V2 purchase", page.includes("不包含 V2 授权"));
 
   const qrRes = await fetch(BASE + "/api/qr?text=hello");
   check("qr endpoint serves png", qrRes.status === 200 && qrRes.headers.get("content-type") === "image/png");
@@ -97,6 +104,13 @@ try {
     body: JSON.stringify({ channel: "wechat", plan: "personal" }),
   });
   check("V2 order without handle rejected", bad.status === 400);
+
+  const badHandle = await fetch(BASE + "/api/order", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ channel: "wechat", plan: "personal", handle: "bad\u0000handle" }),
+  });
+  check("control characters in license handle rejected", badHandle.status === 400);
 
   const claim = await (await fetch(BASE + "/api/manual-claim", {
     method: "POST",
