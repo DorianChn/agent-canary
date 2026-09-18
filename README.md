@@ -107,7 +107,7 @@ and delivery package are kept outside the public repository.
 Paid features are gated by a license. Buy a subscription on the sponsor page
 (WeChat / Alipay), then:
 
-    agent-canary activate --handle <your GitHub username or email>
+    agent-canary activate --code <one-time V2 activation code>
 
 The gateway signs a 30-day license bound to your machine fingerprint (up to 3
 machines per subscription) and the CLI verifies the signature on every load.
