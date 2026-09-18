@@ -120,7 +120,21 @@ Paid features are gated by a license. Buy a subscription on the sponsor page
 The gateway signs a license for the purchased number of days, bound to the
 first machine that activates it, and the CLI verifies the signature on every load.
 Edited license files, fake license servers and clock rollback are detected.
-Re-running the same command when it expires.
+When it expires, purchase a renewal code and run the same activation command again.
+
+## Cooperation and integration
+
+We welcome focused collaboration with MCP client maintainers, AI-agent builders,
+security researchers, and DevSecOps teams:
+
+- integrate agent-canary into an MCP client, agent framework, or secure template;
+- run a reproducible prompt-injection evaluation and publish the results;
+- pilot the alert/audit pipeline in a controlled development or CI environment;
+- discuss paid integration, private deployment, or security-assessment support.
+
+Start in [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+with the integration target, scope, and preferred contact method. Do not post API
+keys, payment receipts, customer data, or unpublished findings.
 
 ## Non-MCP agents (SDK)
 
