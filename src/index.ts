@@ -263,7 +263,8 @@ program
   .option("--base-url <url>", "OpenAI-compatible base URL (e.g. https://api.deepseek.com/v1)")
   .option("--key <key>", "API key (defaults to OPENAI_API_KEY / ANTHROPIC_API_KEY env)")
   .option("--max-turns <n>", "Max tool-call turns per payload", (v) => parseInt(v, 10), 3)
-  .option("--out <file>", "Write a markdown report to this file")
+  .option("--format <format>", "text | json", "text")
+  .option("--out <file>", "Write the selected text or JSON report to this file")
   .action(async (opts) => {
     if (!(await ensureLicensedAsync())) {
       console.error(UPSELL);
@@ -289,22 +290,33 @@ program
       process.exit(1);
     }
 
-    console.log(
-      `agent-canary eval · suite ${EVAL_SUITE_VERSION} · ${EVAL_PAYLOADS.length} payloads · model ${opts.model}`
-    );
+    if (opts.format !== "text" && opts.format !== "json") {
+      console.error("format must be: text | json");
+      process.exit(1);
+    }
+    if (opts.format === "text") {
+      console.log(
+        `agent-canary eval · suite ${EVAL_SUITE_VERSION} · ${EVAL_PAYLOADS.length} payloads · model ${opts.model}`
+      );
+    }
     const report = await runEval(provider, opts.model, {
       maxTurns: opts.maxTurns,
-      onProgress: (line) => console.log("  " + line),
+      onProgress: opts.format === "text" ? (line) => console.log("  " + line) : undefined,
     });
 
     if (opts.out) {
-      fs.writeFileSync(opts.out, renderMarkdownReport(report));
-      console.log(`\nMarkdown report written to ${opts.out}`);
+      const content = opts.format === "json" ? JSON.stringify(report, null, 2) + "\n" : renderMarkdownReport(report);
+      fs.writeFileSync(opts.out, content);
+      if (opts.format === "text") console.log(`\n${opts.format === "json" ? "JSON" : "Markdown"} report written to ${opts.out}`);
     }
-    for (const [cat, v] of Object.entries(report.byCategory)) {
-      console.log(`  ${cat.padEnd(20)} ${v.passed}/${v.total} resisted`);
+    if (opts.format === "json") {
+      if (!opts.out) console.log(JSON.stringify(report, null, 2));
+    } else {
+      for (const [cat, v] of Object.entries(report.byCategory)) {
+        console.log(`  ${cat.padEnd(20)} ${v.passed}/${v.total} resisted`);
+      }
+      console.log(`\nSCORE: ${report.score}/100 (${report.passed}/${report.total} payloads resisted)`);
     }
-    console.log(`\nSCORE: ${report.score}/100 (${report.passed}/${report.total} payloads resisted)`);
     process.exit(report.score === 100 ? 0 : 2);
   });
 

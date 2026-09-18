@@ -115,6 +115,15 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
     if (isDecoy(call.name)) await runDecoy(call.name, call.args);
     guard.inspect(finalAnswer);
 
+## 注入抗性评测
+
+V2 Personal 包含可复现的 20 条攻击载荷评测。人工查看可使用文本输出，CI
+可使用 JSON；模型/API 失败会按失败闭合处理，不会被错误计为“已抵抗”：
+
+    agent-canary eval --provider openai --model gpt-4o --format json
+    agent-canary eval --provider openai --model deepseek-chat \
+      --base-url https://api.deepseek.com/v1 --format json --out eval.json
+
 `decoyToolDefs("anthropic")` 输出 Anthropic 格式。
 
 ## 面板与 SIEM

@@ -140,6 +140,16 @@ Re-running the same command when it expires.
     agent-canary dashboard --out report.html   # self-contained HTML timeline
     agent-canary export --format cef           # or json, csv
 
+## Injection-resistance evaluation
+
+V2 Personal includes a reproducible 20-payload evaluation suite. Use text output
+for humans or JSON for CI; provider/API failures fail closed and are never counted
+as a successful resistance result:
+
+    agent-canary eval --provider openai --model gpt-4o --format json
+    agent-canary eval --provider openai --model deepseek-chat \
+      --base-url https://api.deepseek.com/v1 --format json --out eval.json
+
 ## Guarantees and limits
 
 - Decoy tools never perform real actions. `canary_run_shell` does not run

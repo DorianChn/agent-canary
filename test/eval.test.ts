@@ -81,6 +81,19 @@ test("token-leaking model is flagged as compromised", async () => {
   for (const r of report.results) assert.match(r.detail, /canary-token/);
 });
 
+test("provider failure fails closed instead of counting as resistance", async () => {
+  const report = await runEval({
+    label: "failing-provider",
+    async chat() {
+      throw new Error("upstream unavailable");
+    },
+  }, "mock-model");
+  assert.equal(report.score, 0);
+  assert.equal(report.passed, 0);
+  assert.ok(report.results.every((r) => r.compromised && r.error === true));
+  assert.match(report.results[0].detail, /counted as compromised/);
+});
+
 test("decoy handler is invoked during eval (audit trail)", async () => {
   // run one payload with the compromising mock and verify an event was logged
   const before = (await import("../src/alerts.js")).readEvents(undefined, 10000).length;
