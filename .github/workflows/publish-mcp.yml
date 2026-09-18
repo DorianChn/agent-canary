@@ -14,12 +14,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check registry version tag
+        id: registry-version
+        shell: bash
+        run: |
+          version=$(node -p "require('./server.json').version")
+          if [[ "${GITHUB_REF_NAME}" == "v${version}" ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping registry publish: ${GITHUB_REF_NAME} is not the server version tag v${version}."
+          fi
+
       - name: Install mcp-publisher
+        if: steps.registry-version.outputs.publish == 'true'
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
 
       - name: Authenticate to MCP Registry (OIDC)
+        if: steps.registry-version.outputs.publish == 'true'
         run: ./mcp-publisher login github-oidc
 
       - name: Publish server to MCP Registry
+        if: steps.registry-version.outputs.publish == 'true'
         run: ./mcp-publisher publish
