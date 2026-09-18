@@ -40,6 +40,7 @@
   .howto p.center { text-align:center; color:var(--dim); margin-bottom:28px; }
   footer { border-top:1px solid #21262d; padding:28px 0; color:var(--dim); font-size:14px; display:flex; justify-content:space-between; }
   footer a { color:var(--fg); }
+  .lang-btn { background:transparent; color:var(--fg); border:1px solid #30363d; border-radius:8px; padding:8px 12px; cursor:pointer; margin-left:8px; }
   @media (max-width:720px){ .grid{grid-template-columns:1fr;} .hero h1{font-size:36px;} }
 </style>
 </head>
@@ -48,17 +49,18 @@
   <a class="logo" href="#">agent<span>-canary</span></a>
   <div>
     <a class="btn ghost" href="https://github.com/DorianChn/agent-canary">GitHub</a>
-    <a class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ Sponsor</a>
-    <a class="btn" href="https://github.com/DorianChn/agent-canary#quickstart">Get started</a>
+    <a id="nav-sponsor" class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ Sponsor</a>
+    <a id="nav-start" class="btn" href="https://github.com/DorianChn/agent-canary#quickstart">Get started</a>
+    <button id="lang-toggle" class="lang-btn" type="button">中文</button>
   </div>
 </nav></div></header>
 
 <section class="hero"><div class="wrap">
   <div class="pill">MIT · no telemetry · Windows / macOS / Linux</div>
-  <h1>Your agent got hijacked.<br>You'd never <em>know</em>.</h1>
-  <p class="sub">agent-canary plants tripwires nothing legitimate ever touches. When your AI agent hits one — it's compromised. Zero false positives, by construction.</p>
+  <h1 id="hero-title">Your agent got hijacked.<br>You'd never <em>know</em>.</h1>
+  <p id="hero-sub" class="sub">agent-canary plants tripwires nothing legitimate ever touches. When your AI agent hits one — it's compromised. Zero false positives, by construction.</p>
   <div class="demo"><img src="demo.gif" alt="agent-canary demo"></div>
-  <p style="margin-top:24px"><a class="btn" href="https://github.com/DorianChn/agent-canary/archive/refs/heads/main.zip">免费下载 V1 →</a></p>
+  <p style="margin-top:24px"><a id="hero-download" class="btn" href="https://github.com/DorianChn/agent-canary/archive/refs/heads/main.zip">Download free V1 →</a></p>
 </div></section>
 
 <section class="wrap"><div class="grid">
@@ -68,29 +70,29 @@
 </div></section>
 
 <section class="wrap" id="plans" style="padding-bottom:24px">
-  <h2 style="color:#fff;font-size:28px;text-align:center">V1 免费 / V2 订阅解锁</h2>
-  <p style="color:var(--dim);text-align:center;margin:10px 0 28px">公开仓库只提供 V1；V2 只展示权益，不公开源码。</p>
+  <h2 id="plans-title" style="color:#fff;font-size:28px;text-align:center">Free V1 / V2 unlocked by subscription</h2>
+  <p id="plans-sub" style="color:var(--dim);text-align:center;margin:10px 0 28px">The public repository provides V1; V2 benefits are shown here without publishing private source.</p>
   <div class="grid" style="grid-template-columns:1fr 1fr">
     <div class="card price">
-      <h3>V1 基础版 · 免费</h3>
-      <p><strong>永久免费</strong></p>
-      <p class="steps">诱饵工具 · 金丝雀令牌 · 泄露扫描 · 本地告警 · MCP 安装</p>
-      <a class="btn ghost" href="https://github.com/DorianChn/agent-canary/archive/refs/heads/main.zip" style="margin-top:14px;display:inline-block">下载 V1</a>
+      <h3 id="v1-title">V1 Basic · Free</h3>
+      <p id="v1-price"><strong>Free forever</strong></p>
+      <p id="v1-features" class="steps">Decoys · canary tokens · leak scanning · local alerts · MCP install</p>
+      <a id="v1-download" class="btn ghost" href="https://github.com/DorianChn/agent-canary/archive/refs/heads/main.zip" style="margin-top:14px;display:inline-block">Download V1</a>
     </div>
     <div class="card price">
-      <h3>V2 Personal · 付费</h3>
-      <p><strong>订阅后激活</strong></p>
-      <p class="steps">进阶评测 · 攻击链面板 · SIEM 导出 · SDK · 签名许可证</p>
-      <a class="btn" href="https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal" style="margin-top:14px;display:inline-block">下载软件 →</a>
-      <a class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project" style="margin-top:14px;display:inline-block">订阅并激活</a>
+      <h3 id="v2-title">V2 Personal · Paid</h3>
+      <p id="v2-price"><strong>Activate after subscription</strong></p>
+      <p id="v2-features" class="steps">Advanced eval · attack-chain dashboard · SIEM export · SDK · signed license</p>
+      <a id="v2-download" class="btn" href="https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal" style="margin-top:14px;display:inline-block">Download software →</a>
+      <a id="v2-subscribe" class="btn ghost" data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project" style="margin-top:14px;display:inline-block">Subscribe &amp; activate</a>
     </div>
   </div>
   <p style="color:var(--dim);text-align:center;font-size:13px;max-width:720px;margin:0 auto">付款后由管理员确认支付宝/微信实际到账，再发放一次性 V2 激活码。买家执行 <code>agent-canary activate --code &lt;激活码&gt;</code>，每个激活码只能使用一次。未配置正式网关时不会自动扣款，也不会公开激活私钥。</p>
 </section>
 
 <section class="howto"><div class="wrap">
-  <h2>One command to arm</h2>
-  <p class="center">Works with Claude Code, Cursor, Cline, Windsurf — any MCP client. The token scanner works with any agent.</p>
+  <h2 id="how-title">One command to arm</h2>
+  <p id="how-sub" class="center">Works with Claude Code, Cursor, Cline, Windsurf — any MCP client. The token scanner works with any agent.</p>
 <pre class="term"><span class="c">$</span> Node.js 20+ required
 <span class="c">$</span> curl -L https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -o agent-canary-2.0.0.tgz
 <span class="c">$</span> npm install -g ./agent-canary-2.0.0.tgz
@@ -109,6 +111,51 @@
   <span><a data-sponsor-url href="https://github.com/DorianChn/agent-canary#support-this-project">♥ 赞助支持</a> · <a href="https://github.com/DorianChn/agent-canary">GitHub</a></span>
 </div></footer>
 <script>
+// Language switcher: keeps the choice locally and defaults to the browser language.
+(function () {
+  const copy = {
+    en: {
+      "nav-sponsor": "♥ Sponsor", "nav-start": "Get started", "lang-toggle": "中文",
+      "hero-title": "Your agent got hijacked.<br>You'd never <em>know</em>.",
+      "hero-sub": "agent-canary plants tripwires nothing legitimate ever touches. When your AI agent hits one — it's compromised. Zero false positives, by construction.",
+      "hero-download": "Download free V1 →", "plans-title": "Free V1 / V2 unlocked by subscription",
+      "plans-sub": "The public repository provides V1; V2 benefits are shown here without publishing private source.",
+      "v1-title": "V1 Basic · Free", "v1-price": "<strong>Free forever</strong>",
+      "v1-features": "Decoys · canary tokens · leak scanning · local alerts · MCP install", "v1-download": "Download V1",
+      "v2-title": "V2 Personal · Paid", "v2-price": "<strong>Activate after subscription</strong>",
+      "v2-features": "Advanced eval · attack-chain dashboard · SIEM export · SDK · signed license", "v2-download": "Download software →",
+      "v2-subscribe": "Subscribe &amp; activate", "how-title": "One command to arm",
+      "how-sub": "Works with Claude Code, Cursor, Cline, Windsurf — any MCP client. The token scanner works with any agent."
+    },
+    zh: {
+      "nav-sponsor": "♥ 赞助支持", "nav-start": "开始使用", "lang-toggle": "English",
+      "hero-title": "你的 Agent 被劫持了。<br>你却不会<em>知道</em>。",
+      "hero-sub": "agent-canary 布置正常流程永远不会触碰的绊线。一旦 AI Agent 碰到它，就说明发生了提示注入劫持。按设计实现零误报。",
+      "hero-download": "免费下载 V1 →", "plans-title": "V1 免费 / V2 订阅解锁",
+      "plans-sub": "公开仓库提供 V1；V2 仅展示权益，不公开私有源码。",
+      "v1-title": "V1 基础版 · 免费", "v1-price": "<strong>永久免费</strong>",
+      "v1-features": "诱饵工具 · 金丝雀令牌 · 泄露扫描 · 本地告警 · MCP 安装", "v1-download": "下载 V1",
+      "v2-title": "V2 Personal · 付费", "v2-price": "<strong>订阅后激活</strong>",
+      "v2-features": "进阶评测 · 攻击链面板 · SIEM 导出 · SDK · 签名许可证", "v2-download": "下载软件 →",
+      "v2-subscribe": "订阅并激活", "how-title": "一条命令完成部署",
+      "how-sub": "支持 Claude Code、Cursor、Cline、Windsurf 等 MCP 客户端；令牌扫描器可用于任何 Agent。"
+    }
+  };
+  const button = document.getElementById("lang-toggle");
+  function apply(lang) {
+    for (const [id, value] of Object.entries(copy[lang])) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = value;
+    }
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    localStorage.setItem("agent-canary-lang", lang);
+  }
+  const saved = localStorage.getItem("agent-canary-lang");
+  let lang = saved === "zh" || saved === "en" ? saved : (navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en");
+  apply(lang);
+  button.addEventListener("click", () => { lang = lang === "zh" ? "en" : "zh"; apply(lang); });
+})();
+
 // 赞助链接动态解析：读取仓库里的当前公网地址（隧道域名变化时由 public-link.mjs 自动更新）
 (function () {
   const sources = [
