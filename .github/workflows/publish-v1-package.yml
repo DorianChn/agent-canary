@@ -1,0 +1,35 @@
+name: Publish public V1 package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: '@dorianchn'
+      - name: Validate public V1 package
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const pkg = require('./package.json');
+          if (pkg.name !== '@dorianchn/agent-canary') throw new Error(`unexpected package name: ${pkg.name}`);
+          if (!/^0\./.test(pkg.version)) throw new Error(`refusing to publish non-V1 version: ${pkg.version}`);
+          if (pkg.publishConfig?.registry !== 'https://npm.pkg.github.com') throw new Error('unexpected package registry');
+          NODE
+      - run: npm install
+      - run: npm run build
+      - run: npm test
+      - name: Publish V1 to GitHub Packages
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
