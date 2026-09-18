@@ -31,6 +31,9 @@ point back to the exact tool call that leaked them.
 
 ## Install
 
+Prerequisite: Node.js 20 or newer. The release asset is a compiled package;
+you do not need to clone the private V2 source.
+
 Download the compiled V2 Personal software package from the
 [GitHub Release](https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal).
 It is one CLI package: V1 works free, and V2 features appear after activation.
@@ -43,6 +46,11 @@ Install it with:
 
     npm install -g ./agent-canary-2.0.0.tgz
     agent-canary --help
+
+Windows PowerShell download:
+
+    Invoke-WebRequest -Uri https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -OutFile agent-canary-2.0.0.tgz
+    npm install -g .\agent-canary-2.0.0.tgz
 
 You can also install from source:
 
@@ -109,8 +117,8 @@ Paid features are gated by a license. Buy a subscription on the sponsor page
 
     agent-canary activate --code <one-time V2 activation code>
 
-The gateway signs a 30-day license bound to your machine fingerprint (up to 3
-machines per subscription) and the CLI verifies the signature on every load.
+The gateway signs a license for the purchased number of days, bound to the
+first machine that activates it, and the CLI verifies the signature on every load.
 Edited license files, fake license servers and clock rollback are detected.
 Re-running the same command when it expires.
 

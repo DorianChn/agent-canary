@@ -91,7 +91,9 @@
 <section class="howto"><div class="wrap">
   <h2>One command to arm</h2>
   <p class="center">Works with Claude Code, Cursor, Cline, Windsurf — any MCP client. The token scanner works with any agent.</p>
-<pre class="term"><span class="c">$</span> npm install -g agent-canary
+<pre class="term"><span class="c">$</span> Node.js 20+ required
+<span class="c">$</span> curl -L https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -o agent-canary-2.0.0.tgz
+<span class="c">$</span> npm install -g ./agent-canary-2.0.0.tgz
 <span class="c">$</span> agent-canary tokens plant .env.canary --label prod
 <span class="g">[ok]</span> 3 canary tokens planted in .env.canary
 <span class="c">$</span> agent-canary install claude

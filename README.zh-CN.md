@@ -19,6 +19,8 @@
 
 ## 安装
 
+要求：Node.js 20 或更高版本。安装包是编译后的软件，不需要克隆私有 V2 源码。
+
 下载安装包：
 
     https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz
@@ -27,6 +29,11 @@
 
     npm install -g ./agent-canary-2.0.0.tgz
     agent-canary --help
+
+Windows PowerShell 下载：
+
+    Invoke-WebRequest -Uri https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -OutFile agent-canary-2.0.0.tgz
+    npm install -g .\agent-canary-2.0.0.tgz
 
 也可以从源码安装：
 
