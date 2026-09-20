@@ -135,7 +135,7 @@ This repository publishes the free V1 baseline. V2 Personal is described here
 for subscribers, but its paid implementation, signing keys, customer records,
 and delivery package are kept outside the public repository.
 
-| | Free (forever) | Personal ($10/mo) |
+| | Free (forever) | Personal (¥72 / 30 days) |
 |---|---|---|
 | Decoy server, tokens, watch, alerts, install | yes | yes |
 | `eval` — injection resistance scoring | | yes |
@@ -143,15 +143,11 @@ and delivery package are kept outside the public repository.
 | `export` — CEF / JSON / CSV for SIEM | | yes |
 | V1.1 session circuit breaker (`createAgentGuard`) | yes | yes |
 
-Paid features are gated by a license. Buy a subscription on the sponsor page
-(WeChat / Alipay), then:
-
-    agent-canary activate --code <one-time V2 activation code>
-
-The gateway signs a license for the purchased number of days, bound to the
-first machine that activates it, and the CLI verifies the signature on every load.
-Edited license files, fake license servers and clock rollback are detected.
-When it expires, purchase a renewal code and run the same activation command again.
+V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
+See the public [payment instructions](https://dorianchn.github.io/agent-canary/pay.html)
+for the QR codes, price, and the information needed for delivery. The seller
+checks the actual transfer before sending installation and activation
+instructions; no automatic delivery or instant activation is promised.
 
 ## Cooperation and integration
 

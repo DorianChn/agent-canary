@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Canary V2 Personal — payment instructions</title>
+<meta name="description" content="Manual payment instructions for Agent Canary V2 Personal. V1.1 remains free and open source.">
+<meta name="robots" content="index,follow">
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--fg:#c9d1d9;--dim:#8b949e;--line:#30363d;--yellow:#ffd338;--green:#3fb950}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 'Segoe UI',system-ui,sans-serif}
+  .wrap{max-width:980px;margin:auto;padding:0 24px}.nav{padding:20px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  a{color:var(--yellow)} .brand{font-weight:750;color:#fff;text-decoration:none;font-size:18px}.brand span{color:var(--yellow)} .btn{display:inline-block;background:var(--yellow);color:#0d1117;padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none}.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+  main{padding:58px 0 72px;text-align:center}.eyebrow{color:var(--yellow);font:600 13px ui-monospace,monospace;letter-spacing:.06em}.hero h1{font-size:42px;line-height:1.15;color:#fff;margin:14px 0}.hero p{color:var(--dim);max-width:680px;margin:0 auto}
+  .notice{max-width:760px;margin:28px auto 34px;padding:15px 18px;border:1px solid #6e5b13;background:#261f04;border-radius:10px;text-align:left;color:#eadfa7;font-size:14px}
+  .plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:30px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;text-align:left}.card h2{margin:0;color:#fff;font-size:20px}.price{font-size:28px;color:#fff;font-weight:750;margin:8px 0}.card p,.card li{color:var(--dim)}.card ul{padding-left:20px;margin:12px 0 0}
+  .payments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:32px 0}.payment{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}.payment h2{color:#fff;margin:0 0 12px}.payment img{width:min(100%,360px);border-radius:9px;background:#fff;display:block;margin:0 auto}.payment p{color:var(--dim);font-size:14px}
+  .steps{max-width:760px;margin:36px auto;text-align:left;background:var(--panel);border:1px solid var(--line);padding:24px;border-radius:14px}.steps h2{color:#fff;margin-top:0}.steps ol{padding-left:23px}.steps li{margin:10px 0}.steps code{background:#010409;border:1px solid var(--line);padding:2px 5px;border-radius:4px;word-break:break-word}.contact{margin-top:20px}.fine{font-size:13px;color:var(--dim);max-width:760px;margin:30px auto 0}.free{border-color:var(--green)}
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--dim);font-size:14px}@media(max-width:680px){.hero h1{font-size:34px}.plans,.payments{grid-template-columns:1fr}.nav{gap:12px}.wrap{padding:0 16px}}
+</style>
+</head>
+<body>
+<div class="wrap"><nav class="nav"><a class="brand" href="index.html">agent<span>-canary</span></a><a class="btn ghost" href="index.html">← Free V1.1 / 返回主页</a></nav></div>
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">V2 PERSONAL · MANUAL DELIVERY</div>
+    <h1>V2 Personal payment<br>付款与人工交付</h1>
+    <p>V1.1 is free forever. V2 Personal adds advanced evaluation, attack-chain dashboards, SIEM export, and signed licensing. Source code and signing keys remain private.</p>
+  </section>
+
+  <div class="notice"><strong>Important / 重要：</strong>this is a manual payment flow. A human verifies the actual transfer before delivery. Do not send credentials, private keys, wallet seed phrases, or sensitive screenshots. Availability of WeChat Pay/Alipay depends on your own payment account and region.</div>
+
+  <section class="plans" aria-label="Plans">
+    <article class="card free"><h2>V1.1 Basic · 免费</h2><div class="price">¥0</div><p>公开、免费、可立即从 GitHub 下载。</p><a class="btn ghost" href="https://github.com/DorianChn/agent-canary">Download V1.1 →</a></article>
+    <article class="card"><h2>V2 Personal · 30 days</h2><div class="price">¥72 / 30 天</div><ul><li>Advanced evaluation and attack-chain dashboard</li><li>SIEM export and signed V2 license</li><li>Manual confirmation before activation</li></ul></article>
+  </section>
+
+  <section class="payments" aria-label="Payment QR codes">
+    <article class="payment"><h2>微信支付 / WeChat Pay</h2><img src="payments/wechat.jpg" alt="WeChat Pay QR code for Agent Canary V2 Personal manual payment"><p>Scan in WeChat and pay exactly ¥72. Keep the payment reference.</p></article>
+    <article class="payment"><h2>支付宝 / Alipay</h2><img src="payments/alipay.jpg" alt="Alipay QR code for Agent Canary V2 Personal manual payment"><p>Scan in Alipay and pay exactly ¥72. Keep the payment reference.</p></article>
+  </section>
+
+  <section class="steps">
+    <h2>付款后怎么获得 V2 / What happens next</h2>
+    <ol>
+      <li>付款 ¥72，并保留付款渠道、时间和交易参考号。</li>
+      <li>发送邮件至 <a href="mailto:3671276527@qq.com?subject=Agent%20Canary%20V2%20payment%20confirmation&body=Activation%20identifier%3A%0APayment%20channel%20(WeChat%2FAlipay)%3A%0APayment%20time%3A%0ATransaction%20reference%20or%20last%204%20digits%3A">3671276527@qq.com</a>，写明：激活用户名或邮箱、付款渠道、付款时间、交易参考号或末四位。</li>
+      <li>管理员核对实际到账后，回复 V2 安装包和激活说明。请勿使用与付款登记不一致的激活用户名。</li>
+      <li>续费时使用相同激活标识；确认到账后会延长 V2 使用期。</li>
+    </ol>
+    <p class="contact"><a class="btn" href="mailto:3671276527@qq.com?subject=Agent%20Canary%20V2%20payment%20confirmation">Email payment confirmation →</a></p>
+  </section>
+  <p class="fine">No automatic payment confirmation, no promise of instant delivery, and no claim that this payment route works in every country. For security, the seller never asks for account passwords, SMS codes, card CVV, wallet seed phrases, or private keys.</p>
+</main>
+<footer><div class="wrap">agent-canary · detect compromise, contain the next guarded action · <a href="https://github.com/DorianChn/agent-canary">GitHub</a></div></footer>
+</body>
+</html>
