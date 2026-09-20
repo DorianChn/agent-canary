@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { writeFileAtomically } from "./config.js";
 
 export type InstallTarget = "claude" | "cursor";
 
@@ -50,7 +51,7 @@ export function installServer(
   doc.mcpServers = servers;
 
   fs.mkdirSync(path.dirname(cfgPath), { recursive: true });
-  fs.writeFileSync(cfgPath, JSON.stringify(doc, null, 2) + "\n");
+  writeFileAtomically(cfgPath, JSON.stringify(doc, null, 2) + "\n");
   return { configPath: cfgPath, backupPath };
 }
 
@@ -61,6 +62,6 @@ export function uninstallServer(target: InstallTarget, homeDir: string = os.home
   const servers = doc.mcpServers as Record<string, unknown> | undefined;
   if (!servers || !("agent-canary" in servers)) return false;
   delete servers["agent-canary"];
-  fs.writeFileSync(cfgPath, JSON.stringify(doc, null, 2) + "\n");
+  writeFileAtomically(cfgPath, JSON.stringify(doc, null, 2) + "\n");
   return true;
 }
