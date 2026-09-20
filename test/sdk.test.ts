@@ -1,42 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import crypto from "node:crypto";
 
 process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-sdk-"));
-
-// gated SDK primitives need an active Personal license — mock gateway signs licenses
-const TEST_KEYS = crypto.generateKeyPairSync("ed25519");
-const { __setTrustedPublicKeyForTesting } = await import("../src/license.js");
-__setTrustedPublicKeyForTesting(TEST_KEYS.publicKey.export({ type: "spki", format: "pem" }).toString());
-const licServer = http.createServer((q, s) => {
-  let body = "";
-  q.on("data", (c) => (body += c));
-  q.on("end", () => {
-    const req = JSON.parse(body || "{}");
-    const payload = Buffer.from(
-      JSON.stringify({
-        handle: String(req.handle ?? ""),
-        machineHash: String(req.machineHash ?? ""),
-        expiresAt: new Date(Date.now() + 864e5).toISOString(),
-        iat: Date.now(),
-      })
-    ).toString("base64url");
-    const sig = Buffer.from(crypto.sign(null, Buffer.from(payload), TEST_KEYS.privateKey)).toString("base64url");
-    s.end(JSON.stringify({ ok: true, license: `${payload}.${sig}` }));
-  });
-});
-await new Promise<void>((r) => licServer.listen(0, "127.0.0.1", r));
-licServer.unref(); // don't hold the test process open
-const licPort = (licServer.address() as { port: number }).port;
-process.env.AGENT_CANARY_LICENSE_SERVER = `http://127.0.0.1:${licPort}`;
-
-// gated primitives check the cached license synchronously — activate once up front
-const { activate } = await import("../src/license.js");
-assert.equal((await activate("sdk-test-user")).ok, true);
 
 const sdk = await import("../src/sdk.js");
 const { plantIntoFile, scanCanary } = sdk;
@@ -54,7 +22,7 @@ test("decoyToolDefs emits native schemas for both formats", () => {
   assert.equal(anthropic[0].name, openai[0].function.name);
 });
 
-test("isDecoy / runDecoy: inert fake reply with trace token", async () => {
+test("free SDK decoy and token primitives work without a paid license", async () => {
   assert.equal(sdk.isDecoy("canary_transfer_funds"), true);
   assert.equal(sdk.isDecoy("send_email"), false);
   const res = await sdk.runDecoy("canary_transfer_funds", { from_account: "a", to_account: "b", amount: 1 });

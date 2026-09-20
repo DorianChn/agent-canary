@@ -11,7 +11,6 @@
 import { DECOY_TOOLS, handleDecoyCall } from "./decoys.js";
 import { findTokensInText, plantIntoFile, type CanaryToken } from "./tokens.js";
 import { fireAlerts, logEvent, type CanaryEvent } from "./alerts.js";
-import { ensureLicensed } from "./license.js";
 import {
   createAgentGuard as createContainmentGuard,
   type AgentGuard,
@@ -72,7 +71,9 @@ export function isDecoy(name: string): boolean {
  * audit trail / alerts. Never performs a real action.
  */
 export async function runDecoy(name: string, args: Record<string, unknown> = {}, guard?: AgentGuard) {
-  ensureLicensed(); // Personal Edition legacy SDK primitive
+  // Decoy execution is part of the free detection/containment baseline. It is
+  // intentionally inert and must remain usable before any paid feature is
+  // activated.
   return guard ? guard.runDecoy(name, args) : handleDecoyCall(name, args);
 }
 
@@ -87,7 +88,6 @@ export function createAgentGuard(options: AgentGuardOptions = {}): AgentGuard {
 
 /** Scan any text for planted canary tokens. Zero false positives by design. */
 export function scanCanary(text: string): CanaryToken[] {
-  ensureLicensed(); // Personal Edition legacy SDK primitive
   return findTokensInText(text);
 }
 
@@ -101,7 +101,6 @@ export interface TokenGuard {
 }
 
 export function createTokenGuard(opts: { alert?: boolean; session?: AgentGuard } = {}): TokenGuard {
-  ensureLicensed(); // Personal Edition legacy SDK primitive
   if (opts.session) {
     return { inspect: (text, source) => opts.session!.inspect(text, source) };
   }

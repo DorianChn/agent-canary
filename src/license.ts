@@ -39,9 +39,9 @@ export function __setTrustedPublicKeyForTesting(pem: string): void {
 }
 
 export const UPSELL =
-  "此功能属于 agent-canary 个人版 Personal（US$10/月）。\n" +
+  "此功能属于 agent-canary V2 Personal（¥72/30天）。\n" +
   "  购买：赞助页扫码（README → Support 章节）\n" +
-  "  已购买？激活：agent-canary activate --code <一次性V2激活码>";
+  "  已购买？激活：agent-canary activate --handle <你的GitHub用户名或邮箱>";
 
 export class LicenseError extends Error {
   constructor() {

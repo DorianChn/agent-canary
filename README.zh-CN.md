@@ -10,9 +10,10 @@
 
 ![Agent Canary — AI Agent / MCP 安全](docs/agent-canary-cover-v2.png)
 
-## V1.1：检测失陷，阻断下一步
+## V1.2.1：检测失陷，阻断下一步
 
-V1.1 保留零误报检测模型，并为 SDK 集成增加按会话隔离的 containment layer：
+V1.2.1 是免费公开版本线。它保留零误报检测模型，让核心 SDK 的检测与
+隔离能力无需付费许可即可使用，并改进 CLI 审计输出中的隔离事件详情：
 
 | 层 | 作用 |
 |---|---|
@@ -35,6 +36,7 @@ V1.1 保留零误报检测模型，并为 SDK 集成增加按会话隔离的 con
 ```
 
 完整 API 与边界见 [docs/containment.md](docs/containment.md)。
+V2.x 付费功能单独维护和交付；V2.1 不从此分支公开上传。
 
 ## 问题背景
 
@@ -47,9 +49,14 @@ V1.1 保留零误报检测模型，并为 SDK 集成增加按会话隔离的 con
 
 每个假工具的返回内容里带一次性追踪令牌，"密钥"被外传时能定位到具体哪次调用泄露的。
 
-## 安装
+## 安装免费 V1.2.1
 
-要求：Node.js 20 或更高版本。安装包是编译后的软件，不需要克隆私有 V2 源码。
+要求：Node.js 20 或更高版本。公开源码构建包含免费 V1.2.1 基础能力：
+
+    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
+    npm install && npm run build && npm link
+
+付费 V2.x 是单独的编译交付包，不要把它和免费公开源码混淆。
 
 下载安装包：
 
@@ -64,11 +71,6 @@ Windows PowerShell 下载：
 
     Invoke-WebRequest -Uri https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -OutFile agent-canary-2.0.0.tgz
     npm install -g .\agent-canary-2.0.0.tgz
-
-也可以从源码安装：
-
-    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
-    npm install && npm run build && npm link
 
 ## 使用
 
@@ -115,7 +117,7 @@ agent 眼里这些都是管理员级工具，但它们什么都不做。
 
 [下载 V2 Personal 软件包（GitHub Release）](https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal)
 
-这是同一个 CLI 软件：未激活时使用永久免费 V1，激活成功后显示并解锁 V2 功能。
+这是同一个 CLI 软件：V1.x 永久免费，激活成功后显示并解锁 V2.x 功能。
 
 本仓库只公开永久免费 V1 基础版。这里仅介绍 V2 Personal 的订阅权益；
 V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库。
@@ -126,7 +128,8 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 | `eval` 注入抗性评分 | | 有 |
 | `dashboard` 攻击链时间线 | | 有 |
 | `export` CEF / JSON / CSV 导出 | | 有 |
-| V1.1 会话熔断器（`createAgentGuard`） | 有 | 有 |
+| V1.2.1 会话熔断器（`createAgentGuard`） | 有 | 有 |
+| SDK 诱饵处理与金丝雀扫描 | 有 | 有 |
 
 V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查看公开的[付款说明](https://dorianchn.github.io/agent-canary/pay.html)：其中包含二维码、价格和交付所需信息。作者核对实际到账后才发送安装与激活说明；不承诺自动交付或即时激活。
 
@@ -149,7 +152,7 @@ V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查
 [Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/) 是一个候选渠道；正式申请或商业条款必须先由维护者确认。
 我们不会批量发帖或向陌生人发送骚扰式推广。
 
-## 非 MCP Agent（V1.1 免费熔断器）
+## 非 MCP Agent（V1.2.1 免费熔断器）
 
 每个 agent 会话创建一个 guard，所有**真实工具回调**都必须经过它。诱饵由
 `guard.runDecoy()` 处理：先同步 trip 和 quarantine，再返回无害的伪造结果。
@@ -215,7 +218,7 @@ V2 Personal 包含可复现的 20 条攻击载荷评测。人工查看可使用�
 ## 命令列表
 
     serve / init / install / uninstall
-    tokens generate|plant|check|list|print
+    tokens generate|plant|check|list
     watch, events, report, dashboard, export, eval
     status, activate, alert-test, set-webhook, set-notify
 

@@ -1,7 +1,7 @@
 {
   "name": "@dorianchn/agent-canary",
-  "version": "1.1.0",
-  "description": "Zero-false-positive AI-agent tripwires with a session circuit breaker to contain the next guarded action.",
+  "version": "1.2.1",
+  "description": "Free AI-agent tripwires with session containment, redacted audit events, and a fail-closed guard.",
   "license": "MIT",
   "author": "DorianChn",
   "repository": {

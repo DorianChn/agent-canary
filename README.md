@@ -13,10 +13,11 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
-## V1.1: detect compromise, contain the next action
+## V1.2.1: detect compromise, contain the next action
 
-V1.1 keeps the zero-false-positive detection model and adds a per-session
-containment layer for SDK integrations:
+V1.2.1 is the free public line. It keeps the zero-false-positive detection
+model, makes the core SDK detection/containment primitives usable without a
+paid license, and adds clearer containment details to CLI audit output:
 
 | Layer | What it does |
 |---|---|
@@ -39,6 +40,8 @@ Untrusted content → prompt injection → decoy touched / token detected
 ```
 
 The containment API is documented in [docs/containment.md](docs/containment.md).
+V2.x paid features are maintained and delivered separately; V2.1 is not
+published from this branch.
 
 ## The problem
 
@@ -60,14 +63,21 @@ workflow ever touches, so any contact is a real compromise signal.
 Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
 point back to the exact tool call that leaked them.
 
-## Install
+## Install the free V1.2.1 line
 
-Prerequisite: Node.js 20 or newer. The release asset is a compiled package;
-you do not need to clone the private V2 source.
+Prerequisite: Node.js 20 or newer. The public source build contains the free
+V1.2.1 baseline:
+
+    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
+    npm install && npm run build && npm link
+
+Run `agent-canary --help` after linking. The paid V2.x package is a separate
+compiled delivery and must not be mistaken for the free public source line.
 
 Download the compiled V2 Personal software package from the
 [GitHub Release](https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal).
-It is one CLI package: V1 works free, and V2 features appear after activation.
+It is a paid V2.x delivery: the V1 baseline remains free, and V2 features
+appear only after a valid activation.
 
 Download the compiled V2 Personal package:
 
@@ -82,11 +92,6 @@ Windows PowerShell download:
 
     Invoke-WebRequest -Uri https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -OutFile agent-canary-2.0.0.tgz
     npm install -g .\agent-canary-2.0.0.tgz
-
-You can also install from source:
-
-    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
-    npm install && npm run build && npm link
 
 ## Usage
 
@@ -141,7 +146,8 @@ and delivery package are kept outside the public repository.
 | `eval` — injection resistance scoring | | yes |
 | `dashboard` — HTML attack-chain timeline | | yes |
 | `export` — CEF / JSON / CSV for SIEM | | yes |
-| V1.1 session circuit breaker (`createAgentGuard`) | yes | yes |
+| V1.2.1 session circuit breaker (`createAgentGuard`) | yes | yes |
+| SDK decoy handling and canary scanning | yes | yes |
 
 V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
 See the public [payment instructions](https://dorianchn.github.io/agent-canary/pay.html)
@@ -172,7 +178,7 @@ is a candidate channel; any application or commercial terms must be reviewed by
 the maintainer before submission. We do not mass-post or send unsolicited
 promotional messages.
 
-## Non-MCP agents (free V1.1 circuit breaker)
+## Non-MCP agents (free V1.2.1 circuit breaker)
 
 Create one guard per agent session and route **every real tool callback** through
 it. Decoys are answered by `guard.runDecoy()`, which trips and quarantines the
@@ -254,7 +260,7 @@ casual copying; it is not DRM.
 ## Commands
 
     serve / init / install / uninstall
-    tokens generate|plant|check|list|print
+    tokens generate|plant|check|list
     watch, events, report, dashboard, export, eval
     status, activate, alert-test, set-webhook, set-notify
 

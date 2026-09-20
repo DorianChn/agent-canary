@@ -24,6 +24,21 @@ program
   .description("Zero-false-positive tripwires for AI agents: decoy MCP tools + leak-tracing canary tokens.")
   .version(VERSION);
 
+function eventDetail(ev: CanaryEvent): string {
+  if (ev.kind === "decoy_called") return `tool=${ev.toolName ?? ev.tool ?? "?"}`;
+  if (ev.kind === "token_found") return `label=${ev.label ?? "?"} path=${ev.path ?? "?"}`;
+  if (ev.kind === "session_tripped" || ev.kind === "session_quarantined") {
+    return `session=${ev.sessionId ?? "?"} reason=${ev.reason ?? "?"} tool=${ev.toolName ?? "?"} risk=${ev.riskLevel ?? "?"}`;
+  }
+  if (ev.kind === "action_blocked") {
+    return `session=${ev.sessionId ?? "?"} tool=${ev.toolName ?? ev.tool ?? "?"} risk=${ev.riskLevel ?? "?"} reason=${ev.reason ?? "?"}`;
+  }
+  if (ev.kind === "session_reset") {
+    return `session=${ev.sessionId ?? "?"} by=${ev.metadata?.acknowledgedBy ?? "human"}`;
+  }
+  return ev.note ?? "test";
+}
+
 program
   .command("serve")
   .description("Run the decoy MCP server on stdio (this is what your MCP client launches)")
@@ -177,13 +192,7 @@ program
     const events = readEvents(undefined, opts.tail);
     if (events.length === 0) return console.log("No events yet. That is good news.");
     for (const ev of events.reverse()) {
-      const detail =
-        ev.kind === "decoy_called"
-          ? `tool=${ev.tool}`
-          : ev.kind === "token_found"
-            ? `label=${ev.label} path=${ev.path}`
-            : (ev.note ?? "test");
-      console.log(`${ev.ts}  ${ev.kind.padEnd(12)}  ${detail}`);
+      console.log(`${ev.ts}  ${ev.kind.padEnd(20)}  ${eventDetail(ev)}`);
     }
   });
 
@@ -192,27 +201,23 @@ program
   .description("Print a markdown incident report of all events")
   .action(() => {
     const events = readEvents(undefined, 10_000);
-    const counts = { decoy_called: 0, token_found: 0, test: 0 } as Record<string, number>;
+    const counts: Record<string, number> = {};
     for (const ev of events) counts[ev.kind] = (counts[ev.kind] ?? 0) + 1;
     console.log(`# Agent Canary — Incident Report
 Generated: ${new Date().toISOString()}
 
 ## Summary
-- Decoy tools invoked: ${counts.decoy_called}
-- Canary token leaks: ${counts.token_found}
-- Test alerts: ${counts.test}
+${Object.entries(counts)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([kind, count]) => `- ${kind}: ${count}`)
+  .join("\n") || "- No events"}
 
 ## Events
 | time | kind | detail |
 |---|---|---|
 ${events
   .map((ev: CanaryEvent) => {
-    const detail =
-      ev.kind === "decoy_called"
-        ? `decoy \`${ev.tool}\``
-        : ev.kind === "token_found"
-          ? `token \`${ev.label}\` in \`${ev.path}\``
-          : (ev.note ?? "test");
+    const detail = eventDetail(ev).replace(/\|/g, "\\|");
     return `| ${ev.ts} | ${ev.kind} | ${detail} |`;
   })
   .join("\n")}

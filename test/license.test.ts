@@ -64,7 +64,7 @@ test("activate with valid gateway signature → licensed", async () => {
   assert.ok(r.expiresAt);
   assert.ok(cachedLicense());
   assert.doesNotThrow(() => ensureLicensed());
-  const guard = sdk.createTokenGuard(); // gated primitive now works
+  const guard = sdk.createTokenGuard(); // free V1 primitive remains available
   assert.ok(guard);
 });
 
@@ -117,7 +117,7 @@ test("tampered cache file is rejected on load", async () => {
     doc.license.slice(0, dot + 1) + (doc.license[dot + 1] === "A" ? "B" : "A") + doc.license.slice(dot + 2);
   fs.writeFileSync(licFile, JSON.stringify(doc));
   assert.equal(cachedLicense(), null);
-  await assert.rejects(() => Promise.resolve(sdk.runDecoy("canary_transfer_funds", {})), LicenseError);
+  assert.throws(() => ensureLicensed(), LicenseError);
   assert.match(UPSELL, /activate/);
 });
 
