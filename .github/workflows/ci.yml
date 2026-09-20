@@ -16,7 +16,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
       - run: npm run build
       - run: npm test
 
@@ -27,6 +29,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            sponsor/package-lock.json
+      - run: npm ci
       - run: npm run build
-      - run: cd sponsor && npm install && node smoke.mjs
+      - run: cd sponsor && npm ci && node smoke.mjs
