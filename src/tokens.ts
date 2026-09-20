@@ -15,6 +15,48 @@ export interface CanaryToken {
   planted: PlantedRef[];
 }
 
+const TOKEN_PATTERN = /^cnry_[A-Za-z0-9_-]{20,}$/;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isPlantedRef(value: unknown): value is PlantedRef {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.path === "string" &&
+    value.path.trim() !== "" &&
+    !value.path.includes("\0") &&
+    typeof value.line === "number" &&
+    Number.isInteger(value.line) &&
+    value.line > 0
+  );
+}
+
+/** Parse one persisted record while preserving valid planted references. */
+export function parseCanaryToken(value: unknown): CanaryToken | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.token !== "string" || !TOKEN_PATTERN.test(value.token)) return null;
+  if (typeof value.label !== "string" || value.label.trim() === "") return null;
+  if (
+    typeof value.createdAt !== "string" ||
+    value.createdAt.trim() === "" ||
+    Number.isNaN(Date.parse(value.createdAt))
+  ) {
+    return null;
+  }
+  if (value.planted !== undefined && !Array.isArray(value.planted)) return null;
+
+  return {
+    token: value.token,
+    label: value.label,
+    createdAt: value.createdAt,
+    // A malformed ref cannot be used for scan exclusions; discard only that
+    // ref instead of losing the otherwise valid token record.
+    planted: Array.isArray(value.planted) ? value.planted.filter(isPlantedRef) : [],
+  };
+}
+
 // Variable names used when creating a honeypot file: realistic enough to bait an
 // exfiltrating agent, and each value is a unique, worthless canary string.
 export const HONEYPOT_VARS = [
@@ -37,8 +79,12 @@ export function mintToken(label: string): CanaryToken {
 
 export function loadTokens(): CanaryToken[] {
   try {
-    const raw = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
-    return Array.isArray(raw) ? (raw as CanaryToken[]) : [];
+    const raw: unknown = JSON.parse(fs.readFileSync(TOKENS_PATH, "utf8"));
+    if (!Array.isArray(raw)) return [];
+    return raw.flatMap((entry) => {
+      const token = parseCanaryToken(entry);
+      return token ? [token] : [];
+    });
   } catch {
     return [];
   }

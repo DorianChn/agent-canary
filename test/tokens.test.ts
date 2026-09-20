@@ -58,3 +58,37 @@ test("decoys never execute anything real (all handlers are pure fakes)", async (
   const unknown = await handleDecoyCall("not_a_tool", {});
   assert.equal(unknown.isError, true);
 });
+
+test("loadTokens skips corrupt records without losing valid tokens", () => {
+  const registry = path.join(process.env.AGENT_CANARY_HOME!, "tokens.json");
+  const valid = {
+    token: "cnry_abcdefghijklmnopqrst",
+    label: "valid-token",
+    createdAt: "2026-09-21T00:00:00.000Z",
+    planted: [
+      { path: "/tmp/honeypot.env", line: 4 },
+      { path: "", line: 0 },
+      { path: "/tmp/also-valid.txt", line: 8 },
+    ],
+  };
+  fs.writeFileSync(
+    registry,
+    JSON.stringify([
+      valid,
+      { ...valid, token: "not-a-canary" },
+      { ...valid, label: " " },
+      { ...valid, createdAt: "not a date" },
+      { ...valid, planted: "not-an-array" },
+    ])
+  );
+
+  assert.deepEqual(loadTokens(), [
+    {
+      ...valid,
+      planted: [
+        { path: "/tmp/honeypot.env", line: 4 },
+        { path: "/tmp/also-valid.txt", line: 8 },
+      ],
+    },
+  ]);
+});
