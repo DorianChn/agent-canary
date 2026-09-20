@@ -3,11 +3,30 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { loadConfig, type CanaryConfig } from "./config.js";
 
-export type EventKind = "decoy_called" | "token_found" | "test";
+export type EventKind =
+  | "decoy_called"
+  | "token_found"
+  | "session_tripped"
+  | "session_quarantined"
+  | "action_blocked"
+  | "session_reset"
+  | "test";
+
+/** Risk is intentionally coarse: it is audit context, not an authorization grant. */
+export type RiskLevel = "SAFE" | "READ" | "WRITE" | "NETWORK" | "EXECUTE" | "SECRET" | "DESTRUCTIVE";
 
 export interface CanaryEvent {
   ts: string;
   kind: EventKind;
+  /** Explicit event name for JSON/SIEM consumers; `kind` remains for compatibility. */
+  eventType?: EventKind;
+  sessionId?: string;
+  reason?: string;
+  toolName?: string;
+  riskLevel?: RiskLevel;
+  traceId?: string;
+  /** Operational metadata only. Callers must never place tool arguments or secrets here. */
+  metadata?: Record<string, string | number | boolean>;
   tool?: string;
   label?: string;
   path?: string;
@@ -67,6 +86,10 @@ export function fireAlerts(ev: CanaryEvent, cfg: CanaryConfig = loadConfig()): v
 function summarize(ev: CanaryEvent): string {
   if (ev.kind === "decoy_called") return `Compromise signal: decoy tool "${ev.tool}" was invoked.`;
   if (ev.kind === "token_found") return `Canary token "${ev.label}" surfaced in ${ev.path ?? "output"}.`;
+  if (ev.kind === "session_tripped") return `Session ${ev.sessionId ?? "unknown"} tripped: ${ev.reason ?? "compromise signal"}.`;
+  if (ev.kind === "session_quarantined") return `Session ${ev.sessionId ?? "unknown"} is quarantined.`;
+  if (ev.kind === "action_blocked") return `Blocked ${ev.toolName ?? ev.tool ?? "tool"} in quarantined session.`;
+  if (ev.kind === "session_reset") return `Session ${ev.sessionId ?? "unknown"} was manually reset.`;
   return `Test alert from agent-canary.`;
 }
 

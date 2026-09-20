@@ -1,6 +1,6 @@
 # agent-canary
 
-给 AI 编程 agent 装绊线。它在你的环境里布置诱饵 MCP 工具和金丝雀令牌，agent 一旦碰到，说明它被提示注入劫持了，你会收到带完整攻击上下文的告警。
+给 AI 编程 agent 装绊线。它在你的环境里布置诱饵 MCP 工具和金丝雀令牌，并给 SDK 集成提供会话熔断器，在发现失陷信号后阻断下一次经过守卫的真实操作。
 
 支持 Claude Code、Cursor、Cline、Windsurf 等所有 MCP 客户端。非 MCP 的自研 agent 可以用 SDK。Node 20+，MIT，无遥测。
 
@@ -9,6 +9,32 @@
 [在线体验与赞助](https://dorianchn.github.io/agent-canary/) · [Glama 条目](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
 
 ![Agent Canary — AI Agent / MCP 安全](docs/agent-canary-cover-v2.png)
+
+## V1.1：检测失陷，阻断下一步
+
+V1.1 保留零误报检测模型，并为 SDK 集成增加按会话隔离的 containment layer：
+
+| 层 | 作用 |
+|---|---|
+| 检测 | 不执行真实操作的诱饵 MCP 工具与已埋放的金丝雀令牌发现失陷信号。 |
+| 隔离 | 同步执行 `SAFE → TRIPPED → QUARANTINED`；之后经过守卫的真实工具默认按失败闭合。 |
+| 告警 | 状态变更之后写入 JSONL 审计事件，并可发送 webhook / 桌面告警。 |
+
+```text
+不可信内容 → 提示注入 → 触碰诱饵 / 发现令牌
+                              ↓
+                        SESSION TRIPPED
+                              ↓
+                         QUARANTINED
+                              ↓
+                     危险的受守卫工具调用
+                              ↓
+                           BLOCKED
+                              ↓
+                      告警 + 本地审计日志
+```
+
+完整 API 与边界见 [docs/containment.md](docs/containment.md)。
 
 ## 问题背景
 
@@ -100,7 +126,7 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 | `eval` 注入抗性评分 | | 有 |
 | `dashboard` 攻击链时间线 | | 有 |
 | `export` CEF / JSON / CSV 导出 | | 有 |
-| `agent-canary/sdk` 非 MCP 接入 | | 有 |
+| V1.1 会话熔断器（`createAgentGuard`） | 有 | 有 |
 
 付费功能由许可控制。在赞助页（微信/支付宝）订阅后：
 
@@ -127,16 +153,40 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 [Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/) 是一个候选渠道；正式申请或商业条款必须先由维护者确认。
 我们不会批量发帖或向陌生人发送骚扰式推广。
 
-## 非 MCP Agent（SDK）
+## 非 MCP Agent（V1.1 免费熔断器）
 
-    import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";
+每个 agent 会话创建一个 guard，所有**真实工具回调**都必须经过它。诱饵由
+`guard.runDecoy()` 处理：先同步 trip 和 quarantine，再返回无害的伪造结果。
 
-    const guard = createTokenGuard();
-    const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
+```ts
+import { CanaryBlockedError, createAgentGuard, decoyToolDefs, isDecoy } from "agent-canary/sdk";
 
-    // agent 循环里：
-    if (isDecoy(call.name)) await runDecoy(call.name, call.args);
-    guard.inspect(finalAnswer);
+const guard = createAgentGuard({
+  sessionId: "support-chat-42",
+  // 仅精确列出经审查的安全操作；默认空 allowlist。
+  quarantineAllow: ["read_file", "git_status"],
+});
+const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
+
+async function dispatch(call: { name: string; args: Record<string, unknown> }) {
+  if (isDecoy(call.name)) return guard.runDecoy(call.name, call.args);
+  return guard.executeToolCall(call, () => realTool(call)); // 由宿主实现真实回调
+}
+
+await dispatch({ name: "git_status", args: {} });              // SAFE：允许
+await dispatch({ name: "canary_read_secrets", args: {} });     // trip → quarantine
+
+try {
+  await dispatch({ name: "http_post", args: { url: "https://example.invalid" } });
+} catch (error) {
+  if (error instanceof CanaryBlockedError) console.log(error.decision); // action_blocked
+}
+
+// 只能放在真人的事件响应控制面，不能注册成 MCP/LLM 工具。
+guard.reset({ acknowledgedBy: "on-call-human" });
+```
+
+`guard.inspect(agentOutput, "final-answer")` 发现已埋令牌时，会 trip 同一个会话。
 
 ## 注入抗性评测
 
@@ -160,6 +210,9 @@ V2 Personal 包含可复现的 20 条攻击载荷评测。人工查看可使用�
 - 金丝雀令牌在哪儿都解不开任何东西。
 - 无遥测。事件留在 `~/.agent-canary/events.jsonl`，除非你自己配 webhook。
 - 告警只在诱饵被触碰或令牌出现时产生，正常工作流碰不到它们。
+- **隔离只覆盖已集成的调用链。** 只有经过 `guard.executeToolCall()` /
+  `guard.beforeToolCall()` 的真实工具调用可以被阻断。如果被劫持 agent 的第一个危险操作绕过了 guard，agent-canary 无法拦截它。诱饵本身无害；一旦先碰到诱饵，guard 就能在之后的受守卫操作前隔离该会话。
+- 此版本没有声称支持任意上游 MCP server 的代理；下一阶段的可审计 MCP proxy 设计见 [docs/containment.md](docs/containment.md)。
 
 已知限制：这是 JavaScript，改 `dist/` 可以拆掉许可检查。签名许可提高了白嫖门槛，但它不是 DRM。
 

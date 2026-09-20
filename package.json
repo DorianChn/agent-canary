@@ -1,7 +1,7 @@
 {
   "name": "@dorianchn/agent-canary",
-  "version": "0.8.0",
-  "description": "Zero-false-positive tripwires for AI agents: decoy MCP tools plus leak-tracing canary tokens. Know instantly when your agent is compromised.",
+  "version": "1.1.0",
+  "description": "Zero-false-positive AI-agent tripwires with a session circuit breaker to contain the next guarded action.",
   "license": "MIT",
   "author": "DorianChn",
   "repository": {
@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts test/sdk.test.ts test/license.test.ts",
+    "test": "node --import tsx --test test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts test/sdk.test.ts test/license.test.ts test/containment.test.ts",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

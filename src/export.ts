@@ -15,6 +15,10 @@ function cefEsc(s: string): string {
 const SEVERITY: Record<string, string> = {
   decoy_called: "10",
   token_found: "9",
+  session_tripped: "10",
+  session_quarantined: "10",
+  action_blocked: "8",
+  session_reset: "3",
   test: "1",
 };
 
@@ -27,7 +31,15 @@ export function exportCef(events: CanaryEvent[]): string {
             ? "Decoy tool invoked"
             : ev.kind === "token_found"
               ? "Canary token leak detected"
-              : "Test alert";
+              : ev.kind === "session_tripped"
+                ? "Session circuit breaker tripped"
+                : ev.kind === "session_quarantined"
+                  ? "Session quarantined"
+                  : ev.kind === "action_blocked"
+                    ? "Tool action blocked"
+                    : ev.kind === "session_reset"
+                      ? "Session manually reset"
+                      : "Test alert";
         const ext = [
           `rt=${new Date(ev.ts).getTime() || 0}`,
           ev.tool ? `cs1Label=tool cs1=${cefEsc(ev.tool)}` : "",
@@ -35,6 +47,8 @@ export function exportCef(events: CanaryEvent[]): string {
           ev.path ? `cs3Label=path cs3=${cefEsc(ev.path)}` : "",
           ev.token ? `cs4Label=token cs4=${cefEsc(ev.token)}` : "",
           ev.note ? `cs5Label=note cs5=${cefEsc(ev.note)}` : "",
+          ev.sessionId ? `cs6Label=session cs6=${cefEsc(ev.sessionId)}` : "",
+          ev.reason ? `cs7Label=reason cs7=${cefEsc(ev.reason)}` : "",
         ]
           .filter(Boolean)
           .join(" ");

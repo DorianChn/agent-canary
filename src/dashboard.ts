@@ -21,6 +21,10 @@ function esc(s: unknown): string {
 const KIND_META: Record<string, { label: string; color: string }> = {
   decoy_called: { label: "诱饵触发 DECOY", color: "#f85149" },
   token_found: { label: "令牌泄露 TOKEN LEAK", color: "#ffd338" },
+  session_tripped: { label: "会话触发 TRIPPED", color: "#f85149" },
+  session_quarantined: { label: "会话隔离 QUARANTINED", color: "#ff7b72" },
+  action_blocked: { label: "动作阻断 BLOCKED", color: "#ff7b72" },
+  session_reset: { label: "人工复位 RESET", color: "#3fb950" },
   test: { label: "测试 TEST", color: "#8b949e" },
 };
 
@@ -34,6 +38,15 @@ function eventDetail(ev: CanaryEvent): string {
   }
   if (ev.kind === "token_found") {
     return `金丝雀令牌 <code>${esc(ev.label)}</code> 出现在 <code>${esc(ev.path)}</code>`;
+  }
+  if (ev.kind === "session_tripped" || ev.kind === "session_quarantined") {
+    return `会话 <code>${esc(ev.sessionId)}</code> · 原因 <code>${esc(ev.reason)}</code> · 工具 <code>${esc(ev.toolName)}</code>`;
+  }
+  if (ev.kind === "action_blocked") {
+    return `已阻断 <code>${esc(ev.toolName ?? ev.tool)}</code> · 风险 <code>${esc(ev.riskLevel)}</code>`;
+  }
+  if (ev.kind === "session_reset") {
+    return `会话 <code>${esc(ev.sessionId)}</code> 已由人工确认后复位`;
   }
   return esc(ev.note ?? "test");
 }

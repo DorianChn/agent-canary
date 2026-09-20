@@ -1,16 +1,36 @@
 /**
  * Embeddable SDK for agents that do NOT speak MCP (LangChain.js, Vercel AI
- * SDK, raw provider loops). Three primitives, three lines to wire in:
+ * SDK, raw provider loops). The containment guard must wrap every real tool
+ * callback, so a compromise can be blocked before the callback starts:
  *
- *   const defs = [...myRealTools, ...decoyToolDefs("openai")];  // 1. expose decoys
- *   if (isDecoy(name)) await runDecoy(name, args);              // 2. inert + audited
- *   guard.inspect(finalAnswer);                                 // 3. zero-FP leak scan
+ *   const guard = createAgentGuard({ sessionId });
+ *   if (isDecoy(name)) return guard.runDecoy(name, args);
+ *   return guard.executeToolCall({ name, args }, () => realTool(args));
  */
 
 import { DECOY_TOOLS, handleDecoyCall } from "./decoys.js";
 import { findTokensInText, plantIntoFile, type CanaryToken } from "./tokens.js";
 import { fireAlerts, logEvent, type CanaryEvent } from "./alerts.js";
 import { ensureLicensed } from "./license.js";
+import {
+  createAgentGuard as createContainmentGuard,
+  type AgentGuard,
+  type AgentGuardOptions,
+} from "./containment.js";
+
+export {
+  CanaryBlockedError,
+  classifyToolRisk,
+  type AgentGuard,
+  type AgentGuardOptions,
+  type CircuitState,
+  type ResetRequest,
+  type RiskLevel,
+  type ToolCall,
+  type ToolDecision,
+  type TripInput,
+  type TripResult,
+} from "./containment.js";
 
 // programmatic honeypot planting is part of the SDK surface
 export { plantIntoFile };
@@ -51,14 +71,23 @@ export function isDecoy(name: string): boolean {
  * result (with a one-time trace token) and writes the attempt to the JSONL
  * audit trail / alerts. Never performs a real action.
  */
-export async function runDecoy(name: string, args: Record<string, unknown> = {}) {
-  ensureLicensed(); // Personal Edition
-  return handleDecoyCall(name, args);
+export async function runDecoy(name: string, args: Record<string, unknown> = {}, guard?: AgentGuard) {
+  ensureLicensed(); // Personal Edition legacy SDK primitive
+  return guard ? guard.runDecoy(name, args) : handleDecoyCall(name, args);
+}
+
+/**
+ * Create one fail-closed containment boundary per agent session. Reset is a
+ * host-only operation: never register it as an MCP/LLM-accessible tool.
+ */
+export function createAgentGuard(options: AgentGuardOptions = {}): AgentGuard {
+  // V1.1 public containment: hosts can adopt the guard without an activation.
+  return createContainmentGuard(options);
 }
 
 /** Scan any text for planted canary tokens. Zero false positives by design. */
 export function scanCanary(text: string): CanaryToken[] {
-  ensureLicensed(); // Personal Edition
+  ensureLicensed(); // Personal Edition legacy SDK primitive
   return findTokensInText(text);
 }
 
@@ -71,8 +100,11 @@ export interface TokenGuard {
   inspect(text: string, source?: string): CanaryToken[];
 }
 
-export function createTokenGuard(opts: { alert?: boolean } = {}): TokenGuard {
-  ensureLicensed(); // Personal Edition
+export function createTokenGuard(opts: { alert?: boolean; session?: AgentGuard } = {}): TokenGuard {
+  ensureLicensed(); // Personal Edition legacy SDK primitive
+  if (opts.session) {
+    return { inspect: (text, source) => opts.session!.inspect(text, source) };
+  }
   return {
     inspect(text: string, source?: string): CanaryToken[] {
       const hits = findTokensInText(text);

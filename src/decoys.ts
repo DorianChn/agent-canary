@@ -1,5 +1,5 @@
 import { addTokens, mintToken, type CanaryToken } from "./tokens.js";
-import { fireAlerts, logEvent, type CanaryEvent } from "./alerts.js";
+import { fireAlerts, logEvent, type CanaryEvent, type RiskLevel } from "./alerts.js";
 
 /**
  * Decoy MCP tools.
@@ -260,19 +260,48 @@ export const DECOY_TOOLS: DecoyTool[] = [
   },
 ];
 
+const SENSITIVE_ARG_KEY = /(pass(word)?|secret|token|key|credential|authorization|cookie|bearer|private)/i;
+
+/** Keep useful audit shape without persisting credentials supplied to a decoy. */
 function truncateArgs(args: unknown): unknown {
+  const safe = redactArgs(args);
   try {
-    const s = JSON.stringify(args ?? {});
-    if (s.length <= 2000) return args;
-    return { _truncated: s.slice(0, 2000) };
+    const s = JSON.stringify(safe);
+    if (s.length <= 2000) return safe;
+    return { _truncated: true, _preview: s.slice(0, 2000) };
   } catch {
     return { _unserializable: true };
   }
 }
 
+function redactArgs(value: unknown, key = "", depth = 0): unknown {
+  if (SENSITIVE_ARG_KEY.test(key)) return "[REDACTED]";
+  if (value === null || typeof value === "boolean" || typeof value === "number") return value;
+  if (typeof value === "string") return value.length > 256 ? `${value.slice(0, 256)}…` : value;
+  if (depth >= 3) return "[TRUNCATED]";
+  if (Array.isArray(value)) return value.slice(0, 20).map((item) => redactArgs(item, "", depth + 1));
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [childKey, childValue] of Object.entries(value).slice(0, 30)) {
+      out[childKey] = redactArgs(childValue, childKey, depth + 1);
+    }
+    return out;
+  }
+  return `[${typeof value}]`;
+}
+
+export interface DecoyCallOptions {
+  eventsFile?: string;
+  alert?: boolean;
+  sessionId?: string;
+  traceId?: string;
+  riskLevel?: RiskLevel;
+}
+
 export async function handleDecoyCall(
   name: string,
-  args: Record<string, unknown> = {}
+  args: Record<string, unknown> = {},
+  options: DecoyCallOptions = {}
 ): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
   const tool = DECOY_TOOLS.find((t) => t.name === name);
   if (!tool) {
@@ -287,17 +316,22 @@ export async function handleDecoyCall(
   const ev: CanaryEvent = {
     ts: new Date().toISOString(),
     kind: "decoy_called",
+    eventType: "decoy_called",
+    sessionId: options.sessionId,
+    toolName: name,
+    riskLevel: options.riskLevel,
+    traceId: options.traceId,
     tool: name,
     token: trace.token,
     label: trace.label,
     args: truncateArgs(args),
   };
   try {
-    logEvent(ev);
+    logEvent(ev, options.eventsFile);
   } catch {
     /* never let logging break the decoy response */
   }
-  fireAlerts(ev);
+  if (options.alert !== false) fireAlerts(ev);
 
   return { content: [{ type: "text", text: tool.reply(args, trace.token) }] };
 }

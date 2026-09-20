@@ -15,6 +15,29 @@ touches them — which indicates a prompt-injection attack or other compromise.
   prefix that unlock nothing anywhere. They exist purely to be detected in output.
 - **No telemetry.** Events stay on your machine (JSONL file) unless you configure
   your own webhook URL.
+- **Containment is opt-in at the integration boundary.** The V1.1 session
+  circuit breaker can block only real callbacks routed through
+  `guard.executeToolCall()` or checked with `guard.beforeToolCall()`. It does
+  not magically intercept a tool that an agent or host calls directly.
+
+## V1.1 containment boundary
+
+`createAgentGuard()` creates isolated in-memory state for one agent session:
+`SAFE → TRIPPED → QUARANTINED`. A decoy handled through `guard.runDecoy()` or a
+canary token found by `guard.inspect()` changes that state synchronously before
+JSONL/webhook/desktop alert delivery starts. In quarantine, every non-allowlisted
+guarded call is blocked; the callback is not invoked.
+
+This makes the useful guarantee deliberately narrow: if an attacker first causes
+the agent to touch a harmless decoy, later guarded actions can be contained. It
+does **not** claim to prevent all prompt injection, nor can it stop a first real
+dangerous call that bypasses the guard.
+
+`guard.reset()` requires an acknowledgement string and is intentionally an SDK
+host API. Do not expose reset as an MCP tool or a model-callable function; keep
+it behind a human incident-response control plane. Audit metadata and decoy
+arguments are redacted for common secret-bearing field names, but integrations
+must never submit credentials or full tool payloads as event metadata.
 
 ## Intended use
 

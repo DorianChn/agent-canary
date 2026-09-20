@@ -1,8 +1,8 @@
 # agent-canary
 
 Tripwires for AI coding agents. It plants decoy MCP tools and canary tokens in
-your environment. When your agent touches one, it was prompt-injected, and you
-get an alert with the full attack context.
+your environment, then gives SDK integrations a session circuit breaker to
+contain the next guarded action after a compromise signal.
 
 Works with Claude Code, Cursor, Cline, Windsurf — anything that speaks MCP.
 Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
@@ -12,6 +12,33 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 [Live demo & sponsor](https://dorianchn.github.io/agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
+
+## V1.1: detect compromise, contain the next action
+
+V1.1 keeps the zero-false-positive detection model and adds a per-session
+containment layer for SDK integrations:
+
+| Layer | What it does |
+|---|---|
+| Detection | Inert decoy MCP tools and planted canary tokens detect a compromise signal. |
+| Containment | `SAFE → TRIPPED → QUARANTINED` happens synchronously; guarded real-tool calls are fail-closed. |
+| Alerting | JSONL audit events and optional webhook/desktop alerts are sent after the state transition. |
+
+```text
+Untrusted content → prompt injection → decoy touched / token detected
+                                      ↓
+                              SESSION TRIPPED
+                                      ↓
+                                QUARANTINED
+                                      ↓
+                         dangerous guarded tool call
+                                      ↓
+                                  BLOCKED
+                                      ↓
+                            alert + local audit log
+```
+
+The containment API is documented in [docs/containment.md](docs/containment.md).
 
 ## The problem
 
@@ -114,7 +141,7 @@ and delivery package are kept outside the public repository.
 | `eval` — injection resistance scoring | | yes |
 | `dashboard` — HTML attack-chain timeline | | yes |
 | `export` — CEF / JSON / CSV for SIEM | | yes |
-| `agent-canary/sdk` — non-MCP agents | | yes |
+| V1.1 session circuit breaker (`createAgentGuard`) | yes | yes |
 
 Paid features are gated by a license. Buy a subscription on the sponsor page
 (WeChat / Alipay), then:
@@ -149,18 +176,47 @@ is a candidate channel; any application or commercial terms must be reviewed by
 the maintainer before submission. We do not mass-post or send unsolicited
 promotional messages.
 
-## Non-MCP agents (SDK)
+## Non-MCP agents (free V1.1 circuit breaker)
 
-    import { decoyToolDefs, isDecoy, runDecoy, createTokenGuard } from "agent-canary/sdk";
+Create one guard per agent session and route **every real tool callback** through
+it. Decoys are answered by `guard.runDecoy()`, which trips and quarantines the
+session before creating its inert fake reply.
 
-    const guard = createTokenGuard();
-    const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
+```ts
+import {
+  CanaryBlockedError,
+  createAgentGuard,
+  decoyToolDefs,
+  isDecoy,
+} from "agent-canary/sdk";
 
-    // in your agent loop:
-    if (isDecoy(call.name)) await runDecoy(call.name, call.args);
-    guard.inspect(finalAnswer);
+const guard = createAgentGuard({
+  sessionId: "support-chat-42",
+  // Exact, reviewed names only. Default is an empty allowlist.
+  quarantineAllow: ["read_file", "git_status"],
+});
+const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
 
-`decoyToolDefs("anthropic")` emits Anthropic schemas.
+async function dispatch(call: { name: string; args: Record<string, unknown> }) {
+  if (isDecoy(call.name)) return guard.runDecoy(call.name, call.args);
+  return guard.executeToolCall(call, () => realTool(call)); // host-provided callback
+}
+
+await dispatch({ name: "git_status", args: {} });              // SAFE: allowed
+await dispatch({ name: "canary_read_secrets", args: {} });     // trip → quarantine
+
+try {
+  await dispatch({ name: "http_post", args: { url: "https://example.invalid" } });
+} catch (error) {
+  if (error instanceof CanaryBlockedError) console.log(error.decision); // action_blocked
+}
+
+// Expose this only to a human incident-response control plane, never an LLM tool.
+guard.reset({ acknowledgedBy: "on-call-human" });
+```
+
+`guard.inspect(agentOutput, "final-answer")` detects a planted token and trips
+the same session. `decoyToolDefs("anthropic")` emits Anthropic schemas.
 
 ## Dashboard and SIEM
 
@@ -187,6 +243,13 @@ as a successful resistance result:
   configure a webhook.
 - Alerts only fire when a decoy is touched or a token surfaces. Nothing in a
   legitimate workflow can trigger them.
+- **Containment is integration-scoped.** It can block only real tool calls
+  routed through `guard.executeToolCall()` / `guard.beforeToolCall()`. If a
+  compromised agent's first dangerous action bypasses this guard, agent-canary
+  cannot intercept that action. Decoys are harmless, so touching one lets the
+  guard quarantine the session before a later guarded action runs.
+- This release does not ship an MCP proxy for arbitrary upstream MCP servers;
+  the reviewed next-step design is in [docs/containment.md](docs/containment.md).
 
 Known limit: this is JavaScript, so a determined user can patch `dist/` and
 strip the license checks. The signed-license scheme raises the bar against
