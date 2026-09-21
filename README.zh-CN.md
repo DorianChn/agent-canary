@@ -10,16 +10,16 @@
 
 ![Agent Canary — AI Agent / MCP 安全](docs/agent-canary-cover-v2.png)
 
-## V1.2.2：本地验证隔离，安全保留审计数据
+## V1.2.3：每个工具调用只走一条受守卫路径
 
-V1.2.2 是免费公开版本线。它保留零误报检测模型和免费的 SDK 隔离能力，
-新增完全离线的 `self-test`，并把审计事件脱敏统一放到 JSONL / webhook
-出口执行：
+V1.2.3 是免费公开版本线。它保留零误报检测模型和免费的 SDK 隔离能力，
+新增 `createGuardedToolRouter()`，让诱饵和真实工具共用一条经过审查的分发路径；
+同时保留完全离线的 `self-test` 和 JSONL / webhook 出口的统一审计脱敏：
 
 | 层 | 作用 |
 |---|---|
 | 检测 | 不执行真实操作的诱饵 MCP 工具与已埋放的金丝雀令牌发现失陷信号。 |
-| 隔离 | 同步执行 `SAFE → TRIPPED → QUARANTINED`；之后经过守卫的真实工具默认按失败闭合。 |
+| 隔离 | 同步执行 `SAFE → TRIPPED → QUARANTINED`；Router 把诱饵送入隔离，把真实工具送入失败闭合 guard。 |
 | 告警 | 状态变更之后写入 JSONL 审计事件，并可发送 webhook / 桌面告警；工具参数和金丝雀值会脱敏。 |
 
 ```text
@@ -50,15 +50,26 @@ V2.x 付费功能单独维护和交付；V2.1 不从此分支公开上传。
 
 每个假工具的返回内容里带一次性追踪令牌，"密钥"被外传时能定位到具体哪次调用泄露的。
 
-## 安装免费 V1.2.2
+## 安装免费 V1.2.3
 
-要求：Node.js 20 或更高版本。公开源码构建包含免费 V1.2.2 基础能力：
+要求：Node.js 20 或更高版本。公开源码构建包含免费 V1.2.3 基础能力：
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
     npm install && npm run build && npm link
 
 执行 `agent-canary --help` 后，再运行离线隔离自检。公开仓库和公开安装包只
 包含免费 V1 版本线；V2.x 在确认付款后单独私下交付，不从这个公开源码分支分发。
+
+### 容器与 Glama 评测
+
+仓库提供一个最小化、仅 stdio 的 Docker 镜像，供 Glama 等 MCP 目录构建免费 V1
+服务并内省工具 schema；该过程不需要凭据、网络访问或 V2 交付包：
+
+    docker build -t agent-canary .
+    docker run --rm -i agent-canary
+
+镜像启动的是 `agent-canary serve`，提供与本地 V1 CLI 相同的无害诱饵工具；其中不
+包含真实工具执行、收款、许可证或客户数据。
 
 ## 使用
 
@@ -115,7 +126,7 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 | `eval` 注入抗性评分 | | 有 |
 | `dashboard` 攻击链时间线 | | 有 |
 | `export` CEF / JSON / CSV 导出 | | 有 |
-| V1.2.2 会话熔断器（`createAgentGuard`）与离线 `self-test` | 有 | 有 |
+| V1.2.3 会话熔断器、受守卫工具 Router 与离线 `self-test` | 有 | 有 |
 | SDK 诱饵处理与金丝雀扫描 | 有 | 有 |
 
 V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查看公开的[付款说明](https://dorianchn.github.io/agent-canary/pay.html)：其中包含二维码、价格和交付所需信息。作者核对实际到账后才发送安装与激活说明；不承诺自动交付或即时激活。
@@ -139,13 +150,14 @@ V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查
 [Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/) 是一个候选渠道；正式申请或商业条款必须先由维护者确认。
 我们不会批量发帖或向陌生人发送骚扰式推广。
 
-## 非 MCP Agent（V1.2.2 免费熔断器）
+## 非 MCP Agent（V1.2.3 免费受守卫工具 Router）
 
-每个 agent 会话创建一个 guard，所有**真实工具回调**都必须经过它。诱饵由
-`guard.runDecoy()` 处理：先同步 trip 和 quarantine，再返回无害的伪造结果。
+每个 agent 会话创建一个 guard，然后交给一个 Router。Router 用
+`guard.runDecoy()` 回答诱饵，并把所有非诱饵回调交给
+`guard.executeToolCall()`。
 
 ```ts
-import { CanaryBlockedError, createAgentGuard, decoyToolDefs, isDecoy } from "agent-canary/sdk";
+import { CanaryBlockedError, createAgentGuard, createGuardedToolRouter, decoyToolDefs } from "agent-canary/sdk";
 
 const guard = createAgentGuard({
   sessionId: "support-chat-42",
@@ -153,17 +165,16 @@ const guard = createAgentGuard({
   quarantineAllow: ["read_file", "git_status"],
 });
 const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
+const router = createGuardedToolRouter({
+  guard,
+  executeRealTool: realTool, // 由宿主实现真实回调
+});
 
-async function dispatch(call: { name: string; args: Record<string, unknown> }) {
-  if (isDecoy(call.name)) return guard.runDecoy(call.name, call.args);
-  return guard.executeToolCall(call, () => realTool(call)); // 由宿主实现真实回调
-}
-
-await dispatch({ name: "git_status", args: {} });              // SAFE：允许
-await dispatch({ name: "canary_read_secrets", args: {} });     // trip → quarantine
+await router.dispatch({ name: "git_status", args: {} });              // SAFE：允许
+await router.dispatch({ name: "canary_read_secrets", args: {} });     // trip → quarantine
 
 try {
-  await dispatch({ name: "http_post", args: { url: "https://example.invalid" } });
+  await router.dispatch({ name: "http_post", args: { url: "https://example.invalid" } });
 } catch (error) {
   if (error instanceof CanaryBlockedError) console.log(error.decision); // action_blocked
 }
@@ -196,8 +207,8 @@ V2 Personal 包含可复现的 20 条攻击载荷评测。人工查看可使用�
 - 金丝雀令牌在哪儿都解不开任何东西。
 - 无遥测。事件留在 `~/.agent-canary/events.jsonl`，除非你自己配 webhook。
 - 告警只在诱饵被触碰或令牌出现时产生，正常工作流碰不到它们。
-- **隔离只覆盖已集成的调用链。** 只有经过 `guard.executeToolCall()` /
-  `guard.beforeToolCall()` 的真实工具调用可以被阻断。如果被劫持 agent 的第一个危险操作绕过了 guard，agent-canary 无法拦截它。诱饵本身无害；一旦先碰到诱饵，guard 就能在之后的受守卫操作前隔离该会话。
+- **隔离只覆盖已集成的调用链。** 只有经过 `router.dispatch()`、
+  `guard.executeToolCall()` / `guard.beforeToolCall()` 的真实工具调用可以被阻断。如果被劫持 agent 的第一个危险操作绕过这些路径，agent-canary 无法拦截它。诱饵本身无害；一旦先碰到诱饵，guard 就能在之后的受守卫操作前隔离该会话。
 - 此版本没有声称支持任意上游 MCP server 的代理；下一阶段的可审计 MCP proxy 设计见 [docs/containment.md](docs/containment.md)。
 
 已知限制：这是 JavaScript，改 `dist/` 可以拆掉许可检查。签名许可提高了白嫖门槛，但它不是 DRM。

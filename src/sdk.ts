@@ -3,9 +3,8 @@
  * SDK, raw provider loops). The containment guard must wrap every real tool
  * callback, so a compromise can be blocked before the callback starts:
  *
- *   const guard = createAgentGuard({ sessionId });
- *   if (isDecoy(name)) return guard.runDecoy(name, args);
- *   return guard.executeToolCall({ name, args }, () => realTool(args));
+ *   const router = createGuardedToolRouter({ guard, executeRealTool });
+ *   return router.dispatch({ name, args });
  */
 
 import { DECOY_TOOLS, handleDecoyCall } from "./decoys.js";
@@ -15,6 +14,7 @@ import {
   createAgentGuard as createContainmentGuard,
   type AgentGuard,
   type AgentGuardOptions,
+  type ToolCall,
 } from "./containment.js";
 
 export {
@@ -62,7 +62,8 @@ export function decoyToolDefs(format: ToolFormat = "openai"): Array<OpenAIToolDe
 
 /** True when the given tool name is one of our decoys. */
 export function isDecoy(name: string): boolean {
-  return DECOY_TOOLS.some((t) => t.name === name);
+  const normalized = typeof name === "string" ? name.trim().toLowerCase() : "";
+  return DECOY_TOOLS.some((t) => t.name === normalized);
 }
 
 /**
@@ -84,6 +85,49 @@ export async function runDecoy(name: string, args: Record<string, unknown> = {},
 export function createAgentGuard(options: AgentGuardOptions = {}): AgentGuard {
   // V1.1 public containment: hosts can adopt the guard without an activation.
   return createContainmentGuard(options);
+}
+
+export type DecoyToolResult = Awaited<ReturnType<typeof handleDecoyCall>>;
+
+export type RealToolExecutor<T> = (call: ToolCall) => T | Promise<T>;
+
+export interface GuardedToolRouterOptions<T> {
+  /** One guard per agent session. Do not share it across independent sessions. */
+  guard: AgentGuard;
+  /** The only callback path for non-decoy tools routed through this helper. */
+  executeRealTool: RealToolExecutor<T>;
+}
+
+export interface GuardedToolRouter<T> {
+  readonly guard: AgentGuard;
+  /** Route decoys to their inert reply; route every other call through the guard. */
+  dispatch(call: ToolCall): Promise<T | DecoyToolResult>;
+}
+
+/**
+ * Build one safe dispatch path for a non-MCP agent integration.
+ *
+ * Decoys are always answered by `guard.runDecoy()` and never reach the real
+ * callback. All other calls go through `guard.executeToolCall()`, so a
+ * quarantined session cannot accidentally run the host callback.
+ */
+export function createGuardedToolRouter<T>(options: GuardedToolRouterOptions<T>): GuardedToolRouter<T> {
+  if (!options?.guard || typeof options.guard.executeToolCall !== "function" || typeof options.guard.runDecoy !== "function") {
+    throw new Error("createGuardedToolRouter requires an AgentGuard.");
+  }
+  if (typeof options.executeRealTool !== "function") {
+    throw new Error("createGuardedToolRouter requires an executeRealTool callback.");
+  }
+
+  const { guard, executeRealTool } = options;
+  return {
+    guard,
+    async dispatch(call: ToolCall): Promise<T | DecoyToolResult> {
+      const name = typeof call.name === "string" ? call.name.trim().toLowerCase() : "";
+      if (isDecoy(name)) return guard.runDecoy(name, call.args);
+      return guard.executeToolCall(call, () => executeRealTool(call));
+    },
+  };
 }
 
 /** Scan any text for planted canary tokens. Zero false positives by design. */

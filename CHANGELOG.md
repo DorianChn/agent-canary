@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.3 — free guarded-router release
+
+- Add `createGuardedToolRouter()` for non-MCP agent integrations. It routes
+  decoys to the inert, synchronous containment path and all other calls through
+  the same fail-closed guard.
+- Extend the offline `self-test` to exercise the router's guarded real-tool
+  dispatch path without touching user state.
+- Update the English and Chinese SDK examples to use the router instead of
+  hand-written decoy branching.
+- Add a minimal, stdio-only Docker image for reproducible MCP registry
+  introspection; it carries the free V1 server only and no payment or V2 data.
+- Add claimed-server metadata for Glama and align public MCP metadata with
+  the free V1.2.3 release.
+
 ## 1.2.2 — free V1 stability release
 
 - Add `agent-canary self-test`, an offline check of the SAFE → QUARANTINED →

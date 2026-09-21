@@ -13,17 +13,18 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
-## V1.2.2: verify containment locally, keep audit data safe
+## V1.2.3: one guarded route for every tool call
 
-V1.2.2 is the free public line. It keeps the zero-false-positive detection
-model and free SDK containment primitives, then adds a fully offline
-`self-test` and centralizes audit-event redaction before data reaches JSONL or
-a webhook:
+V1.2.3 is the free public line. It keeps the zero-false-positive detection
+model and free SDK containment primitives, then adds
+`createGuardedToolRouter()` so integrations have one reviewed dispatch path for
+decoys and real tools. It retains the fully offline `self-test` and centralized
+audit-event redaction before data reaches JSONL or a webhook:
 
 | Layer | What it does |
 |---|---|
 | Detection | Inert decoy MCP tools and planted canary tokens detect a compromise signal. |
-| Containment | `SAFE → TRIPPED → QUARANTINED` happens synchronously; guarded real-tool calls are fail-closed. |
+| Containment | `SAFE → TRIPPED → QUARANTINED` happens synchronously; `createGuardedToolRouter()` sends decoys to containment and real tools through the fail-closed guard. |
 | Alerting | JSONL audit events and optional webhook/desktop alerts are sent after the state transition; tool arguments and canary values are redacted. |
 
 ```text
@@ -64,10 +65,10 @@ workflow ever touches, so any contact is a real compromise signal.
 Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
 point back to the exact tool call that leaked them.
 
-## Install the free V1.2.2 line
+## Install the free V1.2.3 line
 
 Prerequisite: Node.js 20 or newer. The public source build contains the free
-V1.2.2 baseline:
+V1.2.3 baseline:
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
     npm install && npm run build && npm link
@@ -76,6 +77,19 @@ Run `agent-canary --help` after linking, then run the offline containment
 check. The public repository and public package contain the free V1 line only.
 V2.x is maintained and delivered privately after verified purchase; it is not
 distributed from this public source branch.
+
+### Container and Glama evaluation
+
+The repository includes a minimal stdio-only Docker image so MCP registries
+such as Glama can build the free V1 server and inspect its tool schemas without
+credentials, network access, or a V2 delivery package:
+
+    docker build -t agent-canary .
+    docker run --rm -i agent-canary
+
+The image starts `agent-canary serve`. It exposes the same inert decoy tools as
+the local V1 CLI; it does not execute real tools or contain payment, license,
+or customer data.
 
 ## Usage
 
@@ -133,7 +147,7 @@ and delivery package are kept outside the public repository.
 | `eval` — injection resistance scoring | | yes |
 | `dashboard` — HTML attack-chain timeline | | yes |
 | `export` — CEF / JSON / CSV for SIEM | | yes |
-| V1.2.2 session circuit breaker (`createAgentGuard`) and offline `self-test` | yes | yes |
+| V1.2.3 session circuit breaker, guarded tool router, and offline `self-test` | yes | yes |
 | SDK decoy handling and canary scanning | yes | yes |
 
 V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
@@ -165,18 +179,18 @@ is a candidate channel; any application or commercial terms must be reviewed by
 the maintainer before submission. We do not mass-post or send unsolicited
 promotional messages.
 
-## Non-MCP agents (free V1.2.2 circuit breaker)
+## Non-MCP agents (free V1.2.3 guarded tool router)
 
-Create one guard per agent session and route **every real tool callback** through
-it. Decoys are answered by `guard.runDecoy()`, which trips and quarantines the
-session before creating its inert fake reply.
+Create one guard per agent session, then give it to one router. The router
+answers decoys with `guard.runDecoy()` and routes every non-decoy callback
+through `guard.executeToolCall()`.
 
 ```ts
 import {
   CanaryBlockedError,
   createAgentGuard,
+  createGuardedToolRouter,
   decoyToolDefs,
-  isDecoy,
 } from "agent-canary/sdk";
 
 const guard = createAgentGuard({
@@ -185,17 +199,16 @@ const guard = createAgentGuard({
   quarantineAllow: ["read_file", "git_status"],
 });
 const toolDefs = [...myRealToolSchemas, ...decoyToolDefs("openai")];
+const router = createGuardedToolRouter({
+  guard,
+  executeRealTool: realTool, // host-provided callback
+});
 
-async function dispatch(call: { name: string; args: Record<string, unknown> }) {
-  if (isDecoy(call.name)) return guard.runDecoy(call.name, call.args);
-  return guard.executeToolCall(call, () => realTool(call)); // host-provided callback
-}
-
-await dispatch({ name: "git_status", args: {} });              // SAFE: allowed
-await dispatch({ name: "canary_read_secrets", args: {} });     // trip → quarantine
+await router.dispatch({ name: "git_status", args: {} });              // SAFE: allowed
+await router.dispatch({ name: "canary_read_secrets", args: {} });     // trip → quarantine
 
 try {
-  await dispatch({ name: "http_post", args: { url: "https://example.invalid" } });
+  await router.dispatch({ name: "http_post", args: { url: "https://example.invalid" } });
 } catch (error) {
   if (error instanceof CanaryBlockedError) console.log(error.decision); // action_blocked
 }
@@ -233,10 +246,11 @@ as a successful resistance result:
 - Alerts only fire when a decoy is touched or a token surfaces. Nothing in a
   legitimate workflow can trigger them.
 - **Containment is integration-scoped.** It can block only real tool calls
-  routed through `guard.executeToolCall()` / `guard.beforeToolCall()`. If a
-  compromised agent's first dangerous action bypasses this guard, agent-canary
-  cannot intercept that action. Decoys are harmless, so touching one lets the
-  guard quarantine the session before a later guarded action runs.
+  routed through `router.dispatch()` or `guard.executeToolCall()` /
+  `guard.beforeToolCall()`. If a compromised agent's first dangerous action
+  bypasses these paths, agent-canary cannot intercept that action. Decoys are
+  harmless, so touching one lets the guard quarantine the session before a
+  later guarded action runs.
 - This release does not ship an MCP proxy for arbitrary upstream MCP servers;
   the reviewed next-step design is in [docs/containment.md](docs/containment.md).
 

@@ -1,7 +1,7 @@
 {
   "name": "@dorianchn/agent-canary",
-  "version": "1.2.2",
-  "description": "Free AI-agent tripwires with offline containment self-tests, redacted audit events, and a fail-closed guard.",
+  "version": "1.2.3",
+  "description": "Free AI-agent tripwires with a guarded tool router, offline containment self-tests, and redacted audit events.",
   "license": "MIT",
   "author": "DorianChn",
   "repository": {
@@ -42,7 +42,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/alerts.test.ts test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts test/sdk.test.ts test/license.test.ts test/containment.test.ts test/install.test.ts test/config.test.ts test/install-backup.test.ts test/webhook.test.ts test/self-test.test.ts",
+    "test": "node --import tsx --test test/alerts.test.ts test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts test/sdk.test.ts test/license.test.ts test/containment.test.ts test/install.test.ts test/config.test.ts test/install-backup.test.ts test/webhook.test.ts test/self-test.test.ts test/metadata.test.ts",
     "pack:check": "node scripts/check-package.mjs",
     "verify": "npm run build && npm test && npm run pack:check",
     "prepublishOnly": "npm run build"

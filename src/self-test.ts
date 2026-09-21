@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { readEvents } from "./alerts.js";
 import { CanaryBlockedError, createAgentGuard } from "./containment.js";
+import { createGuardedToolRouter } from "./sdk.js";
 
 export interface SelfTestCheck {
   name: "safe_call" | "decoy_quarantine" | "blocked_callback" | "audit_order";
@@ -32,8 +33,12 @@ export async function runSelfTest(): Promise<SelfTestResult> {
       eventsFile,
       alert: false,
     });
+    const router = createGuardedToolRouter({
+      guard,
+      executeRealTool: (call) => (call.name === "git_status" ? "clean" : "must-not-run"),
+    });
 
-    const safeResult = await guard.executeToolCall({ name: "git_status" }, () => "clean");
+    const safeResult = await router.dispatch({ name: "git_status" });
     checks.push({ name: "safe_call", passed: safeResult === "clean" && guard.state === "SAFE" });
 
     const decoy = guard.beforeToolCall({ name: "canary_read_secrets" });
@@ -41,10 +46,8 @@ export async function runSelfTest(): Promise<SelfTestResult> {
 
     let callbackRan = false;
     try {
-      await guard.executeToolCall({ name: "http_post" }, () => {
-        callbackRan = true;
-        return "must-not-run";
-      });
+      await router.dispatch({ name: "http_post" });
+      callbackRan = true;
     } catch (error) {
       checks.push({ name: "blocked_callback", passed: error instanceof CanaryBlockedError && !callbackRan });
     }
