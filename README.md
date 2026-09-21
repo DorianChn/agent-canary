@@ -1,7 +1,7 @@
-# agent-canary
+# Shanchuanzhi Canary
 
-Tripwires for AI coding agents. It plants decoy MCP tools and canary tokens in
-your environment, then gives SDK integrations a session circuit breaker to
+Tripwires for coding environments. It plants decoy MCP tools and canary tokens
+in your environment, then gives SDK integrations a session circuit breaker to
 contain the next guarded action after a compromise signal.
 
 Works with Claude Code, Cursor, Cline, Windsurf — anything that speaks MCP.
@@ -9,7 +9,7 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 中文文档：[README.zh-CN.md](README.zh-CN.md)
 
-[Live demo & sponsor](https://dorianchn.github.io/agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+[Live demo & sponsor](https://dorianchn.github.io/agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
@@ -69,7 +69,7 @@ point back to the exact tool call that leaked them.
 Prerequisite: Node.js 20 or newer. The public source build contains the free
 V1.2.2 baseline:
 
-    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
+    git clone https://github.com/DorianChn/shanchuanzhi-agent-canary && cd shanchuanzhi-agent-canary
     npm install && npm run build && npm link
 
 Run `agent-canary --help` after linking, then run the offline containment
@@ -152,7 +152,7 @@ security researchers, and DevSecOps teams:
 - pilot the alert/audit pipeline in a controlled development or CI environment;
 - discuss paid integration, private deployment, or security-assessment support.
 
-Start in [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+Start in [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 with the integration target, scope, and preferred contact method. Do not post API
 keys, payment receipts, customer data, or unpublished findings.
 

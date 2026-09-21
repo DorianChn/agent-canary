@@ -6,13 +6,13 @@
   "author": "DorianChn",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DorianChn/agent-canary.git"
+    "url": "git+https://github.com/DorianChn/shanchuanzhi-agent-canary.git"
   },
-  "homepage": "https://github.com/DorianChn/agent-canary#readme",
+  "homepage": "https://github.com/DorianChn/shanchuanzhi-agent-canary#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "bugs": "https://github.com/DorianChn/agent-canary/issues",
+  "bugs": "https://github.com/DorianChn/shanchuanzhi-agent-canary/issues",
   "keywords": [
     "mcp",
     "security",
