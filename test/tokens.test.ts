@@ -7,7 +7,7 @@ import path from "node:path";
 // Point the whole module tree at a throwaway home before importing.
 process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-test-"));
 
-const { generateTokens, loadTokens, plantIntoFile, findTokensInText, scanFile } = await import("../src/tokens.js");
+const { generateTokens, loadTokens, saveTokens, plantIntoFile, findTokensInText, scanFile } = await import("../src/tokens.js");
 const { handleDecoyCall, DECOY_TOOLS } = await import("../src/decoys.js");
 const { readEvents } = await import("../src/alerts.js");
 
@@ -91,4 +91,15 @@ test("loadTokens skips corrupt records without losing valid tokens", () => {
       ],
     },
   ]);
+});
+
+test("saveTokens writes a complete registry without leaving a temporary file", () => {
+  const current = loadTokens();
+  saveTokens(current);
+
+  assert.deepEqual(loadTokens(), current);
+  const temporaryFiles = fs
+    .readdirSync(process.env.AGENT_CANARY_HOME!)
+    .filter((name) => name.endsWith(".tmp"));
+  assert.deepEqual(temporaryFiles, []);
 });

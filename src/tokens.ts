@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { TOKENS_PATH, ensureDirs } from "./config.js";
+import { TOKENS_PATH, ensureDirs, writeFileAtomically } from "./config.js";
 
 export interface PlantedRef {
   path: string;
@@ -92,7 +92,7 @@ export function loadTokens(): CanaryToken[] {
 
 export function saveTokens(tokens: CanaryToken[]): void {
   ensureDirs();
-  fs.writeFileSync(TOKENS_PATH, JSON.stringify(tokens, null, 2) + "\n");
+  writeFileAtomically(TOKENS_PATH, JSON.stringify(tokens, null, 2) + "\n");
 }
 
 export function addTokens(added: CanaryToken[]): CanaryToken[] {
