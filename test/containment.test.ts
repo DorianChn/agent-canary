@@ -35,7 +35,8 @@ test("2: decoy invocation synchronously quarantines its own session", async () =
   const events = eventsFor("decoy-session");
   assert.deepEqual(events.slice(0, 2).map((event) => event.kind), ["session_tripped", "session_quarantined"]);
   const decoyEvent = events.find((event) => event.kind === "decoy_called");
-  assert.equal((decoyEvent?.args as { apiKey?: string }).apiKey, "[REDACTED]");
+  assert.equal(decoyEvent?.args, undefined);
+  assert.equal(decoyEvent?.token, "[CANARY_REDACTED]");
 });
 
 test("3: a quarantined session blocks a dangerous real tool", () => {

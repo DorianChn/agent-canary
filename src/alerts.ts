@@ -37,6 +37,54 @@ export interface CanaryEvent {
 
 const MAX_EVENT_BYTES = 5 * 1024 * 1024; // ~5 MB, keeps roughly the last few thousand events
 const KEEP_LINES = 1500;
+const MAX_TEXT_LENGTH = 240;
+const SENSITIVE_FIELD = /(pass(word)?|secret|token|key|credential|authorization|cookie|bearer|private)/i;
+const INLINE_SECRET = /(\b(?:pass(?:word)?|secret|token|api[_-]?key|credential|authorization|cookie|bearer|private[_-]?key)\b\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi;
+const CANARY_VALUE = /\bcnry_[a-zA-Z0-9_-]+\b/g;
+
+/**
+ * Produce an audit-safe copy for both disk and outbound alerts.
+ *
+ * Tool arguments are deliberately omitted: even "harmless" arguments often
+ * contain paths, URLs, or credentials that become sensitive later. Canary
+ * values are also never persisted outside the local token registry.
+ */
+export function sanitizeEvent(ev: CanaryEvent): CanaryEvent {
+  const { args: _args, ...event } = ev;
+  return {
+    ...event,
+    sessionId: safeText(event.sessionId, 128),
+    reason: safeText(event.reason),
+    toolName: safeText(event.toolName, 128),
+    traceId: safeText(event.traceId, 128),
+    tool: safeText(event.tool, 128),
+    label: safeText(event.label, 128),
+    path: safeText(event.path),
+    note: safeText(event.note),
+    token: event.token === undefined ? undefined : "[CANARY_REDACTED]",
+    metadata: sanitizeMetadata(event.metadata),
+  };
+}
+
+function sanitizeMetadata(metadata: CanaryEvent["metadata"]): CanaryEvent["metadata"] {
+  if (!metadata) return undefined;
+  const safe: NonNullable<CanaryEvent["metadata"]> = {};
+  for (const [key, value] of Object.entries(metadata).slice(0, 16)) {
+    safe[key.slice(0, 80)] = SENSITIVE_FIELD.test(key) ? "[REDACTED]" : typeof value === "string" ? redactText(value) : value;
+  }
+  return Object.keys(safe).length ? safe : undefined;
+}
+
+function safeText(value: string | undefined, maxLength = MAX_TEXT_LENGTH): string | undefined {
+  return value === undefined ? undefined : redactText(value, maxLength);
+}
+
+function redactText(value: string, maxLength = MAX_TEXT_LENGTH): string {
+  return value
+    .replace(CANARY_VALUE, "[CANARY_REDACTED]")
+    .replace(INLINE_SECRET, "$1[REDACTED]")
+    .slice(0, maxLength);
+}
 
 export function logEvent(ev: CanaryEvent, eventsFile?: string): void {
   const file = eventsFile ?? loadConfig().eventsFile;
@@ -50,7 +98,7 @@ export function logEvent(ev: CanaryEvent, eventsFile?: string): void {
   } catch {
     /* rotation is best-effort */
   }
-  fs.appendFileSync(file, JSON.stringify(ev) + "\n");
+  fs.appendFileSync(file, JSON.stringify(sanitizeEvent(ev)) + "\n");
 }
 
 export function readEvents(eventsFile?: string, tail = 100): CanaryEvent[] {
@@ -65,7 +113,10 @@ export function readEvents(eventsFile?: string, tail = 100): CanaryEvent[] {
   for (const line of raw.split("\n")) {
     if (!line.trim()) continue;
     try {
-      events.push(JSON.parse(line) as CanaryEvent);
+      // Older installations may contain events written before centralized
+      // redaction. Sanitize on read so reports and dashboards never replay
+      // stale raw arguments or canary values.
+      events.push(sanitizeEvent(JSON.parse(line) as CanaryEvent));
     } catch {
       /* skip corrupted lines */
     }
@@ -79,8 +130,9 @@ export function readEvents(eventsFile?: string, tail = 100): CanaryEvent[] {
  * never stall the MCP stdio loop.
  */
 export function fireAlerts(ev: CanaryEvent, cfg: CanaryConfig = loadConfig()): void {
-  void postWebhook(cfg.webhook, ev);
-  if (cfg.notify) void notifyDesktop(summarize(ev));
+  const safeEvent = sanitizeEvent(ev);
+  void postWebhook(cfg.webhook, safeEvent);
+  if (cfg.notify) void notifyDesktop(summarize(safeEvent));
 }
 
 function summarize(ev: CanaryEvent): string {

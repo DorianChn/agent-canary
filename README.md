@@ -13,17 +13,18 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
-## V1.2.1: detect compromise, contain the next action
+## V1.2.2: verify containment locally, keep audit data safe
 
-V1.2.1 is the free public line. It keeps the zero-false-positive detection
-model, makes the core SDK detection/containment primitives usable without a
-paid license, and adds clearer containment details to CLI audit output:
+V1.2.2 is the free public line. It keeps the zero-false-positive detection
+model and free SDK containment primitives, then adds a fully offline
+`self-test` and centralizes audit-event redaction before data reaches JSONL or
+a webhook:
 
 | Layer | What it does |
 |---|---|
 | Detection | Inert decoy MCP tools and planted canary tokens detect a compromise signal. |
 | Containment | `SAFE → TRIPPED → QUARANTINED` happens synchronously; guarded real-tool calls are fail-closed. |
-| Alerting | JSONL audit events and optional webhook/desktop alerts are sent after the state transition. |
+| Alerting | JSONL audit events and optional webhook/desktop alerts are sent after the state transition; tool arguments and canary values are redacted. |
 
 ```text
 Untrusted content → prompt injection → decoy touched / token detected
@@ -63,35 +64,18 @@ workflow ever touches, so any contact is a real compromise signal.
 Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
 point back to the exact tool call that leaked them.
 
-## Install the free V1.2.1 line
+## Install the free V1.2.2 line
 
 Prerequisite: Node.js 20 or newer. The public source build contains the free
-V1.2.1 baseline:
+V1.2.2 baseline:
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
     npm install && npm run build && npm link
 
-Run `agent-canary --help` after linking. The paid V2.x package is a separate
-compiled delivery and must not be mistaken for the free public source line.
-
-Download the compiled V2 Personal software package from the
-[GitHub Release](https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal).
-It is a paid V2.x delivery: the V1 baseline remains free, and V2 features
-appear only after a valid activation.
-
-Download the compiled V2 Personal package:
-
-    https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz
-
-Install it with:
-
-    npm install -g ./agent-canary-2.0.0.tgz
-    agent-canary --help
-
-Windows PowerShell download:
-
-    Invoke-WebRequest -Uri https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -OutFile agent-canary-2.0.0.tgz
-    npm install -g .\agent-canary-2.0.0.tgz
+Run `agent-canary --help` after linking, then run the offline containment
+check. The public repository and public package contain the free V1 line only.
+V2.x is maintained and delivered privately after verified purchase; it is not
+distributed from this public source branch.
 
 ## Usage
 
@@ -103,6 +87,9 @@ Windows PowerShell download:
 
     # verify the alert pipeline
     agent-canary alert-test
+
+    # verify SAFE → QUARANTINED → BLOCKED locally, without network or user-state writes
+    agent-canary self-test
 
 Restart your editor. If the agent later calls a decoy or leaks a token:
 
@@ -146,7 +133,7 @@ and delivery package are kept outside the public repository.
 | `eval` — injection resistance scoring | | yes |
 | `dashboard` — HTML attack-chain timeline | | yes |
 | `export` — CEF / JSON / CSV for SIEM | | yes |
-| V1.2.1 session circuit breaker (`createAgentGuard`) | yes | yes |
+| V1.2.2 session circuit breaker (`createAgentGuard`) and offline `self-test` | yes | yes |
 | SDK decoy handling and canary scanning | yes | yes |
 
 V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
@@ -178,7 +165,7 @@ is a candidate channel; any application or commercial terms must be reviewed by
 the maintainer before submission. We do not mass-post or send unsolicited
 promotional messages.
 
-## Non-MCP agents (free V1.2.1 circuit breaker)
+## Non-MCP agents (free V1.2.2 circuit breaker)
 
 Create one guard per agent session and route **every real tool callback** through
 it. Decoys are answered by `guard.runDecoy()`, which trips and quarantines the
@@ -262,6 +249,7 @@ casual copying; it is not DRM.
     serve / init / install / uninstall
     tokens generate|plant|check|list
     watch, events, report, dashboard, export, eval
+    self-test
     status, activate, alert-test, set-webhook, set-notify
 
 Run `agent-canary --help` for details.

@@ -26,9 +26,10 @@ jobs:
           if (!/^1\./.test(pkg.version)) throw new Error(`refusing to publish non-V1 version: ${pkg.version}`);
           if (pkg.publishConfig?.registry !== 'https://npm.pkg.github.com') throw new Error('unexpected package registry');
           NODE
-      - run: npm install
+      - run: npm ci
       - run: npm run build
       - run: npm test
+      - run: npm run pack:check
       - name: Publish V1 to GitHub Packages
         run: npm publish --access public
         env:

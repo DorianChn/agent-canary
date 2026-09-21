@@ -16,6 +16,7 @@ import { renderDashboard } from "./dashboard.js";
 import { exportCef, exportCsv, exportJson } from "./export.js";
 import { activate, ensureLicensedAsync, licenseServer, UPSELL, cachedLicense } from "./license.js";
 import { DECOY_TOOLS } from "./decoys.js";
+import { runSelfTest } from "./self-test.js";
 import http from "node:http";
 
 const program = new Command();
@@ -239,6 +240,22 @@ program
   });
 
 program
+  .command("self-test")
+  .option("--json", "Print the result as JSON for CI")
+  .description("Verify the local circuit breaker without touching your config, tokens, events, or network")
+  .action(async (opts) => {
+    const result = await runSelfTest();
+    if (opts.json) {
+      console.log(JSON.stringify(result));
+    } else {
+      console.log("agent-canary containment self-test");
+      for (const check of result.checks) console.log(`  ${check.passed ? "✓" : "✗"} ${check.name}`);
+      console.log(result.passed ? "Containment path verified; no user state was changed." : "Self-test failed; do not rely on containment until resolved.");
+    }
+    if (!result.passed) process.exitCode = 1;
+  });
+
+program
   .command("set-webhook")
   .argument("<url|null>", "HTTPS URL to receive alert JSON (Slack/Discord/Telegram bridge), or 'null' to clear")
   .description("Configure the alert webhook")
@@ -422,7 +439,7 @@ program
     console.log(`agent-canary doctor (v${VERSION})`);
     console.log("  环境");
     if (lic) ok(`授权：个人版 Personal，有效期至 ${lic.expiresAt.slice(0, 10)}`);
-    else info("授权：免费版 Free（eval/dashboard/export/sdk 需个人版）");
+    else info("授权：免费版 Free（eval/dashboard/export 需个人版；SDK containment 免费）");
     info(`配置文件：${fs.existsSync(CONFIG_PATH) ? CONFIG_PATH : "未创建（agent-canary init）"}`);
     info(`诱饵工具：${DECOY_TOOLS.length} 个 · 令牌：${tokens.length} 个（${tokens.filter((t) => t.planted.length).length} 已埋放）`);
     info(`事件：${events.length} 条 · 日志 ${cfg.eventsFile}`);

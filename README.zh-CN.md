@@ -10,16 +10,17 @@
 
 ![Agent Canary — AI Agent / MCP 安全](docs/agent-canary-cover-v2.png)
 
-## V1.2.1：检测失陷，阻断下一步
+## V1.2.2：本地验证隔离，安全保留审计数据
 
-V1.2.1 是免费公开版本线。它保留零误报检测模型，让核心 SDK 的检测与
-隔离能力无需付费许可即可使用，并改进 CLI 审计输出中的隔离事件详情：
+V1.2.2 是免费公开版本线。它保留零误报检测模型和免费的 SDK 隔离能力，
+新增完全离线的 `self-test`，并把审计事件脱敏统一放到 JSONL / webhook
+出口执行：
 
 | 层 | 作用 |
 |---|---|
 | 检测 | 不执行真实操作的诱饵 MCP 工具与已埋放的金丝雀令牌发现失陷信号。 |
 | 隔离 | 同步执行 `SAFE → TRIPPED → QUARANTINED`；之后经过守卫的真实工具默认按失败闭合。 |
-| 告警 | 状态变更之后写入 JSONL 审计事件，并可发送 webhook / 桌面告警。 |
+| 告警 | 状态变更之后写入 JSONL 审计事件，并可发送 webhook / 桌面告警；工具参数和金丝雀值会脱敏。 |
 
 ```text
 不可信内容 → 提示注入 → 触碰诱饵 / 发现令牌
@@ -49,28 +50,15 @@ V2.x 付费功能单独维护和交付；V2.1 不从此分支公开上传。
 
 每个假工具的返回内容里带一次性追踪令牌，"密钥"被外传时能定位到具体哪次调用泄露的。
 
-## 安装免费 V1.2.1
+## 安装免费 V1.2.2
 
-要求：Node.js 20 或更高版本。公开源码构建包含免费 V1.2.1 基础能力：
+要求：Node.js 20 或更高版本。公开源码构建包含免费 V1.2.2 基础能力：
 
     git clone https://github.com/DorianChn/agent-canary && cd agent-canary
     npm install && npm run build && npm link
 
-付费 V2.x 是单独的编译交付包，不要把它和免费公开源码混淆。
-
-下载安装包：
-
-    https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz
-
-安装：
-
-    npm install -g ./agent-canary-2.0.0.tgz
-    agent-canary --help
-
-Windows PowerShell 下载：
-
-    Invoke-WebRequest -Uri https://github.com/DorianChn/agent-canary/releases/download/v2.0.0-personal/agent-canary-2.0.0.tgz -OutFile agent-canary-2.0.0.tgz
-    npm install -g .\agent-canary-2.0.0.tgz
+执行 `agent-canary --help` 后，再运行离线隔离自检。公开仓库和公开安装包只
+包含免费 V1 版本线；V2.x 在确认付款后单独私下交付，不从这个公开源码分支分发。
 
 ## 使用
 
@@ -82,6 +70,9 @@ Windows PowerShell 下载：
 
     # 验证告警链路
     agent-canary alert-test
+
+    # 在本地验证 SAFE → QUARANTINED → BLOCKED；不会访问网络或写入用户数据
+    agent-canary self-test
 
 重启编辑器。之后如果 agent 调了诱饵或泄露了令牌：
 
@@ -115,10 +106,6 @@ agent 眼里这些都是管理员级工具，但它们什么都不做。
 
 ## 免费版与个人版
 
-[下载 V2 Personal 软件包（GitHub Release）](https://github.com/DorianChn/agent-canary/releases/tag/v2.0.0-personal)
-
-这是同一个 CLI 软件：V1.x 永久免费，激活成功后显示并解锁 V2.x 功能。
-
 本仓库只公开永久免费 V1 基础版。这里仅介绍 V2 Personal 的订阅权益；
 V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库。
 
@@ -128,7 +115,7 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 | `eval` 注入抗性评分 | | 有 |
 | `dashboard` 攻击链时间线 | | 有 |
 | `export` CEF / JSON / CSV 导出 | | 有 |
-| V1.2.1 会话熔断器（`createAgentGuard`） | 有 | 有 |
+| V1.2.2 会话熔断器（`createAgentGuard`）与离线 `self-test` | 有 | 有 |
 | SDK 诱饵处理与金丝雀扫描 | 有 | 有 |
 
 V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查看公开的[付款说明](https://dorianchn.github.io/agent-canary/pay.html)：其中包含二维码、价格和交付所需信息。作者核对实际到账后才发送安装与激活说明；不承诺自动交付或即时激活。
@@ -152,7 +139,7 @@ V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查
 [Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/) 是一个候选渠道；正式申请或商业条款必须先由维护者确认。
 我们不会批量发帖或向陌生人发送骚扰式推广。
 
-## 非 MCP Agent（V1.2.1 免费熔断器）
+## 非 MCP Agent（V1.2.2 免费熔断器）
 
 每个 agent 会话创建一个 guard，所有**真实工具回调**都必须经过它。诱饵由
 `guard.runDecoy()` 处理：先同步 trip 和 quarantine，再返回无害的伪造结果。
@@ -220,6 +207,7 @@ V2 Personal 包含可复现的 20 条攻击载荷评测。人工查看可使用�
     serve / init / install / uninstall
     tokens generate|plant|check|list
     watch, events, report, dashboard, export, eval
+    self-test
     status, activate, alert-test, set-webhook, set-notify
 
 `agent-canary --help` 看详情。
