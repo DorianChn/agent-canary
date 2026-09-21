@@ -7,7 +7,7 @@ import path from "node:path";
 // Point the whole module tree at a throwaway home before importing.
 process.env.AGENT_CANARY_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "agent-canary-test-"));
 
-const { generateTokens, loadTokens, plantIntoFile, findTokensInText, scanFile } = await import("../src/tokens.js");
+const { generateTokens, loadTokens, saveTokens, plantIntoFile, findTokensInText, scanFile } = await import("../src/tokens.js");
 const { handleDecoyCall, DECOY_TOOLS } = await import("../src/decoys.js");
 const { readEvents } = await import("../src/alerts.js");
 
@@ -57,4 +57,49 @@ test("decoys never execute anything real (all handlers are pure fakes)", async (
   assert.ok(DECOY_TOOLS.length >= 8);
   const unknown = await handleDecoyCall("not_a_tool", {});
   assert.equal(unknown.isError, true);
+});
+
+test("loadTokens skips corrupt records without losing valid tokens", () => {
+  const registry = path.join(process.env.AGENT_CANARY_HOME!, "tokens.json");
+  const valid = {
+    token: "cnry_abcdefghijklmnopqrst",
+    label: "valid-token",
+    createdAt: "2026-09-21T00:00:00.000Z",
+    planted: [
+      { path: "/tmp/honeypot.env", line: 4 },
+      { path: "", line: 0 },
+      { path: "/tmp/also-valid.txt", line: 8 },
+    ],
+  };
+  fs.writeFileSync(
+    registry,
+    JSON.stringify([
+      valid,
+      { ...valid, token: "not-a-canary" },
+      { ...valid, label: " " },
+      { ...valid, createdAt: "not a date" },
+      { ...valid, planted: "not-an-array" },
+    ])
+  );
+
+  assert.deepEqual(loadTokens(), [
+    {
+      ...valid,
+      planted: [
+        { path: "/tmp/honeypot.env", line: 4 },
+        { path: "/tmp/also-valid.txt", line: 8 },
+      ],
+    },
+  ]);
+});
+
+test("saveTokens writes a complete registry without leaving a temporary file", () => {
+  const current = loadTokens();
+  saveTokens(current);
+
+  assert.deepEqual(loadTokens(), current);
+  const temporaryFiles = fs
+    .readdirSync(process.env.AGENT_CANARY_HOME!)
+    .filter((name) => name.endsWith(".tmp"));
+  assert.deepEqual(temporaryFiles, []);
 });

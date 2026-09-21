@@ -1,20 +1,27 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-
-// Windows: npx is a .cmd shim — several MCP clients spawn without a shell and
-// fail with ENOENT unless wrapped in cmd /c (the documented Claude Code pattern).
-const ENTRY =
-  process.platform === "win32"
-    ? { command: "cmd", args: ["/c", "npx", "-y", "agent-canary@latest", "serve"] }
-    : { command: "npx", args: ["-y", "agent-canary@latest", "serve"] };
+import { writeFileAtomically } from "./config.js";
 
 export type InstallTarget = "claude" | "cursor";
 
-export function configPathFor(target: InstallTarget): string {
+export interface InstallEntry {
+  command: string;
+  args: string[];
+}
+
+// Windows: npx is a .cmd shim — several MCP clients spawn without a shell and
+// fail with ENOENT unless wrapped in cmd /c (the documented Claude Code pattern).
+export function entryForPlatform(platform: string = process.platform): InstallEntry {
+  return platform === "win32"
+    ? { command: "cmd", args: ["/c", "npx", "-y", "agent-canary@latest", "serve"] }
+    : { command: "npx", args: ["-y", "agent-canary@latest", "serve"] };
+}
+
+export function configPathFor(target: InstallTarget, homeDir: string = os.homedir()): string {
   return target === "claude"
-    ? path.join(os.homedir(), ".claude.json")
-    : path.join(os.homedir(), ".cursor", "mcp.json");
+    ? path.join(homeDir, ".claude.json")
+    : path.join(homeDir, ".cursor", "mcp.json");
 }
 
 function readJson(cfgPath: string): Record<string, unknown> {
@@ -25,33 +32,48 @@ function readJson(cfgPath: string): Record<string, unknown> {
   }
 }
 
-export function installServer(target: InstallTarget): { configPath: string; backupPath: string | null } {
-  const cfgPath = configPathFor(target);
+function createBackup(cfgPath: string): string {
+  const basePath = `${cfgPath}.agent-canary-backup`;
+  for (let suffix = 0; ; suffix += 1) {
+    const backupPath = suffix === 0 ? basePath : `${basePath}.${suffix}`;
+    try {
+      fs.copyFileSync(cfgPath, backupPath, fs.constants.COPYFILE_EXCL);
+      return backupPath;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+  }
+}
+
+export function installServer(
+  target: InstallTarget,
+  homeDir: string = os.homedir()
+): { configPath: string; backupPath: string | null } {
+  const cfgPath = configPathFor(target, homeDir);
   let doc: Record<string, unknown> = {};
   let backupPath: string | null = null;
 
   if (fs.existsSync(cfgPath)) {
-    backupPath = `${cfgPath}.agent-canary-backup`;
-    fs.copyFileSync(cfgPath, backupPath);
+    backupPath = createBackup(cfgPath);
     doc = readJson(cfgPath);
   }
 
   const servers = (doc.mcpServers && typeof doc.mcpServers === "object" ? { ...(doc.mcpServers as object) } : {}) as Record<string, unknown>;
-  servers["agent-canary"] = ENTRY;
+  servers["agent-canary"] = entryForPlatform();
   doc.mcpServers = servers;
 
   fs.mkdirSync(path.dirname(cfgPath), { recursive: true });
-  fs.writeFileSync(cfgPath, JSON.stringify(doc, null, 2) + "\n");
+  writeFileAtomically(cfgPath, JSON.stringify(doc, null, 2) + "\n");
   return { configPath: cfgPath, backupPath };
 }
 
-export function uninstallServer(target: InstallTarget): boolean {
-  const cfgPath = configPathFor(target);
+export function uninstallServer(target: InstallTarget, homeDir: string = os.homedir()): boolean {
+  const cfgPath = configPathFor(target, homeDir);
   if (!fs.existsSync(cfgPath)) return false;
   const doc = readJson(cfgPath);
   const servers = doc.mcpServers as Record<string, unknown> | undefined;
   if (!servers || !("agent-canary" in servers)) return false;
   delete servers["agent-canary"];
-  fs.writeFileSync(cfgPath, JSON.stringify(doc, null, 2) + "\n");
+  writeFileAtomically(cfgPath, JSON.stringify(doc, null, 2) + "\n");
   return true;
 }

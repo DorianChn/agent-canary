@@ -9,6 +9,9 @@
 - Add a packed-install smoke check to CI; the public package is verified to
   contain only the compiled V1 CLI, documentation, and license.
 - Use `npm ci` in public V1 workflows for repeatable installs.
+- Merge the current V1 stability fixes: atomic config/token writes, preserved
+  MCP-config backups, webhook URL validation, and explicit alert-test delivery
+  status.
 
 ## 1.2.1
 

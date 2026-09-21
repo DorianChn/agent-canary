@@ -35,6 +35,12 @@ export interface CanaryEvent {
   note?: string;
 }
 
+export interface AlertTestStatus {
+  eventLog: "success" | "failure";
+  desktop: "enabled" | "disabled" | "failed";
+  webhook: "success" | "failed" | "not configured";
+}
+
 const MAX_EVENT_BYTES = 5 * 1024 * 1024; // ~5 MB, keeps roughly the last few thousand events
 const KEEP_LINES = 1500;
 const MAX_TEXT_LENGTH = 240;
@@ -131,8 +137,37 @@ export function readEvents(eventsFile?: string, tail = 100): CanaryEvent[] {
  */
 export function fireAlerts(ev: CanaryEvent, cfg: CanaryConfig = loadConfig()): void {
   const safeEvent = sanitizeEvent(ev);
-  void postWebhook(cfg.webhook, safeEvent);
+  if (cfg.webhook) void postWebhook(cfg.webhook, safeEvent);
   if (cfg.notify) void notifyDesktop(summarize(safeEvent));
+}
+
+/** Awaitable status path for the CLI's explicit alert-test command. */
+export async function sendAlertTest(
+  ev: CanaryEvent,
+  cfg: CanaryConfig = loadConfig()
+): Promise<AlertTestStatus> {
+  const safeEvent = sanitizeEvent(ev);
+  let eventLog: AlertTestStatus["eventLog"] = "success";
+  try {
+    logEvent(safeEvent, cfg.eventsFile);
+  } catch {
+    eventLog = "failure";
+  }
+
+  const webhookPromise = cfg.webhook
+    ? postWebhook(cfg.webhook, safeEvent)
+    : Promise.resolve<boolean | null>(null);
+  const desktopPromise = cfg.notify
+    ? notifyDesktop(summarize(safeEvent))
+    : Promise.resolve<boolean | null>(null);
+  const [webhookDelivered, desktopLaunched] = await Promise.all([webhookPromise, desktopPromise]);
+
+  return {
+    eventLog,
+    desktop: !cfg.notify ? "disabled" : desktopLaunched ? "enabled" : "failed",
+    webhook:
+      webhookDelivered === null ? "not configured" : webhookDelivered ? "success" : "failed",
+  };
 }
 
 function summarize(ev: CanaryEvent): string {
@@ -145,17 +180,18 @@ function summarize(ev: CanaryEvent): string {
   return `Test alert from agent-canary.`;
 }
 
-async function postWebhook(url: string | null, ev: CanaryEvent): Promise<void> {
-  if (!url) return;
+async function postWebhook(url: string, ev: CanaryEvent): Promise<boolean> {
   try {
-    await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(ev),
       signal: AbortSignal.timeout(3000),
     });
+    return response.ok;
   } catch {
     /* alerts are best-effort */
+    return false;
   }
 }
 
@@ -163,7 +199,19 @@ function psEscape(s: string): string {
   return s.replace(/'/g, "''");
 }
 
-async function notifyDesktop(body: string): Promise<void> {
+async function notifyDesktop(body: string): Promise<boolean> {
+  const launched = (child: ReturnType<typeof spawn>): Promise<boolean> =>
+    new Promise((resolve) => {
+      let settled = false;
+      const finish = (value: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+      child.once("spawn", () => finish(true));
+      child.once("error", () => finish(false));
+    });
+
   try {
     const platform = process.platform;
     if (platform === "win32") {
@@ -174,23 +222,27 @@ async function notifyDesktop(body: string): Promise<void> {
         `$n.ShowBalloonTip(8000, 'Agent Canary', '${psEscape(body)}', 'Warning'); ` +
         `Start-Sleep -Seconds 9; $n.Dispose()`;
       const child = spawn("powershell", ["-NoProfile", "-Command", script], { stdio: "ignore", detached: true });
-      child.on("error", () => {});
+      const notification = launched(child);
       child.unref();
+      return await notification;
     } else if (platform === "darwin") {
       const quoted = body.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       const child = spawn("osascript", ["-e", `display notification "${quoted}" with title "Agent Canary"`], {
         stdio: "ignore",
         detached: true,
       });
-      child.on("error", () => {});
+      const notification = launched(child);
       child.unref();
+      return await notification;
     } else {
       // notify-send may not exist on headless systems; the error listener swallows ENOENT.
       const child = spawn("notify-send", ["Agent Canary", body], { stdio: "ignore", detached: true });
-      child.on("error", () => {});
+      const notification = launched(child);
       child.unref();
+      return await notification;
     }
   } catch {
     /* desktop notifications are optional */
+    return false;
   }
 }
