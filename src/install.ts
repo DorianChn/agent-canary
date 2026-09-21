@@ -32,6 +32,19 @@ function readJson(cfgPath: string): Record<string, unknown> {
   }
 }
 
+function createBackup(cfgPath: string): string {
+  const basePath = `${cfgPath}.agent-canary-backup`;
+  for (let suffix = 0; ; suffix += 1) {
+    const backupPath = suffix === 0 ? basePath : `${basePath}.${suffix}`;
+    try {
+      fs.copyFileSync(cfgPath, backupPath, fs.constants.COPYFILE_EXCL);
+      return backupPath;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    }
+  }
+}
+
 export function installServer(
   target: InstallTarget,
   homeDir: string = os.homedir()
@@ -41,8 +54,7 @@ export function installServer(
   let backupPath: string | null = null;
 
   if (fs.existsSync(cfgPath)) {
-    backupPath = `${cfgPath}.agent-canary-backup`;
-    fs.copyFileSync(cfgPath, backupPath);
+    backupPath = createBackup(cfgPath);
     doc = readJson(cfgPath);
   }
 
