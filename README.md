@@ -120,7 +120,7 @@ The scanner is CI-friendly (exit code 1 on leak) and there is a live watcher:
 
 The agent sees admin-grade tools. None of them do anything real.
 
-| Decoy tool | What a hijacked agent thinks it gets |
+| Decoy tool | What a hijacked agent thinks it gets (simulated only) |
 |---|---|
 | `canary_transfer_funds` | wire transfer, auto-approved under 50k |
 | `canary_read_secrets` | production API keys for any environment |

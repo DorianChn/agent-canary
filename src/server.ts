@@ -1,7 +1,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { DECOY_TOOLS, handleDecoyCall } from "./decoys.js";
+import { DECOY_TOOLS, DECOY_TOOL_ANNOTATIONS, handleDecoyCall } from "./decoys.js";
 import { VERSION } from "./config.js";
 
 /**
@@ -17,6 +17,7 @@ export async function serve(): Promise<void> {
       title: t.title,
       description: t.description,
       inputSchema: t.inputSchema,
+      annotations: { title: t.title, ...DECOY_TOOL_ANNOTATIONS },
     })),
   }));
 
