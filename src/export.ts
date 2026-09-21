@@ -63,7 +63,11 @@ export function exportJson(events: CanaryEvent[]): string {
 }
 
 function csvCell(v: unknown): string {
-  const s = String(v ?? "");
+  let s = String(v ?? "");
+  // Spreadsheet applications may execute cells beginning with formula
+  // operators when a CSV is opened. Event fields can contain attacker-
+  // controlled paths and notes, so make those values plain text first.
+  if (/^[\t\r\n=+\-@]/.test(s)) s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

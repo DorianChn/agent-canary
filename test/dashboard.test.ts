@@ -69,3 +69,21 @@ test("CSV export: header + quoted cells", () => {
   assert.equal(lines[0], "timestamp,kind,tool,label,path,token_masked,note");
   assert.match(lines[1], /decoy_called/);
 });
+
+test("CSV export: formula-like cells are treated as text", () => {
+  const csv = exportCsv([
+    {
+      ts: "=1+1",
+      kind: "test",
+      tool: "+run",
+      label: "-label",
+      path: "@path",
+      note: "\t=payload",
+    },
+  ]);
+
+  assert.equal(
+    csv,
+    "timestamp,kind,tool,label,path,token_masked,note\n'=1+1,test,'+run,'-label,'@path,,\'\t=payload\n"
+  );
+});
