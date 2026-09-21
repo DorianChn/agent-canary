@@ -16,6 +16,7 @@ import { renderDashboard } from "./dashboard.js";
 import { exportCef, exportCsv, exportJson } from "./export.js";
 import { activate, ensureLicensedAsync, licenseServer, UPSELL, cachedLicense } from "./license.js";
 import { DECOY_TOOLS } from "./decoys.js";
+import { validateWebhookUrl } from "./webhook.js";
 import http from "node:http";
 
 const program = new Command();
@@ -244,9 +245,21 @@ program
   .description("Configure the alert webhook")
   .action((url: string) => {
     const cfg = loadConfig();
-    cfg.webhook = url === "null" ? null : url;
+    if (url.trim() === "null") {
+      cfg.webhook = null;
+      saveConfig(cfg);
+      console.log("Webhook cleared.");
+      return;
+    }
+    try {
+      cfg.webhook = validateWebhookUrl(url);
+    } catch (error) {
+      console.error(`Invalid webhook URL: ${(error as Error).message}`);
+      process.exitCode = 1;
+      return;
+    }
     saveConfig(cfg);
-    console.log(cfg.webhook ? `Webhook set: ${cfg.webhook}` : "Webhook cleared.");
+    console.log("Webhook configured.");
   });
 
 program

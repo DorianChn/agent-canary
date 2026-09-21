@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts test/sdk.test.ts test/license.test.ts test/containment.test.ts test/install.test.ts test/config.test.ts test/install-backup.test.ts",
+    "test": "node --import tsx --test test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts test/sdk.test.ts test/license.test.ts test/containment.test.ts test/install.test.ts test/config.test.ts test/install-backup.test.ts test/webhook.test.ts",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
