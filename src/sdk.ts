@@ -23,6 +23,8 @@ export {
   type AgentGuard,
   type AgentGuardOptions,
   type CircuitState,
+  type CredentialRevocationRequest,
+  type CredentialRevoker,
   type ResetRequest,
   type RiskLevel,
   type ToolCall,

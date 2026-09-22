@@ -13,15 +13,18 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
-## V1.2.4: explicit MCP safety instructions
+## V1.2.5: quarantine plus optional session credential revocation
 
-V1.2.4 is the free public line. It keeps the zero-false-positive detection
+V1.2.5 is the free public line. It keeps the zero-false-positive detection
 model and free SDK containment primitives, then adds
 `createGuardedToolRouter()` so integrations have one reviewed dispatch path for
 decoys and real tools. It retains the fully offline `self-test` and centralized
 audit-event redaction before data reaches JSONL or a webhook. It also publishes
 concise MCP server instructions so registries and clients can identify the
-decoys as inert and state the guarded-containment boundary before tool use:
+decoys as inert and state the guarded-containment boundary before tool use. For
+hosts using short-lived session-scoped vault references, an optional
+secret-free `credentialRevoker` hook starts invalidation after quarantine and
+before alerts:
 
 | Layer | What it does |
 |---|---|
@@ -67,10 +70,10 @@ workflow ever touches, so any contact is a real compromise signal.
 Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
 point back to the exact tool call that leaked them.
 
-## Install the free V1.2.4 line
+## Install the free V1.2.5 line
 
 Prerequisite: Node.js 20 or newer. The public source build contains the free
-V1.2.4 baseline:
+V1.2.5 baseline:
 
     git clone https://github.com/DorianChn/shanchuanzhi-agent-canary && cd shanchuanzhi-agent-canary
     npm install && npm run build && npm link
@@ -149,7 +152,7 @@ and delivery package are kept outside the public repository.
 | `eval` — injection resistance scoring | | yes |
 | `dashboard` — HTML attack-chain timeline | | yes |
 | `export` — CEF / JSON / CSV for SIEM | | yes |
-| V1.2.4 session circuit breaker, guarded tool router, MCP safety instructions, and offline `self-test` | yes | yes |
+| V1.2.5 session circuit breaker, optional credential revoker, guarded tool router, MCP safety instructions, and offline `self-test` | yes | yes |
 | SDK decoy handling and canary scanning | yes | yes |
 
 V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
@@ -181,7 +184,7 @@ is a candidate channel; any application or commercial terms must be reviewed by
 the maintainer before submission. We do not mass-post or send unsolicited
 promotional messages.
 
-## Non-MCP agents (free V1.2.4 guarded tool router)
+## Non-MCP agents (free V1.2.5 guarded tool router)
 
 Create one guard per agent session, then give it to one router. The router
 answers decoys with `guard.runDecoy()` and routes every non-decoy callback

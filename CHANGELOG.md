@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.5
+
+- Add an optional secret-free `credentialRevoker` hook for hosts that use
+  short-lived, session-scoped vault or broker references.
+- Request revocation after synchronous quarantine and before alert delivery;
+  adapter failure is audited but can never reopen the circuit breaker.
+
 ## 1.2.4
 
 - Publish concise MCP server instructions: every `canary_*` tool is inert and

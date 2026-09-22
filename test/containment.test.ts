@@ -124,3 +124,47 @@ test("token detection trips before its token event is emitted", () => {
   assert.deepEqual(kinds.slice(0, 3), ["session_tripped", "session_quarantined", "token_found"]);
   assert.equal(guard.state, "QUARANTINED");
 });
+
+test("credential revoker receives no secret data and starts after quarantine before alerts", () => {
+  let observedState = "";
+  let request: sdk.CredentialRevocationRequest | undefined;
+  let guard: sdk.AgentGuard;
+  guard = sdk.createAgentGuard({
+    sessionId: "revoker-session",
+    eventsFile: containmentEvents,
+    alert: false,
+    credentialRevoker: {
+      revoke(input) {
+        observedState = guard.state;
+        request = input;
+      },
+    },
+  });
+
+  guard.trip({
+    reason: "decoy_called",
+    toolName: "canary_read_secrets",
+    riskLevel: "SECRET",
+    metadata: { apiKey: "must-not-reach-revoker" },
+  });
+
+  assert.equal(observedState, "QUARANTINED");
+  assert.deepEqual(request && Object.keys(request).sort(), ["reason", "riskLevel", "sessionId", "toolName", "traceId"]);
+  assert.equal(request?.sessionId, "revoker-session");
+  assert.equal(request?.riskLevel, "SECRET");
+  const kinds = eventsFor("revoker-session").map((event) => event.kind);
+  assert.deepEqual(kinds.slice(0, 3), ["session_tripped", "session_quarantined", "credential_revocation_requested"]);
+});
+
+test("credential revoker failures do not re-open the circuit", () => {
+  const guard = sdk.createAgentGuard({
+    sessionId: "revoker-failure-session",
+    eventsFile: containmentEvents,
+    alert: false,
+    credentialRevoker: { revoke: () => { throw new Error("vault unavailable"); } },
+  });
+  guard.trip({ reason: "decoy_called", toolName: "canary_read_secrets", riskLevel: "SECRET" });
+  assert.equal(guard.state, "QUARANTINED");
+  assert.equal(guard.beforeToolCall({ name: "http_post" }).allowed, false);
+  assert.ok(eventsFor("revoker-failure-session").some((event) => event.kind === "credential_revocation_failed"));
+});

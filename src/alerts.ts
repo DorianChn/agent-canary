@@ -8,6 +8,8 @@ export type EventKind =
   | "token_found"
   | "session_tripped"
   | "session_quarantined"
+  | "credential_revocation_requested"
+  | "credential_revocation_failed"
   | "action_blocked"
   | "session_reset"
   | "test";
@@ -175,6 +177,8 @@ function summarize(ev: CanaryEvent): string {
   if (ev.kind === "token_found") return `Canary token "${ev.label}" surfaced in ${ev.path ?? "output"}.`;
   if (ev.kind === "session_tripped") return `Session ${ev.sessionId ?? "unknown"} tripped: ${ev.reason ?? "compromise signal"}.`;
   if (ev.kind === "session_quarantined") return `Session ${ev.sessionId ?? "unknown"} is quarantined.`;
+  if (ev.kind === "credential_revocation_requested") return `Credential revocation was requested for session ${ev.sessionId ?? "unknown"}.`;
+  if (ev.kind === "credential_revocation_failed") return `Credential revocation adapter failed for session ${ev.sessionId ?? "unknown"}.`;
   if (ev.kind === "action_blocked") return `Blocked ${ev.toolName ?? ev.tool ?? "tool"} in quarantined session.`;
   if (ev.kind === "session_reset") return `Session ${ev.sessionId ?? "unknown"} was manually reset.`;
   return `Test alert from agent-canary.`;

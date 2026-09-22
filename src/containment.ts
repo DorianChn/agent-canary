@@ -53,6 +53,29 @@ export interface TripResult {
   traceId: string;
 }
 
+/**
+ * Minimal, secret-free context for a host's vault or broker integration.
+ * The adapter should revoke session-scoped references or let their short TTL
+ * expire; never pass raw credentials into the Agent Canary process.
+ */
+export interface CredentialRevocationRequest {
+  sessionId: string;
+  reason: string;
+  toolName?: string;
+  riskLevel: RiskLevel;
+  traceId: string;
+}
+
+/**
+ * Optional host-owned containment extension. It is invoked synchronously
+ * after the circuit is quarantined and before alerts are sent. Implementations
+ * may begin an asynchronous vault request, but the local guard never waits for
+ * it or treats it as authorization to reopen the session.
+ */
+export interface CredentialRevoker {
+  revoke(request: CredentialRevocationRequest): void | Promise<void>;
+}
+
 export interface AgentGuardOptions {
   sessionId?: string;
   /** Exact tool names that may still run after quarantine. Default: none. */
@@ -63,6 +86,8 @@ export interface AgentGuardOptions {
   eventsFile?: string;
   /** Disable outbound/desktop notifications while retaining local audit events. */
   alert?: boolean;
+  /** Optional host-owned session credential invalidation hook. */
+  credentialRevoker?: CredentialRevoker;
 }
 
 export interface AgentGuard {
@@ -121,6 +146,7 @@ class SessionCircuitBreaker implements AgentGuard {
   private readonly classify: (call: ToolCall) => RiskLevel;
   private readonly eventsFile?: string;
   private readonly alertsEnabled: boolean;
+  private readonly credentialRevoker?: CredentialRevoker;
 
   constructor(options: AgentGuardOptions) {
     this.sessionId = checkedSessionId(options.sessionId ?? `ac_${randomUUID()}`);
@@ -128,6 +154,7 @@ class SessionCircuitBreaker implements AgentGuard {
     this.classify = options.classifyRisk ?? classifyToolRisk;
     this.eventsFile = options.eventsFile;
     this.alertsEnabled = options.alert !== false;
+    this.credentialRevoker = options.credentialRevoker;
   }
 
   get state(): CircuitState {
@@ -269,6 +296,14 @@ class SessionCircuitBreaker implements AgentGuard {
       metadata: sanitizeMetadata(input.metadata),
     });
 
+    this.requestCredentialRevocation({
+      sessionId: this.sessionId,
+      reason: safeReason(input.reason),
+      toolName: input.toolName,
+      riskLevel: input.riskLevel ?? "SAFE",
+      traceId,
+    });
+
     this.alert(tripped);
     this.alert(quarantined);
     return { changed: true, sessionId: this.sessionId, state: this.currentState, traceId };
@@ -316,6 +351,50 @@ class SessionCircuitBreaker implements AgentGuard {
       // Delivery is advisory; containment is already complete.
     }
   }
+
+  private requestCredentialRevocation(request: CredentialRevocationRequest): void {
+    if (!this.credentialRevoker) return;
+
+    // The local circuit is already QUARANTINED. Start the host-side revocation
+    // before alerts, but never await network I/O or let an adapter failure
+    // affect containment.
+    const requested = this.emit({
+      kind: "credential_revocation_requested",
+      eventType: "credential_revocation_requested",
+      sessionId: request.sessionId,
+      reason: request.reason,
+      toolName: request.toolName,
+      riskLevel: request.riskLevel,
+      traceId: request.traceId,
+    });
+    try {
+      const result = this.credentialRevoker.revoke(request);
+      if (isPromiseLike(result)) {
+        void result.catch(() => this.recordCredentialRevocationFailure(request));
+      }
+    } catch {
+      this.recordCredentialRevocationFailure(request);
+    }
+    // Preserve the existing alert order: trip and quarantine alerts remain the
+    // primary signal. The adapter event is still written to the local audit log.
+    void requested;
+  }
+
+  private recordCredentialRevocationFailure(request: CredentialRevocationRequest): void {
+    this.emit({
+      kind: "credential_revocation_failed",
+      eventType: "credential_revocation_failed",
+      sessionId: request.sessionId,
+      reason: "credential_revoker_failed",
+      toolName: request.toolName,
+      riskLevel: request.riskLevel,
+      traceId: request.traceId,
+    });
+  }
+}
+
+function isPromiseLike(value: unknown): value is Promise<unknown> {
+  return typeof (value as { then?: unknown } | undefined)?.then === "function";
 }
 
 function isDecoy(name: string): boolean {
