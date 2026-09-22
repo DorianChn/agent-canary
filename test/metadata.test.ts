@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import { DECOY_TOOLS, DECOY_TOOL_ANNOTATIONS } from "../src/decoys.ts";
+import { SERVER_INSTRUCTIONS } from "../src/server.ts";
 
 function readJson(file: string): Record<string, unknown> {
   return JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, unknown>;
@@ -33,4 +34,10 @@ test("decoy tool definitions disclose inert behavior and conservative MCP annota
     assert.match(tool.title, /canary simulation$/);
     assert.match(tool.description, /^Synthetic canary decoy for security testing only\./);
   }
+});
+
+test("server instructions disclose the containment boundary without implying real decoy actions", () => {
+  assert.match(SERVER_INSTRUCTIONS, /Every canary_\* tool is synthetic/i);
+  assert.match(SERVER_INSTRUCTIONS, /never executes commands, reads secrets, changes files/i);
+  assert.match(SERVER_INSTRUCTIONS, /only contains tool calls routed through its integration layer/i);
 });

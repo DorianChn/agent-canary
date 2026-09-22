@@ -552,7 +552,7 @@ const server = http.createServer(async (req, res) => {
         const type = qrFiles[ch].endsWith(".png") ? "image/png" : qrFiles[ch].endsWith(".webp") ? "image/webp" : "image/jpeg";
         return send(res, 200, fs.readFileSync(qrFiles[ch]), type);
       }
-      res.writeHead(302, { Location: `https://cdn.jsdelivr.net/gh/DorianChn/agent-canary@main/docs/pay/${ch}.jpg` });
+      res.writeHead(302, { Location: `https://cdn.jsdelivr.net/gh/DorianChn/shanchuanzhi-agent-canary@main/docs/pay/${ch}.jpg` });
       return res.end();
     }
 
@@ -803,7 +803,7 @@ ${DEMO || EPAY_READY || WECHAT_READY || ALIPAY_READY || VMQ_READY ? `
 <button id="go" class="ghost">生成付款码</button>
 <div class="qrbox" id="qrbox"><img id="qr" alt="付款二维码"><div id="st" class="sub" style="margin-top:10px">等待支付…</div><div class="ok" id="ok">✓ 支付成功，感谢支持！</div></div>
 ` : ""}
-<p class="note">本页为自托管收款服务：线上通道回调均经过签名验证。<br>项目：github.com/DorianChn/agent-canary</p>
+<p class="note">本页为自托管收款服务：线上通道回调均经过签名验证。<br>项目：github.com/DorianChn/shanchuanzhi-agent-canary</p>
 </div>
 <script>
 const MODE = "${DEMO ? "demo" : !EPAY_READY && !WECHAT_READY && !ALIPAY_READY && MANUAL_READY ? "manual" : "auto"}";

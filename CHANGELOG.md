@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.4
+
+- Publish concise MCP server instructions: every `canary_*` tool is inert and
+  containment applies only to guarded tool calls.
+- Update public repository metadata and documentation links after the GitHub
+  repository move.
+
 ## 1.2.3 — free guarded-router release
 
 - Add `createGuardedToolRouter()` for non-MCP agent integrations. It routes

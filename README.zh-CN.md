@@ -6,15 +6,15 @@
 
 中文文档（本文件）｜ [English](README.md)
 
-[在线体验与赞助](https://dorianchn.github.io/agent-canary/) · [Glama 条目](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+[在线体验与赞助](https://dorianchn.github.io/agent-canary/) · [Glama 条目](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary) · [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 
 ![Agent Canary — AI Agent / MCP 安全](docs/agent-canary-cover-v2.png)
 
-## V1.2.3：每个工具调用只走一条受守卫路径
+## V1.2.4：明确发布 MCP 安全说明
 
-V1.2.3 是免费公开版本线。它保留零误报检测模型和免费的 SDK 隔离能力，
+V1.2.4 是免费公开版本线。它保留零误报检测模型和免费的 SDK 隔离能力，
 新增 `createGuardedToolRouter()`，让诱饵和真实工具共用一条经过审查的分发路径；
-同时保留完全离线的 `self-test` 和 JSONL / webhook 出口的统一审计脱敏：
+同时保留完全离线的 `self-test` 和 JSONL / webhook 出口的统一审计脱敏；还会发布精简的 MCP server instructions，让目录和客户端在调用工具前明确知道诱饵无害，以及受守卫隔离的适用边界：
 
 | 层 | 作用 |
 |---|---|
@@ -50,11 +50,11 @@ V2.x 付费功能单独维护和交付；V2.1 不从此分支公开上传。
 
 每个假工具的返回内容里带一次性追踪令牌，"密钥"被外传时能定位到具体哪次调用泄露的。
 
-## 安装免费 V1.2.3
+## 安装免费 V1.2.4
 
-要求：Node.js 20 或更高版本。公开源码构建包含免费 V1.2.3 基础能力：
+要求：Node.js 20 或更高版本。公开源码构建包含免费 V1.2.4 基础能力：
 
-    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
+    git clone https://github.com/DorianChn/shanchuanzhi-agent-canary && cd shanchuanzhi-agent-canary
     npm install && npm run build && npm link
 
 执行 `agent-canary --help` 后，再运行离线隔离自检。公开仓库和公开安装包只
@@ -126,7 +126,7 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 | `eval` 注入抗性评分 | | 有 |
 | `dashboard` 攻击链时间线 | | 有 |
 | `export` CEF / JSON / CSV 导出 | | 有 |
-| V1.2.3 会话熔断器、受守卫工具 Router 与离线 `self-test` | 有 | 有 |
+| V1.2.4 会话熔断器、受守卫工具 Router、MCP 安全说明与离线 `self-test` | 有 | 有 |
 | SDK 诱饵处理与金丝雀扫描 | 有 | 有 |
 
 V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查看公开的[付款说明](https://dorianchn.github.io/agent-canary/pay.html)：其中包含二维码、价格和交付所需信息。作者核对实际到账后才发送安装与激活说明；不承诺自动交付或即时激活。
@@ -140,17 +140,17 @@ V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查
 - 在受控开发环境或 CI 中试点告警与审计链路；
 - 讨论付费集成、私有部署或安全评估支持。
 
-请在 [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+请在 [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 说明集成目标、范围和首选联系方式。不要提交 API 密钥、付款凭证、客户数据或未公开漏洞。
 
 ## 分发与合作渠道
 
 项目已进入[官方 MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.DorianChn%2Fagent-canary)，
-并保留 [Glama 展示页](https://glama.ai/mcp/servers/DorianChn/agent-canary)。如果要和更大的安全平台做集成，
+并保留 [Glama 展示页](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary)。如果要和更大的安全平台做集成，
 [Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/) 是一个候选渠道；正式申请或商业条款必须先由维护者确认。
 我们不会批量发帖或向陌生人发送骚扰式推广。
 
-## 非 MCP Agent（V1.2.3 免费受守卫工具 Router）
+## 非 MCP Agent（V1.2.4 免费受守卫工具 Router）
 
 每个 agent 会话创建一个 guard，然后交给一个 Router。Router 用
 `guard.runDecoy()` 回答诱饵，并把所有非诱饵回调交给

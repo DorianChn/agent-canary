@@ -6,7 +6,7 @@
 
 ## 加代码
 
-    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
+    git clone https://github.com/DorianChn/shanchuanzhi-agent-canary && cd shanchuanzhi-agent-canary
     npm install && npm run build && npm test
 
 提交前测试必须全绿；评测、许可证和诱饵处理都有回归测试。

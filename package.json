@@ -1,18 +1,18 @@
 {
   "name": "@dorianchn/agent-canary",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Free AI-agent tripwires with a guarded tool router, offline containment self-tests, and redacted audit events.",
   "license": "MIT",
   "author": "DorianChn",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DorianChn/agent-canary.git"
+    "url": "git+https://github.com/DorianChn/shanchuanzhi-agent-canary.git"
   },
-  "homepage": "https://github.com/DorianChn/agent-canary#readme",
+  "homepage": "https://github.com/DorianChn/shanchuanzhi-agent-canary#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "bugs": "https://github.com/DorianChn/agent-canary/issues",
+  "bugs": "https://github.com/DorianChn/shanchuanzhi-agent-canary/issues",
   "keywords": [
     "mcp",
     "security",

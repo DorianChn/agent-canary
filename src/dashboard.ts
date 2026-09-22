@@ -120,6 +120,6 @@ pre{background:#010409;border:1px solid var(--line);border-radius:8px;padding:10
 <div class="meta">生成时间 ${esc(meta.generatedAt)} · agent-canary v${esc(meta.version)} · 数据源 ~/.agent-canary/events.jsonl</div>
 ${cards}
 <div class="tl">${timeline || empty}</div>
-<div class="foot">零误报：事件只在诱饵被触碰或金丝雀令牌外泄时产生 · github.com/DorianChn/agent-canary</div>
+<div class="foot">零误报：事件只在诱饵被触碰或金丝雀令牌外泄时产生 · github.com/DorianChn/shanchuanzhi-agent-canary</div>
 </div></body></html>`;
 }

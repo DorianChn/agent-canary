@@ -9,17 +9,19 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 中文文档：[README.zh-CN.md](README.zh-CN.md)
 
-[Live demo & sponsor](https://dorianchn.github.io/agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/agent-canary) · [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+[Live demo & sponsor](https://dorianchn.github.io/agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary) · [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
-## V1.2.3: one guarded route for every tool call
+## V1.2.4: explicit MCP safety instructions
 
-V1.2.3 is the free public line. It keeps the zero-false-positive detection
+V1.2.4 is the free public line. It keeps the zero-false-positive detection
 model and free SDK containment primitives, then adds
 `createGuardedToolRouter()` so integrations have one reviewed dispatch path for
 decoys and real tools. It retains the fully offline `self-test` and centralized
-audit-event redaction before data reaches JSONL or a webhook:
+audit-event redaction before data reaches JSONL or a webhook. It also publishes
+concise MCP server instructions so registries and clients can identify the
+decoys as inert and state the guarded-containment boundary before tool use:
 
 | Layer | What it does |
 |---|---|
@@ -65,12 +67,12 @@ workflow ever touches, so any contact is a real compromise signal.
 Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
 point back to the exact tool call that leaked them.
 
-## Install the free V1.2.3 line
+## Install the free V1.2.4 line
 
 Prerequisite: Node.js 20 or newer. The public source build contains the free
-V1.2.3 baseline:
+V1.2.4 baseline:
 
-    git clone https://github.com/DorianChn/agent-canary && cd agent-canary
+    git clone https://github.com/DorianChn/shanchuanzhi-agent-canary && cd shanchuanzhi-agent-canary
     npm install && npm run build && npm link
 
 Run `agent-canary --help` after linking, then run the offline containment
@@ -147,7 +149,7 @@ and delivery package are kept outside the public repository.
 | `eval` — injection resistance scoring | | yes |
 | `dashboard` — HTML attack-chain timeline | | yes |
 | `export` — CEF / JSON / CSV for SIEM | | yes |
-| V1.2.3 session circuit breaker, guarded tool router, and offline `self-test` | yes | yes |
+| V1.2.4 session circuit breaker, guarded tool router, MCP safety instructions, and offline `self-test` | yes | yes |
 | SDK decoy handling and canary scanning | yes | yes |
 
 V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
@@ -166,20 +168,20 @@ security researchers, and DevSecOps teams:
 - pilot the alert/audit pipeline in a controlled development or CI environment;
 - discuss paid integration, private deployment, or security-assessment support.
 
-Start in [GitHub Discussions](https://github.com/DorianChn/agent-canary/discussions)
+Start in [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 with the integration target, scope, and preferred contact method. Do not post API
 keys, payment receipts, customer data, or unpublished findings.
 
 ## Distribution and partner paths
 
 The project is already discoverable through the [official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.DorianChn%2Fagent-canary&version=latest)
-and [Glama](https://glama.ai/mcp/servers/DorianChn/agent-canary). For a deeper
+and [Glama](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary). For a deeper
 security-platform integration, the [Snyk Technology Alliance Partner Program](https://snyk.io/partners/tapp/)
 is a candidate channel; any application or commercial terms must be reviewed by
 the maintainer before submission. We do not mass-post or send unsolicited
 promotional messages.
 
-## Non-MCP agents (free V1.2.3 guarded tool router)
+## Non-MCP agents (free V1.2.4 guarded tool router)
 
 Create one guard per agent session, then give it to one router. The router
 answers decoys with `guard.runDecoy()` and routes every non-decoy callback
