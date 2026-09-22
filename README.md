@@ -13,9 +13,9 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
-## V1.2.6: containment that can follow a reviewed identity
+## V1.2.7: containment that holds through the next retry
 
-V1.2.6 is the free public line. It keeps the zero-false-positive detection
+V1.2.7 is the free public line. It keeps the zero-false-positive detection
 model and free SDK containment primitives, then adds
 `createGuardedToolRouter()` so integrations have one reviewed dispatch path for
 decoys and real tools. It retains the fully offline `self-test` and centralized
@@ -71,10 +71,10 @@ workflow ever touches, so any contact is a real compromise signal.
 Every fake tool reply embeds a one-time trace token, so exfiltrated "secrets"
 point back to the exact tool call that leaked them.
 
-## Install the free V1.2.6 line
+## Install the free V1.2.7 line
 
 Prerequisite: Node.js 20 or newer. The public source build contains the free
-V1.2.6 baseline:
+V1.2.7 baseline:
 
     git clone https://github.com/DorianChn/shanchuanzhi-agent-canary && cd shanchuanzhi-agent-canary
     npm install && npm run build && npm link
@@ -153,7 +153,7 @@ and delivery package are kept outside the public repository.
 | `eval` — injection resistance scoring | | yes |
 | `dashboard` — HTML attack-chain timeline | | yes |
 | `export` — CEF / JSON / CSV for SIEM | | yes |
-| V1.2.6 session circuit breaker, shared identity containment, optional credential revoker, guarded tool router, MCP safety instructions, and offline `self-test` | yes | yes |
+| V1.2.7 session circuit breaker, shared identity containment, optional credential revoker, guarded tool router, MCP safety instructions, and offline `self-test` | yes | yes |
 | SDK decoy handling and canary scanning | yes | yes |
 
 V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
@@ -185,7 +185,7 @@ is a candidate channel; any application or commercial terms must be reviewed by
 the maintainer before submission. We do not mass-post or send unsolicited
 promotional messages.
 
-## Non-MCP agents (free V1.2.6 guarded tool router)
+## Non-MCP agents (free V1.2.7 guarded tool router)
 
 Create one guard per agent session, then give it to one router. The router
 answers decoys with `guard.runDecoy()` and routes every non-decoy callback

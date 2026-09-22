@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.7
+
+- Surface credential-revocation adapter failures through the normal alert path
+  while preserving the already fail-closed circuit state.
+- Add a regression test proving that a new session for the same reviewed
+  identity cannot race a synchronous decoy trip.
+
 ## 1.2.6
 
 - Add an explicit host-owned shared identity state store so a reviewed

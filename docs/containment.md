@@ -51,8 +51,8 @@ const guard = createAgentGuard({
 
 The callback may start an asynchronous revocation request, but Agent Canary
 does not await it or rely on it for authorization: local blocking is already
-fail-closed. A failed adapter is recorded as `credential_revocation_failed` and
-never resets the session. Keep external tokens short-lived and scoped so that
+fail-closed. A failed adapter is recorded as `credential_revocation_failed`,
+sent through the normal alert path, and never resets the session. Keep external tokens short-lived and scoped so that
 revocation complements, rather than replaces, the guarded tool boundary.
 
 ## Identity scope across retries

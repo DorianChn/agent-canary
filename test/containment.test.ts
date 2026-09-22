@@ -205,6 +205,34 @@ test("shared principal state quarantines a fresh session without affecting anoth
   assert.equal(await other.executeToolCall({ name: "http_post" }, () => "other identity allowed"), "other identity allowed");
 });
 
+test("a new session for the same principal cannot race a synchronous decoy trip", async () => {
+  const stateStore = sdk.createContainmentStateStore();
+  const first = sdk.createAgentGuard({
+    sessionId: "principal-race-first",
+    principalId: "principal-race-identity",
+    stateStore,
+    eventsFile: containmentEvents,
+    alert: false,
+  });
+  // Calling an async decoy path executes its synchronous trip before it yields.
+  const decoyReply = first.runDecoy("canary_read_secrets");
+  const retried = sdk.createAgentGuard({
+    sessionId: "principal-race-retry",
+    principalId: "principal-race-identity",
+    stateStore,
+    eventsFile: containmentEvents,
+    alert: false,
+  });
+  let callbackRan = false;
+  await assert.rejects(
+    retried.executeToolCall({ name: "http_post" }, () => { callbackRan = true; return "should not run"; }),
+    (error: unknown) => error instanceof sdk.CanaryBlockedError
+  );
+  await decoyReply;
+  assert.equal(retried.state, "QUARANTINED");
+  assert.equal(callbackRan, false);
+});
+
 test("principalId requires an explicit shared state store", () => {
   assert.throws(() => sdk.createAgentGuard({ principalId: "reviewed-agent-identity" }), /requires an explicit stateStore/);
 });

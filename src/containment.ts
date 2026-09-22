@@ -439,7 +439,7 @@ class SessionCircuitBreaker implements AgentGuard {
   }
 
   private recordCredentialRevocationFailure(request: CredentialRevocationRequest): void {
-    this.emit({
+    const event = this.emit({
       kind: "credential_revocation_failed",
       eventType: "credential_revocation_failed",
       sessionId: request.sessionId,
@@ -448,6 +448,9 @@ class SessionCircuitBreaker implements AgentGuard {
       riskLevel: request.riskLevel,
       traceId: request.traceId,
     });
+    // A vault/broker failure is an operational incident worth surfacing, but
+    // it cannot alter the already-closed local circuit.
+    this.alert(event);
   }
 }
 
