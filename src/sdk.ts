@@ -20,9 +20,11 @@ import {
 export {
   CanaryBlockedError,
   classifyToolRisk,
+  createContainmentStateStore,
   type AgentGuard,
   type AgentGuardOptions,
   type CircuitState,
+  type ContainmentStateStore,
   type CredentialRevocationRequest,
   type CredentialRevoker,
   type ResetRequest,

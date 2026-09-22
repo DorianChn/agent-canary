@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.6
+
+- Add an explicit host-owned shared identity state store so a reviewed
+  principal's fresh session inherits quarantine instead of silently retrying
+  with a new session handle.
+- Keep identity keys out of audit events and fail closed if a shared store is
+  unavailable.
+
 ## 1.2.5
 
 - Add an optional secret-free `credentialRevoker` hook for hosts that use

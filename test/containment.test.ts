@@ -168,3 +168,43 @@ test("credential revoker failures do not re-open the circuit", () => {
   assert.equal(guard.beforeToolCall({ name: "http_post" }).allowed, false);
   assert.ok(eventsFor("revoker-failure-session").some((event) => event.kind === "credential_revocation_failed"));
 });
+
+test("shared principal state quarantines a fresh session without affecting another identity", async () => {
+  const stateStore = sdk.createContainmentStateStore();
+  const first = sdk.createAgentGuard({
+    sessionId: "principal-first-session",
+    principalId: "reviewed-agent-identity",
+    stateStore,
+    eventsFile: containmentEvents,
+    alert: false,
+  });
+  const retried = sdk.createAgentGuard({
+    sessionId: "principal-retry-session",
+    principalId: "reviewed-agent-identity",
+    stateStore,
+    eventsFile: containmentEvents,
+    alert: false,
+  });
+  const other = sdk.createAgentGuard({
+    sessionId: "other-principal-session",
+    principalId: "other-reviewed-identity",
+    stateStore,
+    eventsFile: containmentEvents,
+    alert: false,
+  });
+
+  first.trip({ reason: "decoy_called", toolName: "canary_read_secrets", riskLevel: "SECRET" });
+  assert.equal(retried.state, "QUARANTINED");
+  let callbackRan = false;
+  await assert.rejects(
+    retried.executeToolCall({ name: "http_post" }, () => { callbackRan = true; return "should not run"; }),
+    (error: unknown) => error instanceof sdk.CanaryBlockedError
+  );
+  assert.equal(callbackRan, false);
+  assert.equal(other.state, "SAFE");
+  assert.equal(await other.executeToolCall({ name: "http_post" }, () => "other identity allowed"), "other identity allowed");
+});
+
+test("principalId requires an explicit shared state store", () => {
+  assert.throws(() => sdk.createAgentGuard({ principalId: "reviewed-agent-identity" }), /requires an explicit stateStore/);
+});

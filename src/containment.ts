@@ -76,8 +76,37 @@ export interface CredentialRevoker {
   revoke(request: CredentialRevocationRequest): void | Promise<void>;
 }
 
+/**
+ * Host-owned state shared by guards for the same reviewed identity. The key is
+ * never written to Agent Canary audit events. Remote implementations should
+ * make quarantine monotonic and fail closed when their backing store is down.
+ */
+export interface ContainmentStateStore {
+  get(scopeKey: string): CircuitState | undefined;
+  quarantine(scopeKey: string): boolean;
+  reset(scopeKey: string): void;
+}
+
+/** Create an in-memory store for multiple guards in one trusted host process. */
+export function createContainmentStateStore(): ContainmentStateStore {
+  const states = new Map<string, CircuitState>();
+  return {
+    get: (scopeKey) => states.get(scopeKey),
+    quarantine: (scopeKey) => {
+      if (states.get(scopeKey) === "QUARANTINED") return false;
+      states.set(scopeKey, "QUARANTINED");
+      return true;
+    },
+    reset: (scopeKey) => states.delete(scopeKey),
+  };
+}
+
 export interface AgentGuardOptions {
   sessionId?: string;
+  /** Reviewed host identity. Requires a shared stateStore to span sessions. */
+  principalId?: string;
+  /** Explicit shared state for the same principal across independently created guards. */
+  stateStore?: ContainmentStateStore;
   /** Exact tool names that may still run after quarantine. Default: none. */
   quarantineAllow?: string[];
   /** Override only when the host has a stricter, reviewed policy. */
@@ -147,18 +176,31 @@ class SessionCircuitBreaker implements AgentGuard {
   private readonly eventsFile?: string;
   private readonly alertsEnabled: boolean;
   private readonly credentialRevoker?: CredentialRevoker;
+  private readonly stateStore?: ContainmentStateStore;
+  private readonly scopeKey: string;
 
   constructor(options: AgentGuardOptions) {
     this.sessionId = checkedSessionId(options.sessionId ?? `ac_${randomUUID()}`);
+    if (options.principalId && !options.stateStore) {
+      throw new Error("principalId requires an explicit stateStore shared by the trusted host.");
+    }
+    this.scopeKey = options.principalId ? `principal:${checkedScopeId(options.principalId)}` : `session:${this.sessionId}`;
     this.allowAfterQuarantine = new Set((options.quarantineAllow ?? []).map(normalizeToolName));
     this.classify = options.classifyRisk ?? classifyToolRisk;
     this.eventsFile = options.eventsFile;
     this.alertsEnabled = options.alert !== false;
     this.credentialRevoker = options.credentialRevoker;
+    this.stateStore = options.stateStore;
   }
 
   get state(): CircuitState {
-    return this.currentState;
+    if (!this.stateStore) return this.currentState;
+    try {
+      return this.stateStore.get(this.scopeKey) ?? this.currentState;
+    } catch {
+      // A shared-store outage must not create a new allow path.
+      return "QUARANTINED";
+    }
   }
 
   beforeToolCall(call: ToolCall): ToolDecision {
@@ -177,8 +219,8 @@ class SessionCircuitBreaker implements AgentGuard {
       return this.block(name, riskLevel, "decoy_called", trip.traceId);
     }
 
-    if (this.currentState === "SAFE" || this.allowAfterQuarantine.has(name)) {
-      return { allowed: true, sessionId: this.sessionId, state: this.currentState, riskLevel };
+    if (this.state === "SAFE" || this.allowAfterQuarantine.has(name)) {
+      return { allowed: true, sessionId: this.sessionId, state: this.state, riskLevel };
     }
 
     return this.block(name, riskLevel, "session_quarantined", call.traceId ?? randomUUID());
@@ -248,7 +290,14 @@ class SessionCircuitBreaker implements AgentGuard {
       throw new Error("A non-empty human acknowledgement is required to reset a quarantined session.");
     }
 
-    const previousState = this.currentState;
+    const previousState = this.state;
+    if (this.stateStore) {
+      try {
+        this.stateStore.reset(this.scopeKey);
+      } catch {
+        throw new Error("The shared containment state could not be reset; session remains quarantined.");
+      }
+    }
     this.currentState = "SAFE";
     this.emit({
       kind: "session_reset",
@@ -263,14 +312,23 @@ class SessionCircuitBreaker implements AgentGuard {
 
   trip(input: TripInput): TripResult {
     const traceId = input.traceId ?? randomUUID();
-    if (this.currentState !== "SAFE") {
-      return { changed: false, sessionId: this.sessionId, state: this.currentState, traceId };
+    if (this.state !== "SAFE") {
+      return { changed: false, sessionId: this.sessionId, state: this.state, traceId };
     }
 
     // Complete both state assignments before *any* I/O. Logging and alert
     // delivery are best-effort side effects and can never delay quarantine.
     this.currentState = "TRIPPED";
     this.currentState = "QUARANTINED";
+    if (this.stateStore) {
+      try {
+        if (!this.stateStore.quarantine(this.scopeKey)) {
+          return { changed: false, sessionId: this.sessionId, state: this.state, traceId };
+        }
+      } catch {
+        // Keep the local breaker closed if an external identity store is down.
+      }
+    }
 
     const tripped = this.emit({
       kind: "session_tripped",
@@ -313,7 +371,7 @@ class SessionCircuitBreaker implements AgentGuard {
     const decision: ToolDecision = {
       allowed: false,
       sessionId: this.sessionId,
-      state: this.currentState,
+      state: this.state,
       riskLevel,
       reason,
       traceId,
@@ -327,7 +385,7 @@ class SessionCircuitBreaker implements AgentGuard {
       tool: name,
       riskLevel,
       traceId,
-      metadata: { state: this.currentState },
+      metadata: { state: this.state },
     });
     this.alert(event);
     return decision;
@@ -409,6 +467,12 @@ function checkedSessionId(value: string): string {
   const sessionId = value.trim();
   if (!sessionId || sessionId.length > 128) throw new Error("sessionId must be a non-empty string up to 128 characters.");
   return sessionId;
+}
+
+function checkedScopeId(value: string): string {
+  const scopeId = value.trim();
+  if (!scopeId || scopeId.length > 128) throw new Error("principalId must be a non-empty string up to 128 characters.");
+  return scopeId;
 }
 
 function safeReason(reason: string): string {

@@ -55,6 +55,28 @@ fail-closed. A failed adapter is recorded as `credential_revocation_failed` and
 never resets the session. Keep external tokens short-lived and scoped so that
 revocation complements, rather than replaces, the guarded tool boundary.
 
+## Identity scope across retries
+
+The default remains one isolated guard per session. If a host issues a new
+session handle for the same reviewed agent identity, reuse an explicit shared
+store and `principalId` so quarantine follows that identity. The principal ID
+is never put in Agent Canary audit events.
+
+```ts
+const stateStore = createContainmentStateStore();
+const guard = createAgentGuard({
+  sessionId: newSessionId(),
+  principalId: reviewedAgentIdentity,
+  stateStore,
+});
+```
+
+`createContainmentStateStore()` is for one trusted host process. Multi-process
+or distributed deployments must supply a host-owned store with atomic,
+monotonic quarantine semantics and a fail-closed outage policy. `principalId`
+without a `stateStore` is rejected so callers cannot assume retries are covered
+when they are not.
+
 ## Why there is no MCP proxy yet
 
 The project currently serves only inert decoy MCP tools. A transparent proxy for
