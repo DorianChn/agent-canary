@@ -6,7 +6,7 @@
 
 中文文档（本文件）｜ [English](README.md)
 
-[在线体验与赞助](https://dorianchn.github.io/agent-canary/) · [Glama 条目](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary) · [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
+[在线体验与赞助](https://dorianchn.github.io/shanchuanzhi-agent-canary/) · [Glama 条目](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary) · [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 
 ![Agent Canary — AI Agent / MCP 安全](docs/agent-canary-cover-v2.png)
 
@@ -129,7 +129,7 @@ V2 付费实现、签名私钥、客户记录和交付包不放入公开仓库�
 | V1.2.4 会话熔断器、受守卫工具 Router、MCP 安全说明与离线 `self-test` | 有 | 有 |
 | SDK 诱饵处理与金丝雀扫描 | 有 | 有 |
 
-V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查看公开的[付款说明](https://dorianchn.github.io/agent-canary/pay.html)：其中包含二维码、价格和交付所需信息。作者核对实际到账后才发送安装与激活说明；不承诺自动交付或即时激活。
+V2 Personal 目前采用**人工确认**的微信/支付宝付款流程。请查看公开的[付款说明](https://dorianchn.github.io/shanchuanzhi-agent-canary/pay.html)：其中包含二维码、价格和交付所需信息。作者核对实际到账后才发送安装与激活说明；不承诺自动交付或即时激活。
 
 ## 合作与集成
 

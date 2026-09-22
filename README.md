@@ -9,7 +9,7 @@ Non-MCP agents can use the SDK instead (see below). Node 20+, MIT, no telemetry.
 
 中文文档：[README.zh-CN.md](README.zh-CN.md)
 
-[Live demo & sponsor](https://dorianchn.github.io/agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary) · [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
+[Live demo & sponsor](https://dorianchn.github.io/shanchuanzhi-agent-canary/) · [Glama listing](https://glama.ai/mcp/servers/DorianChn/shanchuanzhi-agent-canary) · [GitHub Discussions](https://github.com/DorianChn/shanchuanzhi-agent-canary/discussions)
 
 ![Agent Canary — AI agent and MCP security](docs/agent-canary-cover-v2.png)
 
@@ -153,7 +153,7 @@ and delivery package are kept outside the public repository.
 | SDK decoy handling and canary scanning | yes | yes |
 
 V2 Personal currently uses a **manual** WeChat Pay / Alipay confirmation flow.
-See the public [payment instructions](https://dorianchn.github.io/agent-canary/pay.html)
+See the public [payment instructions](https://dorianchn.github.io/shanchuanzhi-agent-canary/pay.html)
 for the QR codes, price, and the information needed for delivery. The seller
 checks the actual transfer before sending installation and activation
 instructions; no automatic delivery or instant activation is promised.
