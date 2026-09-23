@@ -16,7 +16,7 @@ test("public MCP and Glama metadata stays aligned with the free V1 release", () 
 
   assert.equal(registry.name, "io.github.DorianChn/agent-canary");
   assert.equal(registry.version, pkg.version);
-  assert.match(String(registry.description), /inert decoy tools/i);
+  assert.match(String(registry.description), /inert MCP decoys/i);
   assert.equal(glama.$schema, "https://glama.ai/mcp/schemas/server.json");
   assert.deepEqual(glama.maintainers, ["DorianChn"]);
   assert.match(dockerfile, /ENTRYPOINT \["node", "dist\/index\.js", "serve"\]/);
