@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           version=$(node -p "require('./server.json').version")
-          if [[ "${GITHUB_REF_NAME}" == "v${version}" ]]; then
+          if [[ "${GITHUB_REF_NAME}" == "v${version}" || ("${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${GITHUB_REF_NAME}" == "main") ]]; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
