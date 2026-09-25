@@ -42,7 +42,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/alerts.test.ts test/tokens.test.ts test/eval.test.ts test/dashboard.test.ts test/sdk.test.ts test/license.test.ts test/containment.test.ts test/install.test.ts test/config.test.ts test/install-backup.test.ts test/webhook.test.ts test/self-test.test.ts test/metadata.test.ts",
+    "test": "node scripts/run-tests.mjs",
     "pack:check": "node scripts/check-package.mjs",
     "verify": "npm run build && npm test && npm run pack:check",
     "prepublishOnly": "npm run build"
